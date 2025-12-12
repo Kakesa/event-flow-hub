@@ -32,7 +32,7 @@ const navigation = [
   { name: 'Événements', href: '/events', icon: Calendar },
   { name: 'Invités', href: '/guests', icon: Users },
   { name: 'Invitations', href: '/invitations', icon: Mail },
-  { name: 'Livre d\'or', href: '/guestbook', icon: BookOpen },
+  { name: 'Message', href: '/guestbook', icon: BookOpen },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Scanner QR', href: '/scanner', icon: QrCode },
 ];
