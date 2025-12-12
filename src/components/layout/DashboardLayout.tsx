@@ -57,8 +57,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center gap-3 px-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary overflow-hidden">
+              <img src="/src/assets/white.png" alt="Logo EventFlow" className="h-full w-full object-contain" />
             </div>
             <span className="font-display text-xl font-semibold text-sidebar-foreground">
               EventFlow
