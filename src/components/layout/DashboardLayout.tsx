@@ -23,6 +23,10 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+const userName = "Hope"; // Prénom
+const userLastName = "Kakesa"; // Nom de famille
+const userPhoto = ""; // Laissez vide pour simuler l'absence de photo
+
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Événements', href: '/events', icon: Calendar },
@@ -61,7 +65,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <img src="/src/assets/white.png" alt="Logo EventFlow" className="h-full w-full object-contain" />
             </div>
             <span className="font-display text-xl font-semibold text-sidebar-foreground">
-              EventFlow
+              HK Event
             </span>
             <Button
               variant="ghost"
@@ -134,13 +138,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           <div className="flex-1" />
 
+
           <div className="flex items-center gap-3">
+            {/* Conteneur pour le nom de l'utilisateur et son statut */}
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium">Marie Dupont</p>
-              <p className="text-xs text-muted-foreground">Premium</p>
+              <p className="text-sm font-medium">{userName} {userLastName || "Nom d'utilisateur"}</p>
+              <p className="text-xs text-muted-foreground">Admin</p>
             </div>
+
+            {/* Photo de profil ou initiales */}
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-semibold text-primary">MD</span>
+              {userPhoto ? (
+                <img src={userPhoto} alt="Photo de profil" className="h-full w-full rounded-full object-cover" />
+              ) : (
+                <span className="text-sm font-semibold text-primary">
+                  {userName[0]}{userLastName[0]} {/* Affiche la première lettre du prénom et du nom */}
+                </span>
+              )}
             </div>
           </div>
         </header>
