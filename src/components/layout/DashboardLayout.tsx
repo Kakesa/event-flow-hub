@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard,
   Calendar,
@@ -12,8 +13,8 @@ import {
   Settings,
   Menu,
   X,
-  Sparkles,
   LogOut,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,10 +23,6 @@ import { Separator } from '@/components/ui/separator';
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
-
-const userName = "Hope"; // Prénom
-const userLastName = "Kakesa"; // Nom de famille
-const userPhoto = ""; // Laissez vide pour simuler l'absence de photo
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -40,6 +37,17 @@ const navigation = [
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
+  const userInitials = user 
+    ? `${user.fullName.split(' ')[0]?.[0] || ''}${user.fullName.split(' ')[1]?.[0] || ''}`.toUpperCase()
+    : 'U';
 
   return (
     <div className="min-h-screen bg-background">
@@ -62,7 +70,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="flex h-16 items-center gap-3 px-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary overflow-hidden">
-              <img src="/src/assets/white.png" alt="Logo EventFlow" className="h-full w-full object-contain" />
+              <img src="/src/assets/white.png" alt="Logo HK Event" className="h-full w-full object-contain" />
             </div>
             <span className="font-display text-xl font-semibold text-sidebar-foreground">
               HK Event
@@ -79,8 +87,22 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           <Separator className="bg-sidebar-border" />
 
+          {/* Quick Action */}
+          <div className="px-4 py-4">
+            <Button 
+              onClick={() => {
+                navigate('/events/create');
+                setSidebarOpen(false);
+              }}
+              className="w-full justify-start gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvel événement
+            </Button>
+          </div>
+
           {/* Navigation */}
-          <ScrollArea className="flex-1 px-4 py-6">
+          <ScrollArea className="flex-1 px-4">
             <nav className="space-y-1">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
@@ -111,11 +133,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Link
               to="/settings"
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+              onClick={() => setSidebarOpen(false)}
             >
               <Settings className="h-5 w-5" />
               Paramètres
             </Link>
-            <button className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
               <LogOut className="h-5 w-5" />
               Déconnexion
             </button>
@@ -138,23 +164,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           <div className="flex-1" />
 
-
           <div className="flex items-center gap-3">
-            {/* Conteneur pour le nom de l'utilisateur et son statut */}
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium">{userName} {userLastName || "Nom d'utilisateur"}</p>
-              <p className="text-xs text-muted-foreground">Admin</p>
+              <p className="text-sm font-medium">{user?.fullName || 'Utilisateur'}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.subscriptionType || 'Free'}</p>
             </div>
 
-            {/* Photo de profil ou initiales */}
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              {userPhoto ? (
-                <img src={userPhoto} alt="Photo de profil" className="h-full w-full rounded-full object-cover" />
-              ) : (
-                <span className="text-sm font-semibold text-primary">
-                  {userName[0]}{userLastName[0]} {/* Affiche la première lettre du prénom et du nom */}
-                </span>
-              )}
+              <span className="text-sm font-semibold text-primary">{userInitials}</span>
             </div>
           </div>
         </header>
