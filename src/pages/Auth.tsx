@@ -79,8 +79,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Sparkles className="w-8 h-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-2 border-primary mb-4 relative overflow-hidden">
+            <img src="/src/assets/black.png" alt="Logo HK Event" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-primary/10"></div>
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground">HK Event</h1>
           <p className="text-muted-foreground mt-2">Gérez vos événements avec élégance</p>
@@ -140,9 +141,6 @@ const Auth = () => {
                     {isLoading ? 'Connexion...' : 'Se connecter'}
                   </Button>
 
-                  <p className="text-xs text-center text-muted-foreground mt-4">
-                    Demo: hope@example.com / password123
-                  </p>
                 </form>
               </TabsContent>
 
