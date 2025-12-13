@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { 
-  Mail, MessageCircle, Send, Eye, Palette, Type, 
+import {
+  Mail, MessageCircle, Send, Eye, Palette, Type,
   Image, Check, Sparkles, Heart, PartyPopper, GraduationCap,
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
@@ -45,14 +45,14 @@ const InvitationTemplates = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get('eventId') || '1';
-  
+
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'both'>('both');
   const [isSending, setIsSending] = useState(false);
-  
+
   const [customization, setCustomization] = useState({
     title: 'Vous êtes cordialement invité(e)',
     eventName: 'Notre Événement Spécial',
@@ -104,7 +104,7 @@ const InvitationTemplates = () => {
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const guestsToSend = mockGuests.filter(g => selectedGuests.includes(g.id));
-    
+
     if (sendMethod === 'whatsapp' || sendMethod === 'both') {
       guestsToSend.forEach(guest => {
         if (guest.phone) {
@@ -125,8 +125,8 @@ const InvitationTemplates = () => {
   };
 
   const toggleGuestSelection = (guestId: string) => {
-    setSelectedGuests(prev => 
-      prev.includes(guestId) 
+    setSelectedGuests(prev =>
+      prev.includes(guestId)
         ? prev.filter(id => id !== guestId)
         : [...prev, guestId]
     );
@@ -138,8 +138,8 @@ const InvitationTemplates = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => navigate('/invitations')}
               className="mb-2 -ml-4"
             >
@@ -168,7 +168,7 @@ const InvitationTemplates = () => {
                     Sélectionnez les invités et le mode d'envoi
                   </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4 py-4">
                   {/* Send Method */}
                   <div className="space-y-2">
@@ -222,8 +222,8 @@ const InvitationTemplates = () => {
                         </label>
                       ))}
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => setSelectedGuests(mockGuests.map(g => g.id))}
                     >
@@ -269,11 +269,10 @@ const InvitationTemplates = () => {
                       <button
                         key={template.id}
                         onClick={() => handleSelectTemplate(template)}
-                        className={`group relative rounded-xl overflow-hidden border-2 transition-all ${
-                          isSelected 
-                            ? 'border-primary ring-2 ring-primary/20' 
+                        className={`group relative rounded-xl overflow-hidden border-2 transition-all ${isSelected
+                            ? 'border-primary ring-2 ring-primary/20'
                             : 'border-border hover:border-primary/50'
-                        }`}
+                          }`}
                       >
                         <div className="aspect-[3/4] relative">
                           <img
@@ -283,7 +282,7 @@ const InvitationTemplates = () => {
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                           <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <div 
+                            <div
                               className="w-8 h-8 rounded-lg flex items-center justify-center mb-2"
                               style={{ backgroundColor: `${template.primaryColor}30` }}
                             >
@@ -383,7 +382,7 @@ const InvitationTemplates = () => {
 
                     <div className="space-y-2">
                       <Label>Police</Label>
-                      <Select 
+                      <Select
                         value={customization.fontFamily}
                         onValueChange={(v) => setCustomization(prev => ({ ...prev, fontFamily: v }))}
                       >
@@ -414,7 +413,7 @@ const InvitationTemplates = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div 
+                <div
                   className="aspect-[3/4] rounded-lg overflow-hidden border relative"
                   style={{ fontFamily: customization.fontFamily }}
                 >
@@ -427,14 +426,18 @@ const InvitationTemplates = () => {
                       />
                       <div className="absolute inset-0 bg-black/50" />
                       <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                        <div 
-                          className="w-12 h-12 rounded-full flex items-center justify-center mb-4"
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden"
                           style={{ backgroundColor: customization.primaryColor }}
                         >
-                          <Sparkles className="w-6 h-6" />
+                          <img
+                            src="/src/assets/black.png"
+                            alt="logo"
+                            className="h-full w-full object-cover"
+                          />
                         </div>
                         <p className="text-sm opacity-80 mb-2">{customization.title}</p>
-                        <h3 
+                        <h3
                           className="text-xl font-bold mb-4"
                           style={{ color: customization.primaryColor }}
                         >
@@ -448,7 +451,7 @@ const InvitationTemplates = () => {
                         <p className="text-xs mt-4 opacity-70 line-clamp-3">
                           {customization.message}
                         </p>
-                        <button 
+                        <button
                           className="mt-4 px-4 py-2 rounded-full text-xs font-medium"
                           style={{ backgroundColor: customization.primaryColor }}
                         >
@@ -467,8 +470,8 @@ const InvitationTemplates = () => {
 
                 {selectedTemplate && (
                   <div className="mt-4 space-y-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full"
                       onClick={() => setPreviewOpen(true)}
                     >
@@ -490,7 +493,7 @@ const InvitationTemplates = () => {
             <DialogTitle>Aperçu de l'invitation</DialogTitle>
           </DialogHeader>
           {selectedTemplate && (
-            <div 
+            <div
               className="aspect-[3/4] rounded-lg overflow-hidden border relative max-h-[70vh]"
               style={{ fontFamily: customization.fontFamily }}
             >
@@ -501,14 +504,18 @@ const InvitationTemplates = () => {
               />
               <div className="absolute inset-0 bg-black/50" />
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
-                <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center mb-6"
-                  style={{ backgroundColor: customization.primaryColor }}
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden border border-transparent"
                 >
-                  <Sparkles className="w-8 h-8" />
+                  <img
+                    src="/src/assets/black.png"
+                    alt="logo"
+                    className="h-full w-full object-cover" // Utilisez object-cover pour remplir le cercle
+                    style={{ borderRadius: '50%' }} // Assure que l'image est rendue en forme circulaire
+                  />
                 </div>
                 <p className="text-lg opacity-80 mb-3">{customization.title}</p>
-                <h3 
+                <h3
                   className="text-3xl font-bold mb-6"
                   style={{ color: customization.primaryColor }}
                 >
@@ -522,7 +529,7 @@ const InvitationTemplates = () => {
                 <p className="text-sm mt-6 opacity-70 max-w-md">
                   {customization.message}
                 </p>
-                <button 
+                <button
                   className="mt-6 px-6 py-3 rounded-full font-medium"
                   style={{ backgroundColor: customization.primaryColor }}
                 >
