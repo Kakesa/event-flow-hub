@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import EventCard from '@/components/dashboard/EventCard';
@@ -10,6 +10,9 @@ import { eventsApi, analyticsApi, guestsApi } from '@/services/api';
 import type { Event, Guest } from '@/types/models';
 
 const Index = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [overview, setOverview] = useState({
@@ -61,17 +64,22 @@ const Index = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight">
-              Bonjour, Hope kakesa 
+              Bonjour, Hope kakesa
             </h1>
             <p className="text-muted-foreground mt-1">
               Voici un aperçu de vos événements
             </p>
           </div>
-          <Button asChild className="shadow-gold">
-            <Link to="/events/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvel événement
-            </Link>
+
+          <Button
+            onClick={() => {
+              navigate('/events/create');
+              setSidebarOpen(false);
+            }}
+            className="shadow-gold"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvel événement
           </Button>
         </div>
 
