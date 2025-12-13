@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Send, Mail, MessageSquare, Smartphone, CheckCircle } from 'lucide-react';
+import { Send, Mail, MessageSquare, Smartphone, CheckCircle, Palette } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ const distributionMethods = [
 ];
 
 const Invitations = () => {
+  const navigate = useNavigate();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
@@ -100,13 +102,11 @@ const Invitations = () => {
       setSelectedGuests([]);
       fetchGuests();
     } catch (error) {
-      toast({ title: 'Erreur', description: 'Impossible d\'envoyer les invitations', variant: 'destructive' });
+      toast({ title: 'Erreur', description: "Impossible d'envoyer les invitations", variant: 'destructive' });
     } finally {
       setSending(false);
     }
   };
-
-  const selectedEventData = events.find(e => e.id === selectedEvent);
 
   return (
     <DashboardLayout>
@@ -114,23 +114,32 @@ const Invitations = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Invitations</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Invitations</h1>
             <p className="text-muted-foreground mt-1">
               Envoyez vos invitations par email, WhatsApp ou SMS
             </p>
           </div>
-          <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Sélectionner un événement" />
-            </SelectTrigger>
-            <SelectContent>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => navigate(`/invitations/templates?eventId=${selectedEvent}`)}
+            >
+              <Palette className="h-4 w-4 mr-2" />
+              Templates
+            </Button>
+            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+              <SelectTrigger className="w-full sm:w-64">
+                <SelectValue placeholder="Sélectionner un événement" />
+              </SelectTrigger>
+              <SelectContent>
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id}>
+                    {event.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loading ? (
@@ -143,7 +152,7 @@ const Invitations = () => {
             <div className="lg:col-span-2 space-y-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <CardTitle>Invités à contacter</CardTitle>
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -176,12 +185,12 @@ const Invitations = () => {
                           <p className="font-medium">{guest.fullName}</p>
                           <p className="text-sm text-muted-foreground truncate">{guest.email}</p>
                         </div>
-                        <Badge variant="outline">À inviter</Badge>
+                        <Badge variant="outline" className="hidden sm:flex">À inviter</Badge>
                       </div>
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <CheckCircle className="h-12 w-12 text-success mb-4" />
+                      <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
                       <h3 className="font-display text-lg font-semibold">Tous les invités ont été contactés</h3>
                       <p className="text-muted-foreground mt-1">
                         Ajoutez de nouveaux invités pour envoyer des invitations
@@ -227,19 +236,29 @@ const Invitations = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       {selectedGuests.length} invité(s) sélectionné(s)
                     </p>
-                    <Button
-                      className="w-full shadow-gold"
-                      size="lg"
-                      disabled={selectedGuests.length === 0 || sending}
-                      onClick={handleSendInvitations}
-                    >
-                      {sending ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
-                      ) : (
-                        <Send className="h-4 w-4 mr-2" />
-                      )}
-                      Envoyer les invitations
-                    </Button>
+                    <div className="space-y-2">
+                      <Button
+                        className="w-full shadow-gold"
+                        size="lg"
+                        disabled={selectedGuests.length === 0 || sending}
+                        onClick={handleSendInvitations}
+                      >
+                        {sending ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
+                        ) : (
+                          <Send className="h-4 w-4 mr-2" />
+                        )}
+                        Envoi rapide
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => navigate(`/invitations/templates?eventId=${selectedEvent}`)}
+                      >
+                        <Palette className="h-4 w-4 mr-2" />
+                        Personnaliser le template
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

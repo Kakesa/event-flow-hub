@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import EventCard from '@/components/dashboard/EventCard';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { eventsApi, guestsApi } from '@/services/api';
 import type { Event, Guest } from '@/types/models';
 
 const Events = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,10 @@ const Events = () => {
     return guests.filter(g => g.eventId === eventId).length;
   };
 
+  const handleDeleteEvent = (eventId: string) => {
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+  };
+
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.location.toLowerCase().includes(searchQuery.toLowerCase());
@@ -65,16 +70,14 @@ const Events = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Événements</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Événements</h1>
             <p className="text-muted-foreground mt-1">
               Gérez tous vos événements en un seul endroit
             </p>
           </div>
-          <Button asChild className="shadow-gold">
-            <Link to="/events/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvel événement
-            </Link>
+          <Button onClick={() => navigate('/events/create')} className="shadow-gold">
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvel événement
           </Button>
         </div>
 
@@ -114,6 +117,7 @@ const Events = () => {
                 key={event.id}
                 event={event}
                 guestCount={getGuestCount(event.id)}
+                onDelete={handleDeleteEvent}
               />
             ))}
           </div>
@@ -127,11 +131,9 @@ const Events = () => {
               {searchQuery ? 'Essayez de modifier votre recherche' : 'Créez votre premier événement'}
             </p>
             {!searchQuery && (
-              <Button asChild className="mt-4">
-                <Link to="/events/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Créer un événement
-                </Link>
+              <Button onClick={() => navigate('/events/create')} className="mt-4">
+                <Plus className="h-4 w-4 mr-2" />
+                Créer un événement
               </Button>
             )}
           </div>
