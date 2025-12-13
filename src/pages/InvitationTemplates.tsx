@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -36,9 +37,9 @@ const templates: Template[] = [
 
 // Mock guests for testing
 const mockGuests = [
-  { id: '1', fullName: 'Jean Dupont', email: 'jean@example.com', phone: '+243812345678' },
-  { id: '2', fullName: 'Marie Martin', email: 'marie@example.com', phone: '+243823456789' },
-  { id: '3', fullName: 'Pierre Bernard', email: 'pierre@example.com', phone: '+243834567890' },
+  { id: '1', name: 'Jean Dupont', email: 'jean@example.com', phone: '+243812345678' },
+  { id: '2', name: 'Marie Martin', email: 'marie@example.com', phone: '+243823456789' },
+  { id: '3', name: 'Pierre Bernard', email: 'pierre@example.com', phone: '+243834567890' },
 ];
 
 const InvitationTemplates = () => {
@@ -216,7 +217,7 @@ const InvitationTemplates = () => {
                             className="rounded border-border"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{guest.fullName}</p>
+                            <p className="font-medium truncate">{guest.name}</p>
                             <p className="text-xs text-muted-foreground truncate">{guest.email}</p>
                           </div>
                         </label>

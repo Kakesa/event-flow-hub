@@ -130,7 +130,7 @@ const Scanner = () => {
                     <User className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Nom</p>
-                      <p className="font-medium">{result.guest.fullName}</p>
+                      <p className="font-medium">{result.guest.name}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

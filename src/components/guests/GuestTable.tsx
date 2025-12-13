@@ -85,7 +85,7 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
                   onCheckedChange={() => toggleGuest(guest.id)}
                 />
               </TableCell>
-              <TableCell className="font-medium">{guest.fullName}</TableCell>
+              <TableCell className="font-medium">{guest.name}</TableCell>
               <TableCell className="hidden sm:table-cell text-muted-foreground">
                 {guest.email}
               </TableCell>

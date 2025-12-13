@@ -1,5 +1,7 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Organizer } from '@/types/models';
+import { authApi } from '@/services/api';
 
 interface AuthContextType {
   user: Organizer | null;
@@ -11,115 +13,93 @@ interface AuthContextType {
 }
 
 interface RegisterData {
-  fullName: string;
+  name: string;
   email: string;
-  phone: string;
+  phone?: string;
   password: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Données statiques pour simulation - À remplacer par appels API backend
-const MOCK_USERS: (Organizer & { password: string })[] = [
-  {
-    id: '1',
-    fullName: 'Hope Kakesa',
-    email: 'hope@example.com',
-    phone: '+243123456789',
-    password: 'password123',
-    subscriptionType: 'premium',
-    createdAt: new Date().toISOString(),
-  },
-];
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<Organizer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est déjà connecté (localStorage)
-    const storedUser = localStorage.getItem('eventflow_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem('eventflow_user');
+    const initializeUser = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLoading(false);
+        return;
       }
-    }
-    setIsLoading(false);
+
+      try {
+        const res = await authApi.me();
+        if (res.success) setUser(res.data);
+        else logout();
+      } catch {
+        logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeUser();
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string) => {
+    if (isLoading) return { success: false, error: 'Déjà en cours...' };
     setIsLoading(true);
-    
-    // Simulation d'appel API - À remplacer par votre backend
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const foundUser = MOCK_USERS.find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('eventflow_user', JSON.stringify(userWithoutPassword));
+    try {
+      const res = await authApi.login(email.trim(), password);
+      if (res.success) {
+        setUser(res.data.organizer);
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('eventflow_user', JSON.stringify(res.data.organizer));
+        return { success: true };
+      }
+      return { success: false, error: 'Email ou mot de passe incorrect' };
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : 'Erreur inconnue';
+      return { success: false, error };
+    } finally {
       setIsLoading(false);
-      return { success: true };
     }
-    
-    setIsLoading(false);
-    return { success: false, error: 'Email ou mot de passe incorrect' };
   };
 
-  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+  const register = async (data: RegisterData) => {
+    if (isLoading) return { success: false, error: 'Déjà en cours...' };
     setIsLoading(true);
-    
-    // Simulation d'appel API - À remplacer par votre backend
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const existingUser = MOCK_USERS.find(u => u.email === data.email);
-    if (existingUser) {
+    try {
+      const res = await authApi.register(data);
+      if (res.success) {
+        const loginRes = await login(data.email, data.password);
+        return loginRes;
+      }
+      return { success: false, error: "Erreur lors de l'inscription" };
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : 'Erreur inconnue';
+      return { success: false, error };
+    } finally {
       setIsLoading(false);
-      return { success: false, error: 'Cet email est déjà utilisé' };
     }
-    
-    const newUser: Organizer = {
-      id: Date.now().toString(),
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      subscriptionType: 'free',
-      createdAt: new Date().toISOString(),
-    };
-    
-    MOCK_USERS.push({ ...newUser, password: data.password });
-    setUser(newUser);
-    localStorage.setItem('eventflow_user', JSON.stringify(newUser));
-    setIsLoading(false);
-    return { success: true };
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('token');
     localStorage.removeItem('eventflow_user');
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      login,
-      register,
-      logout,
-    }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };

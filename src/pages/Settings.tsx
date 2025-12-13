@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Settings = () => {
   const [profile, setProfile] = useState({
-    fullName: 'Marie Dupont',
+    name: 'Marie Dupont',
     email: 'marie@example.com',
     phone: '+33 6 12 34 56 78',
   });
@@ -84,11 +84,11 @@ const Settings = () => {
                 <Separator />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Nom complet</Label>
+                    <Label htmlFor="name">Nom complet</Label>
                     <Input
-                      id="fullName"
-                      value={profile.fullName}
-                      onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
+                      id="name"
+                      value={profile.name}
+                      onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
