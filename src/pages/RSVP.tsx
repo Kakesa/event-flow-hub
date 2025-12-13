@@ -99,11 +99,19 @@ const RSVP = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
           <div className="max-w-2xl mx-auto text-center">
-            <Sparkles className="w-8 h-8 text-primary mx-auto mb-4" />
-            <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground mb-2">
-              {MOCK_EVENT.title}
-            </h1>
-          </div>
+  <div
+    className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto" // Ajout de mx-auto pour centrer
+  >
+    <img
+      src="/src/assets/black.png"
+      alt="logo"
+      className="h-full w-full object-cover" // Assurez-vous que l'image remplit le cercle
+    />
+  </div>
+  <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground mb-2">
+    {MOCK_EVENT.title}
+  </h1>
+</div>
         </div>
       </div>
 
