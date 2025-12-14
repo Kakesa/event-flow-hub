@@ -8,6 +8,8 @@ import type {
   Analytics,
   Organizer,
   ApiResponse,
+  User,
+  ModulePermission,
 } from '@/types/models';
 
 // URL de base du backend
@@ -40,7 +42,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 // ==================== AUTHENTIFICATION ====================
 export const authApi = {
   register: async (data: { name: string; email: string; phone?: string; password: string }): Promise<ApiResponse<{ token: string; organizer: Organizer }>> => {
-    // ⚡️ Ne pas envoyer phone si vide
     const payload: any = {
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
@@ -119,6 +120,11 @@ export const eventsApi = {
 
 // ==================== INVITÉS ====================
 export const guestsApi = {
+  getAll: async (): Promise<ApiResponse<Guest[]>> => {
+    const response = await fetch(`${API_BASE_URL}/guests`, { headers: getHeaders() });
+    return handleResponse(response);
+  },
+
   getByEvent: async (eventId: string): Promise<ApiResponse<Guest[]>> => {
     const response = await fetch(`${API_BASE_URL}/events/${eventId}/guests`, { headers: getHeaders() });
     return handleResponse(response);
@@ -227,6 +233,54 @@ export const qrCodeApi = {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ code }),
+    });
+    return handleResponse(response);
+  },
+};
+
+// ==================== UTILISATEURS (Gestion des rôles) ====================
+export const usersApi = {
+  getAll: async (): Promise<ApiResponse<User[]>> => {
+    const response = await fetch(`${API_BASE_URL}/users`, { headers: getHeaders() });
+    return handleResponse(response);
+  },
+
+  getById: async (id: string): Promise<ApiResponse<User>> => {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, { headers: getHeaders() });
+    return handleResponse(response);
+  },
+
+  create: async (data: Partial<User> & { password: string }): Promise<ApiResponse<User>> => {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  update: async (id: string, data: Partial<User>): Promise<ApiResponse<User>> => {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  updatePermissions: async (id: string, permissions: ModulePermission[]): Promise<ApiResponse<User>> => {
+    const response = await fetch(`${API_BASE_URL}/users/${id}/permissions`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ permissions }),
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (id: string): Promise<ApiResponse<void>> => {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
     });
     return handleResponse(response);
   },

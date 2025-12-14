@@ -124,3 +124,32 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
 }
+
+// Modules disponibles avec labels
+export const MODULES: { name: ModuleName; label: string }[] = [
+  { name: 'events', label: 'Événements' },
+  { name: 'guests', label: 'Invités' },
+  { name: 'invitations', label: 'Invitations' },
+  { name: 'guestbook', label: "Livre d'or" },
+  { name: 'analytics', label: 'Analytics' },
+  { name: 'users', label: 'Utilisateurs' },
+  { name: 'settings', label: 'Paramètres' },
+];
+
+// Permissions par défaut pour un nouvel utilisateur
+export const DEFAULT_USER_PERMISSIONS: ModulePermission[] = MODULES.map(m => ({
+  module: m.name,
+  create: false,
+  read: true,
+  update: false,
+  delete: false,
+}));
+
+// Permissions admin (tout autorisé)
+export const ADMIN_PERMISSIONS: ModulePermission[] = MODULES.map(m => ({
+  module: m.name,
+  create: true,
+  read: true,
+  update: true,
+  delete: true,
+}));
