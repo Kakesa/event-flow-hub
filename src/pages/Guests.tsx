@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Download, Send, Filter } from 'lucide-react';
+import { Plus, Search, Download, Filter } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import GuestTable from '@/components/guests/GuestTable';
+import QRCodeModal from '@/components/guests/QRCodeModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,7 +22,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { guestsApi, eventsApi, invitationsApi, qrCodeApi } from '@/services/api';
+import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,7 +34,9 @@ const Guests = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [eventFilter, setEventFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newGuest, setNewGuest] = useState({ name: '', email: '', phone: '', eventId: '' });
+  const [newGuest, setNewGuest] = useState({ fullName: '', email: '', phone: '', eventId: '' });
+  const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,7 +59,7 @@ const Guests = () => {
   };
 
   const filteredGuests = guests.filter(guest => {
-    const matchesSearch = guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = guest.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       guest.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || guest.status === statusFilter;
     const matchesEvent = eventFilter === 'all' || guest.eventId === eventFilter;
@@ -64,7 +67,7 @@ const Guests = () => {
   });
 
   const handleAddGuest = async () => {
-    if (!newGuest.name || !newGuest.email || !newGuest.eventId) {
+    if (!newGuest.fullName || !newGuest.email || !newGuest.eventId) {
       toast({ title: 'Erreur', description: 'Veuillez remplir tous les champs obligatoires', variant: 'destructive' });
       return;
     }
@@ -72,7 +75,7 @@ const Guests = () => {
       await guestsApi.create(newGuest.eventId, newGuest);
       toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
       setIsAddDialogOpen(false);
-      setNewGuest({ name: '', email: '', phone: '', eventId: '' });
+      setNewGuest({ fullName: '', email: '', phone: '', eventId: '' });
       fetchData();
     } catch (error) {
       toast({ title: 'Erreur', description: 'Impossible d\'ajouter l\'invité', variant: 'destructive' });
@@ -88,13 +91,11 @@ const Guests = () => {
     }
   };
 
-  const handleGenerateQR = async (guestId: string) => {
-    try {
-      const result = await qrCodeApi.generate(guestId);
-      toast({ title: 'QR Code généré', description: 'Le QR code a été créé avec succès' });
-      // On pourrait ouvrir un modal avec le QR code ici
-    } catch (error) {
-      toast({ title: 'Erreur', description: 'Impossible de générer le QR code', variant: 'destructive' });
+  const handleGenerateQR = (guestId: string) => {
+    const guest = guests.find(g => g.id === guestId);
+    if (guest) {
+      setSelectedGuestForQR(guest);
+      setIsQRModalOpen(true);
     }
   };
 
@@ -158,11 +159,11 @@ const Guests = () => {
                     </Select>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="name">Nom complet *</Label>
+                    <Label htmlFor="fullName">Nom complet *</Label>
                     <Input
-                      id="name"
-                      value={newGuest.name}
-                      onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
+                      id="fullName"
+                      value={newGuest.fullName}
+                      onChange={(e) => setNewGuest({ ...newGuest, fullName: e.target.value })}
                       placeholder="Jean Dupont"
                     />
                   </div>
@@ -250,6 +251,16 @@ const Guests = () => {
           />
         )}
       </div>
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        guest={selectedGuestForQR}
+        open={isQRModalOpen}
+        onClose={() => {
+          setIsQRModalOpen(false);
+          setSelectedGuestForQR(null);
+        }}
+      />
     </DashboardLayout>
   );
 };
