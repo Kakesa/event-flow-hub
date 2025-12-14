@@ -32,6 +32,7 @@ const navigation = [
   { name: 'Message', href: '/guestbook', icon: BookOpen },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Scanner QR', href: '/scanner', icon: QrCode },
+  { name: 'Utilisateurs', href: '/users', icon: Users },
 ];
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -46,7 +47,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const userInitials = user 
-    ? `${user.name.split(' ')[0]?.[0] || ''}${user.name.split(' ')[1]?.[0] || ''}`.toUpperCase()
+    ? `${user.fullName.split(' ')[0]?.[0] || ''}${user.fullName.split(' ')[1]?.[0] || ''}`.toUpperCase()
     : 'U';
 
   return (
@@ -166,7 +167,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           <div className="flex items-center gap-3">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium">{user?.name || 'Utilisateur'}</p>
+              <p className="text-sm font-medium">{user?.fullName || 'Utilisateur'}</p>
               <p className="text-xs text-muted-foreground capitalize">{user?.subscriptionType || 'Free'}</p>
             </div>
 

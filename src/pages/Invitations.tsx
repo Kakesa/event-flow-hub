@@ -182,7 +182,7 @@ const Invitations = () => {
                           onCheckedChange={() => toggleGuest(guest.id)}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium">{guest.name}</p>
+                          <p className="font-medium">{guest.fullName}</p>
                           <p className="text-sm text-muted-foreground truncate">{guest.email}</p>
                         </div>
                         <Badge variant="outline" className="hidden sm:flex">À inviter</Badge>
