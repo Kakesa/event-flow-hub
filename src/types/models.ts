@@ -1,90 +1,120 @@
-// Types pour l'application de gestion d'événements
-
+// ===================== ENUMS =====================
 export type GuestStatus = 'invited' | 'confirmed' | 'declined' | 'pending';
 export type DistributionMethod = 'whatsapp' | 'sms' | 'email';
 export type SubscriptionType = 'free' | 'premium' | 'enterprise';
 
+// ===================== ORGANIZER =====================
 export interface Organizer {
   id: string;
-  fullName: string;
+  name: string;                // ⚠️ cohérent avec ton backend
   email: string;
-  phone: string;
-  subscriptionType: SubscriptionType;
-  createdAt: string;
+  phone?: string;
+  role?: 'organizer' | 'admin';
+
+  subscriptionType?: SubscriptionType;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// ===================== EVENT =====================
 export interface Event {
   id: string;
   organizerId: string;
+
   title: string;
-  description: string;
-  location: string;
+  type: string;               // wedding, birthday, corporate...
+  description?: string;
+
   date: string;
-  startTime: string;
-  endTime: string;
+  startTime?: string;
+  endTime?: string;
+
+  location: string;
+
   coverImage?: string;
-  theme: string;
-  createdAt: string;
-  updatedAt: string;
+  theme?: string;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// ===================== GUEST =====================
 export interface Guest {
   id: string;
   eventId: string;
+
   fullName: string;
-  phone: string;
-  email: string;
+  phone?: string;
+  email?: string;
+
   status: GuestStatus;
+
   drinkPreference?: string;
   qrCode?: string;
-  createdAt: string;
-  updatedAt: string;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+// ===================== INVITATION =====================
 export interface Invitation {
   id: string;
   eventId: string;
   guestId: string;
-  templateUrl?: string;
-  themeColor: string;
-  sentAt?: string;
+
   distributionMethod: DistributionMethod;
+
+  templateUrl?: string;
+  themeColor?: string;
+
+  sentAt?: string;
+  createdAt?: string;
 }
 
+// ===================== GUESTBOOK =====================
 export interface GuestbookMessage {
   id: string;
   eventId: string;
-  guestId: string;
+
+  guestId?: string;
   guestName?: string;
+
   message: string;
   createdAt: string;
 }
 
+// ===================== QR CODE =====================
 export interface QRCode {
   id: string;
   guestId: string;
+
   code: string;
-  expiresAt: string;
-  scannedAt?: string;
   isValid: boolean;
+
+  expiresAt?: string;
+  scannedAt?: string;
 }
 
+// ===================== ANALYTICS =====================
 export interface Analytics {
   id: string;
   eventId: string;
+
   totalInvitationsSent: number;
   totalConfirmed: number;
   totalDeclined: number;
   totalPending: number;
+
   preferredDrinksStats: Record<string, number>;
-  lastUpdated: string;
+  lastUpdated?: string;
 }
 
-// API Response types
+// ===================== API RESPONSES =====================
 export interface ApiResponse<T> {
-  data: T;
   success: boolean;
   message?: string;
+  data: T;
 }
 
 export interface PaginatedResponse<T> {

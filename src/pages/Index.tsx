@@ -8,11 +8,13 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import { Button } from '@/components/ui/button';
 import { eventsApi, analyticsApi, guestsApi } from '@/services/api';
 import type { Event, Guest } from '@/types/models';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [overview, setOverview] = useState({
@@ -64,7 +66,7 @@ const Index = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight">
-              Bonjour, Hope kakesa
+             Bonjour {user?.name || 'Utilisateur'} !
             </h1>
             <p className="text-muted-foreground mt-1">
               Voici un aperçu de vos événements

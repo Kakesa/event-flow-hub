@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Send, Mail, MessageSquare, Smartphone, CheckCircle, Palette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+
 import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
 import type { Guest, Event, DistributionMethod } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
@@ -26,49 +28,54 @@ const distributionMethods = [
 
 const Invitations = () => {
   const navigate = useNavigate();
-  const [guests, setGuests] = useState<Guest[]>([]);
+  const { toast } = useToast();
+
   const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<string>('');
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<DistributionMethod>('email');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const { toast } = useToast();
 
+  // 🔹 Charger les événements
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const eventsRes = await eventsApi.getAll();
-        setEvents(eventsRes.data);
-        if (eventsRes.data.length > 0) {
-          setSelectedEvent(eventsRes.data[0].id);
+        const res = await eventsApi.getAll();
+        setEvents(res.data);
+        if (res.data.length > 0) {
+          setSelectedEvent(res.data[0].id);
         }
-      } catch (error) {
-        console.error('Erreur:', error);
+      } catch {
+        toast({ title: 'Erreur', description: 'Impossible de charger les événements', variant: 'destructive' });
       } finally {
         setLoading(false);
       }
     };
     fetchEvents();
-  }, []);
+  }, [toast]);
 
+  // 🔹 Charger les invités
   useEffect(() => {
-    if (selectedEvent) {
-      fetchGuests();
-    }
-  }, [selectedEvent]);
+    if (!selectedEvent) return;
 
-  const fetchGuests = async () => {
-    try {
-      const res = await guestsApi.getByEvent(selectedEvent);
-      setGuests(res.data);
-      setSelectedGuests([]);
-    } catch (error) {
-      console.error('Erreur:', error);
-    }
-  };
+    const fetchGuests = async () => {
+      try {
+        const res = await guestsApi.getByEvent(selectedEvent);
+        setGuests(res.data);
+        setSelectedGuests([]);
+      } catch {
+        toast({ title: 'Erreur', description: 'Impossible de charger les invités', variant: 'destructive' });
+      }
+    };
 
-  const uninvitedGuests = guests.filter(g => g.status === 'invited' || !g.status);
+    fetchGuests();
+  }, [selectedEvent, toast]);
+
+  const uninvitedGuests = guests.filter(
+    g => !g.status || g.status === 'invited'
+  );
 
   const toggleGuest = (guestId: string) => {
     setSelectedGuests(prev =>
@@ -97,12 +104,11 @@ const Invitations = () => {
       await invitationsApi.sendBulk(selectedGuests, selectedMethod);
       toast({
         title: 'Succès',
-        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod}`,
+        description: `${selectedGuests.length} invitation(s) envoyée(s)`,
       });
       setSelectedGuests([]);
-      fetchGuests();
-    } catch (error) {
-      toast({ title: 'Erreur', description: "Impossible d'envoyer les invitations", variant: 'destructive' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Échec de l’envoi', variant: 'destructive' });
     } finally {
       setSending(false);
     }
@@ -111,158 +117,127 @@ const Invitations = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Invitations</h1>
-            <p className="text-muted-foreground mt-1">
-              Envoyez vos invitations par email, WhatsApp ou SMS
+            <h1 className="text-3xl font-bold">Invitations</h1>
+            <p className="text-muted-foreground">
+              Envoyez vos invitations par Email, WhatsApp ou SMS
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => navigate(`/invitations/templates?eventId=${selectedEvent}`)}
-            >
-              <Palette className="h-4 w-4 mr-2" />
-              Templates
-            </Button>
+
+          <div className="flex gap-2">
             <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-              <SelectTrigger className="w-full sm:w-64">
-                <SelectValue placeholder="Sélectionner un événement" />
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Choisir un événement" />
               </SelectTrigger>
               <SelectContent>
-                {events.map((event) => (
+                {events.map(event => (
                   <SelectItem key={event.id} value={event.id}>
                     {event.title}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/invitations/templates?eventId=${selectedEvent}`)}
+            >
+              <Palette className="h-4 w-4 mr-2" />
+              Templates
+            </Button>
           </div>
         </div>
 
+        {/* Content */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="flex justify-center py-20">
+            <div className="animate-spin h-8 w-8 border-b-2 border-primary rounded-full" />
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Guests list */}
-            <div className="lg:col-span-2 space-y-4">
+          <div className="grid lg:grid-cols-3 gap-6">
+
+            {/* Guests */}
+            <div className="lg:col-span-2">
               <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <CardTitle>Invités à contacter</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={selectedGuests.length === uninvitedGuests.length && uninvitedGuests.length > 0}
-                        onCheckedChange={toggleAll}
-                      />
-                      <span className="text-sm text-muted-foreground">Tout sélectionner</span>
-                    </div>
-                  </div>
+                <CardHeader>
+                  <CardTitle>Invités à contacter</CardTitle>
                 </CardHeader>
+
                 <CardContent className="space-y-2">
-                  {uninvitedGuests.length > 0 ? (
-                    uninvitedGuests.map((guest, index) => (
+                  <div className="flex items-center gap-2 mb-4">
+                    <Checkbox
+                      checked={selectedGuests.length === uninvitedGuests.length && uninvitedGuests.length > 0}
+                      onCheckedChange={toggleAll}
+                    />
+                    <span className="text-sm text-muted-foreground">Tout sélectionner</span>
+                  </div>
+
+                  {uninvitedGuests.length === 0 ? (
+                    <div className="text-center py-12">
+                      <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                      <p className="font-semibold">Tous les invités ont été contactés</p>
+                    </div>
+                  ) : (
+                    uninvitedGuests.map(guest => (
                       <div
                         key={guest.id}
+                        onClick={() => toggleGuest(guest.id)}
                         className={cn(
-                          'flex items-center gap-4 p-4 rounded-lg border transition-all cursor-pointer animate-fade-in',
+                          'flex items-center gap-4 p-4 rounded-lg border cursor-pointer',
                           selectedGuests.includes(guest.id)
                             ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
+                            : 'border-border'
                         )}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                        onClick={() => toggleGuest(guest.id)}
                       >
-                        <Checkbox
-                          checked={selectedGuests.includes(guest.id)}
-                          onCheckedChange={() => toggleGuest(guest.id)}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{guest.name}</p>
-                          <p className="text-sm text-muted-foreground truncate">{guest.email}</p>
+                        <Checkbox checked={selectedGuests.includes(guest.id)} />
+                        <div className="flex-1">
+                          <p className="font-medium">{guest.fullName}</p>
+                          <p className="text-sm text-muted-foreground">{guest.email}</p>
                         </div>
-                        <Badge variant="outline" className="hidden sm:flex">À inviter</Badge>
+                        <Badge variant="outline">À inviter</Badge>
                       </div>
                     ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-                      <h3 className="font-display text-lg font-semibold">Tous les invités ont été contactés</h3>
-                      <p className="text-muted-foreground mt-1">
-                        Ajoutez de nouveaux invités pour envoyer des invitations
-                      </p>
-                    </div>
                   )}
                 </CardContent>
               </Card>
             </div>
 
             {/* Send panel */}
-            <div className="space-y-4">
-              <Card className="sticky top-24">
-                <CardHeader>
-                  <CardTitle>Méthode d'envoi</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {distributionMethods.map((method) => (
-                    <div
-                      key={method.id}
-                      className={cn(
-                        'flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all',
-                        selectedMethod === method.id
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
-                      )}
-                      onClick={() => setSelectedMethod(method.id)}
-                    >
-                      <div className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-lg',
-                        selectedMethod === method.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      )}>
-                        <method.icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{method.name}</p>
-                        <p className="text-sm text-muted-foreground">{method.description}</p>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="pt-4 border-t">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {selectedGuests.length} invité(s) sélectionné(s)
-                    </p>
-                    <div className="space-y-2">
-                      <Button
-                        className="w-full shadow-gold"
-                        size="lg"
-                        disabled={selectedGuests.length === 0 || sending}
-                        onClick={handleSendInvitations}
-                      >
-                        {sending ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
-                        ) : (
-                          <Send className="h-4 w-4 mr-2" />
-                        )}
-                        Envoi rapide
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => navigate(`/invitations/templates?eventId=${selectedEvent}`)}
-                      >
-                        <Palette className="h-4 w-4 mr-2" />
-                        Personnaliser le template
-                      </Button>
+            <Card className="sticky top-24">
+              <CardHeader>
+                <CardTitle>Méthode d’envoi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {distributionMethods.map(method => (
+                  <div
+                    key={method.id}
+                    onClick={() => setSelectedMethod(method.id)}
+                    className={cn(
+                      'flex items-center gap-4 p-4 rounded-lg border cursor-pointer',
+                      selectedMethod === method.id && 'border-primary bg-primary/5'
+                    )}
+                  >
+                    <method.icon className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium">{method.name}</p>
+                      <p className="text-sm text-muted-foreground">{method.description}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                ))}
+
+                <Button
+                  className="w-full"
+                  disabled={sending || selectedGuests.length === 0}
+                  onClick={handleSendInvitations}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Envoyer ({selectedGuests.length})
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>
