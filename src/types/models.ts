@@ -6,13 +6,12 @@ export type SubscriptionType = 'free' | 'premium' | 'enterprise';
 // ===================== ORGANIZER =====================
 export interface Organizer {
   id: string;
-  name: string;                // ⚠️ cohérent avec ton backend
+  name: string;
   email: string;
   phone?: string;
-  role?: 'organizer' | 'admin';
-
+  role?: 'organizer' | 'admin' | 'user';
   subscriptionType?: SubscriptionType;
-
+  permissions?: import('./models').ModulePermission[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -123,6 +122,38 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+// ===================== ROLES & PERMISSIONS =====================
+export type UserRole = 'admin' | 'user';
+export type PermissionAction = 'create' | 'read' | 'update' | 'delete';
+
+export type ModuleName = 
+  | 'events' 
+  | 'guests' 
+  | 'invitations' 
+  | 'guestbook' 
+  | 'analytics' 
+  | 'users' 
+  | 'settings';
+
+export interface ModulePermission {
+  module: ModuleName;
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  permissions: ModulePermission[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Modules disponibles avec labels
