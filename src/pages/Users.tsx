@@ -1,11 +1,13 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Plus, Search, Shield, Trash2, MoreHorizontal } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import PermissionButton from '@/components/common/PermissionButton';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { useEffect, useMemo, useState } from "react";
+import { Plus, MoreHorizontal, Trash2, Shield } from "lucide-react";
+
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
+
 import {
   Table,
   TableBody,
@@ -13,167 +15,181 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
+
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
+
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { usersApi } from '@/services/api';
-import type { User, ModulePermission, UserRole, ModuleName } from '@/types/models';
-import { MODULES, DEFAULT_USER_PERMISSIONS, ADMIN_PERMISSIONS } from '@/types/models';
-import { useToast } from '@/hooks/use-toast';
-import { usePermissions } from '@/hooks/usePermissions';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+} from "@/components/ui/select";
+
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { usersApi } from "@/services/api";
+
+import {
+  MODULES,
+  DEFAULT_USER_PERMISSIONS,
+  ADMIN_PERMISSIONS,
+} from "@/types/models";
+
+import type { User, UserRole, ModulePermission, ModuleName } from "@/types/models";
+
+import Spinner from "@/components/ui/Spinner";
 
 const Users = () => {
-  const { user: currentUser } = useAuth();
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openPerms, setOpenPerms] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    role: 'user' as UserRole,
-  });
-  const [editUser, setEditUser] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    role: 'user' as UserRole,
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "user" as UserRole,
   });
   const [editingPermissions, setEditingPermissions] = useState<ModulePermission[]>([]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
+  /* ================= FETCH USERS ================= */
   const fetchUsers = async () => {
-    setLoading(true);
+    if (!currentUser) return;
+
+    if (currentUser.role !== "admin") {
+      setLoading(false);
+      toast({
+        title: "Accès refusé",
+        description: "Vous n’avez pas accès à cette ressource",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const res = await usersApi.getAll();
+      setLoading(true);
+      const res = await usersApi.getAll(page, limit);
       setUsers(res.data);
-    } catch (error) {
-      console.error('Erreur lors du chargement:', error);
-      toast({ title: 'Erreur', description: 'Impossible de charger les utilisateurs', variant: 'destructive' });
+      setTotal(res.pagination.total);
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les utilisateurs",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= PERMISSION HELPER =================
-  const hasPermission = (permissions: ModulePermission[], module: ModuleName, action: 'create' | 'read' | 'update' | 'delete') => {
-    if (!permissions) return false;
-    const perm = permissions.find((p) => p.module === module);
-    return perm ? perm[action] : false;
-  };
+  useEffect(() => {
+    fetchUsers();
+  }, [page, limit, currentUser]);
 
-  const filteredUsers = useMemo(
-    () =>
-      users.filter(
-        (u) =>
-          u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchQuery.toLowerCase())
-      ),
-    [users, searchQuery]
-  );
+  /* ================= SEARCH ================= */
+  const filteredUsers = useMemo(() => {
+    return users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [users, search]);
 
+  /* ================= ADD USER ================= */
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
       toast({
-        title: 'Erreur',
-        description: 'Veuillez remplir tous les champs obligatoires',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Champs requis manquants",
+        variant: "destructive",
       });
       return;
     }
 
     try {
-      const permissions =
-        newUser.role === 'admin' ? ADMIN_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
-      await usersApi.create({ ...newUser, permissions });
-      toast({ title: 'Succès', description: 'Utilisateur créé avec succès' });
-      setIsAddDialogOpen(false);
-      setNewUser({ name: '', email: '', phone: '', password: '', role: 'user' });
-      fetchUsers();
-    } catch (error) {
+      const createdUser = await usersApi.create({
+        ...newUser,
+        permissions:
+          newUser.role === "admin"
+            ? ADMIN_PERMISSIONS
+            : DEFAULT_USER_PERMISSIONS,
+      });
+
+      toast({ title: "Utilisateur créé" });
+      setUsers((prev) => [createdUser.data, ...prev]);
+      setTotal((prev) => prev + 1);
+      setOpenAdd(false);
+      setNewUser({ name: "", email: "", phone: "", password: "", role: "user" });
+    } catch {
       toast({
-        title: 'Erreur',
-        description: "Impossible de créer l'utilisateur",
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Création échouée",
+        variant: "destructive",
       });
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    const userToDelete = users.find((u) => u.id === userId);
-    if (!userToDelete) return;
-
-    // Empêcher la suppression du dernier admin
-    const adminCount = users.filter((u) => u.role === 'admin').length;
-    if (userToDelete.role === 'admin' && adminCount <= 1) {
+  /* ================= DELETE ================= */
+  const handleDelete = async (id: string) => {
+    if (id === currentUser?._id) {
       toast({
-        title: 'Erreur',
-        description: "Impossible de supprimer le dernier administrateur",
-        variant: 'destructive',
+        title: "Action interdite",
+        description: "Vous ne pouvez pas vous supprimer",
+        variant: "destructive",
       });
       return;
     }
 
     try {
-      await usersApi.delete(userId);
-      toast({ title: 'Succès', description: 'Utilisateur supprimé' });
-      fetchUsers();
-    } catch (error) {
+      await usersApi.delete(id);
+      toast({ title: "Utilisateur supprimé" });
+      setUsers((prev) => prev.filter((u) => u._id !== id));
+      setTotal((prev) => prev - 1);
+    } catch {
       toast({
-        title: 'Erreur',
-        description: "Impossible de supprimer l'utilisateur",
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Suppression impossible",
+        variant: "destructive",
       });
     }
   };
 
-  const openPermissionsDialog = (user: User) => {
+  /* ================= PERMISSIONS ================= */
+  const openPermissions = (user: User) => {
     setSelectedUser(user);
-    setEditingPermissions(
-      user.permissions && user.permissions.length > 0
-        ? user.permissions
-        : DEFAULT_USER_PERMISSIONS
-    );
-    setIsPermissionsDialogOpen(true);
+    setEditingPermissions(user.permissions?.length ? user.permissions : DEFAULT_USER_PERMISSIONS);
+    setOpenPerms(true);
   };
 
   const togglePermission = (
     module: ModuleName,
-    action: 'create' | 'read' | 'update' | 'delete',
+    action: "create" | "read" | "update" | "delete",
     value: boolean
   ) => {
     setEditingPermissions((prev) =>
@@ -181,255 +197,89 @@ const Users = () => {
     );
   };
 
-  const handleSavePermissions = async () => {
+  const savePermissions = async () => {
     if (!selectedUser) return;
+
     try {
-      await usersApi.updatePermissions(selectedUser.id, editingPermissions);
-      toast({ title: 'Succès', description: 'Permissions mises à jour' });
-      setIsPermissionsDialogOpen(false);
-      fetchUsers();
-    } catch (error) {
+      await usersApi.updatePermissions(selectedUser._id, editingPermissions);
+      toast({ title: "Permissions mises à jour" });
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === selectedUser._id ? { ...u, permissions: editingPermissions } : u
+        )
+      );
+
+      setOpenPerms(false);
+    } catch {
       toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour les permissions',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Impossible de sauvegarder",
+        variant: "destructive",
       });
     }
   };
 
-  const getRoleLabel = (role: UserRole) => (role === 'admin' ? 'Admin' : 'Utilisateur');
+  /* ================= UI ================= */
+  if (!currentUser || currentUser.role !== "admin") {
+    return (
+      <DashboardLayout>
+        <Card className="p-6 text-center text-red-600 font-semibold">
+          Vous n’avez pas accès à cette ressource
+        </Card>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* HEADER */}
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-              Utilisateurs
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Gérez les utilisateurs et leurs permissions d'accès
+            <h1 className="text-3xl font-bold">Utilisateurs</h1>
+            <p className="text-muted-foreground">
+              Gestion des comptes et permissions
             </p>
           </div>
 
-          {/* Add User Dialog */}
-          <Dialog
-            open={isAddDialogOpen}
-            onOpenChange={(open) => {
-              setIsAddDialogOpen(open);
-              if (!open)
-                setNewUser({ name: '', email: '', phone: '', password: '', role: 'user' });
-            }}
-          >
+          {/* Bouton Ajouter uniquement pour admin */}
+          <Dialog open={openAdd} onOpenChange={setOpenAdd}>
             <DialogTrigger asChild>
-              <Button className="shadow-gold">
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvel utilisateur
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Ajouter un utilisateur</DialogTitle>
-                <DialogDescription>
-                  Créez un nouveau compte utilisateur avec un rôle
-                </DialogDescription>
+                <DialogTitle>Nouvel utilisateur</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Nom complet *</Label>
-                  <Input
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    placeholder="Jean Dupont"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="jean@example.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Téléphone</Label>
-                  <Input
-                    value={newUser.phone}
-                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                    placeholder="+33 6 12 34 56 78"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Mot de passe *</Label>
-                  <Input
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Rôle</Label>
-                  <Select
-                    value={newUser.role}
-                    onValueChange={(value: UserRole) =>
-                      setNewUser({ ...newUser, role: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin (tous les accès)</SelectItem>
-                      <SelectItem value="user">Utilisateur (accès limité)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleAddUser}>Créer</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un utilisateur..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Users Table */}
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        ) : (
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead className="hidden sm:table-cell">Email</TableHead>
-                  <TableHead>Rôle</TableHead>
-                  <TableHead className="hidden md:table-cell">Permissions</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((userItem, index) => (
-                  <TableRow
-                    key={userItem.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <TableCell className="font-medium">{userItem.name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-muted-foreground">
-                      {userItem.email}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={cn(
-                          'border',
-                          userItem.role === 'admin'
-                            ? 'bg-primary/10 text-primary border-primary/20'
-                            : 'bg-muted text-muted-foreground border-border'
-                        )}
-                      >
-                        {getRoleLabel(userItem.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openPermissionsDialog(userItem)}
-                      >
-                        <Shield className="h-4 w-4 mr-2" />
-                        Gérer
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openPermissionsDialog(userItem)}>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Permissions
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteUser(userItem.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            {filteredUsers.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <p>Aucun utilisateur trouvé</p>
-              </div>
-            )}
-          </Card>
-        )}
-
-        {/* Edit User Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Modifier l'utilisateur</DialogTitle>
-              <DialogDescription>
-                Modifiez les informations de l'utilisateur
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Nom complet *</Label>
+              <div className="space-y-3">
                 <Input
-                  value={editUser.fullName}
-                  onChange={(e) => setEditUser({ ...editUser, fullName: e.target.value })}
+                  placeholder="Nom"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>Email *</Label>
                 <Input
-                  type="email"
-                  value={editUser.email}
-                  onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
+                  placeholder="Email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>Téléphone</Label>
                 <Input
-                  value={editUser.phone}
-                  onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                  placeholder="Téléphone"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label>Rôle</Label>
+                <Input
+                  type="password"
+                  placeholder="Mot de passe"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                />
                 <Select
-                  value={editUser.role}
-                  onValueChange={(value: UserRole) => setEditUser({ ...editUser, role: value })}
+                  value={newUser.role}
+                  onValueChange={(v: UserRole) => setNewUser({ ...newUser, role: v })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -440,92 +290,168 @@ const Users = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Annuler
-              </Button>
-              <Button onClick={handleEditUser}>Enregistrer</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button onClick={handleAddUser}>Créer</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-        {/* Permissions Dialog */}
-        <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Permissions de {selectedUser?.name}</DialogTitle>
-              <DialogDescription>
-                Définissez les accès CRUD pour chaque module de l'application
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-96 overflow-y-auto">
+        {/* SEARCH */}
+        <Input
+          placeholder="Rechercher..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {/* TABLE */}
+        <Card>
+          {loading ? (
+            <Spinner />
+          ) : (
+            <>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Module</TableHead>
-                    <TableHead className="text-center">Créer</TableHead>
-                    <TableHead className="text-center">Lire</TableHead>
-                    <TableHead className="text-center">Modifier</TableHead>
-                    <TableHead className="text-center">Supprimer</TableHead>
+                    <TableHead>Nom</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Rôle</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
-                  {MODULES.map((module) => {
-                    const perm =
-                      editingPermissions.find((p) => p.module === module.name) || {
-                        module: module.name,
-                        create: false,
-                        read: false,
-                        update: false,
-                        delete: false,
-                      };
-                    return (
-                      <TableRow key={module.name}>
-                        <TableCell className="font-medium">{module.label}</TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={perm.create}
-                            onCheckedChange={(v) =>
-                              togglePermission(module.name, 'create', !!v)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={perm.read}
-                            onCheckedChange={(v) =>
-                              togglePermission(module.name, 'read', !!v)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={perm.update}
-                            onCheckedChange={(v) =>
-                              togglePermission(module.name, 'update', !!v)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={perm.delete}
-                            onCheckedChange={(v) =>
-                              togglePermission(module.name, 'delete', !!v)
-                            }
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {filteredUsers.map((u) => (
+                    <TableRow key={u._id}>
+                      <TableCell>{u.name}</TableCell>
+                      <TableCell>{u.email}</TableCell>
+                      <TableCell>
+                        <Badge>{u.role === "admin" ? "Admin" : "Utilisateur"}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost">
+                              <MoreHorizontal />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openPermissions(u)}>
+                              <Shield className="mr-2 h-4 w-4" />
+                              Permissions
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => handleDelete(u._id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
-            </div>
+
+              {/* PAGINATION */}
+              <div className="flex justify-between items-center mt-4">
+                <div className="flex items-center gap-2">
+                  <span>Afficher :</span>
+                  <Select
+                    value={limit.toString()}
+                    onValueChange={(v) => {
+                      setLimit(Number(v));
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <Button
+                    disabled={page <= 1}
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                  >
+                    Précédent
+                  </Button>
+                  <span>
+                    Page {page} / {Math.ceil(total / limit)}
+                  </span>
+                  <Button
+                    disabled={page >= Math.ceil(total / limit)}
+                    onClick={() => setPage((prev) => prev + 1)}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* PERMISSIONS MODAL */}
+        <Dialog open={openPerms} onOpenChange={setOpenPerms}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Permissions – {selectedUser?.name}</DialogTitle>
+            </DialogHeader>
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Module</TableHead>
+                  <TableHead>C</TableHead>
+                  <TableHead>R</TableHead>
+                  <TableHead>U</TableHead>
+                  <TableHead>D</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {MODULES.map((module) => {
+                  const perm =
+                    editingPermissions.find((p) => p.module === module.name) || {
+                      module: module.name,
+                      create: false,
+                      read: false,
+                      update: false,
+                      delete: false,
+                    };
+
+                  return (
+                    <TableRow key={module.name}>
+                      <TableCell className="font-medium">{module.label}</TableCell>
+                      {(["create", "read", "update", "delete"] as const).map(
+                        (action) => (
+                          <TableCell key={action} className="text-center">
+                            <Checkbox
+                              checked={perm[action]}
+                              onCheckedChange={(v) =>
+                                togglePermission(module.name, action, !!v)
+                              }
+                            />
+                          </TableCell>
+                        )
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsPermissionsDialogOpen(false)}>
-                Annuler
-              </Button>
-              <Button onClick={handleSavePermissions}>Enregistrer</Button>
+              <Button onClick={savePermissions}>Enregistrer</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

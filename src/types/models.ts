@@ -23,11 +23,11 @@ export interface ModulePermission {
 
 // ===================== USER =====================
 export interface User {
-  id: string;
+  _id: string;
   name: string; // cohérent backend
   email: string;
   phone?: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'organizer'; // <-- ajout rôle organizer
 
   subscriptionType?: SubscriptionType;
   permissions?: ModulePermission[];
@@ -98,7 +98,7 @@ export interface GuestbookMessage {
   eventId: string;
 
   guestId?: string;
-  name?: string; // ✅ aligné avec le backend (event.guestbook.push({ name }))
+  name?: string; // ✅ aligné avec le backend
 
   message: string;
   createdAt: string;
@@ -173,3 +173,12 @@ export const ADMIN_PERMISSIONS: ModulePermission[] = MODULES.map(m => ({
   update: true,
   delete: true,
 }));
+
+// ===================== ORGANIZER PERMISSIONS =====================
+export const ORGANIZER_PERMISSIONS: ModulePermission[] = MODULES.map(m => {
+  if (['events', 'guests', 'invitations', 'guestbook', 'analytics'].includes(m.name)) {
+    return { module: m.name, create: true, read: true, update: true, delete: true };
+  }
+  // Pas d'accès aux utilisateurs ou paramètres
+  return { module: m.name, create: false, read: false, update: false, delete: false };
+});

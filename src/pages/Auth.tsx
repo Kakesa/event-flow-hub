@@ -10,13 +10,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
 
+interface RegisterData {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  confirmPassword?: string;
+}
+
 const Auth = () => {
   const navigate = useNavigate();
   const { login, register } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [registerData, setRegisterData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
+  const [registerData, setRegisterData] = useState<RegisterData>({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [loadingLogin, setLoadingLogin] = useState(false);
   const [loadingRegister, setLoadingRegister] = useState(false);
 
@@ -44,60 +58,59 @@ const Auth = () => {
     }
   };
 
- const handleRegister = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const { name, email, phone, password, confirmPassword } = registerData;
+  // ------------------- REGISTER -------------------
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { name, email, phone, password, confirmPassword } = registerData;
 
-  // Vérifications basiques
-  if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-    toast.error('Veuillez remplir tous les champs obligatoires');
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    toast.error('Les mots de passe ne correspondent pas');
-    return;
-  }
-
-  if (password.length < 6) {
-    toast.error('Le mot de passe doit contenir au moins 6 caractères');
-    return;
-  }
-
-  // Nettoyage et format du téléphone
-  let phoneForBackend: string | undefined;
-  if (phone) {
-    let cleaned = phone.replace(/\D/g, ''); // garder seulement les chiffres
-    if (cleaned.startsWith('0')) cleaned = cleaned.slice(1); // enlever 0 initial
-    if (cleaned.length === 9) phoneForBackend = `+243${cleaned}`;
-    else {
-      toast.error('Numéro de téléphone invalide');
+    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
-  }
 
-  setLoadingRegister(true);
-  try {
-    const result = await register({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phoneForBackend,
-      password: password.trim(),
-    });
-
-    if (result.success) {
-      toast.success("Inscription réussie ! Bienvenue !");
-      navigate('/');
-    } else {
-      toast.error(result.error || "Erreur lors de l'inscription");
+    if (password !== confirmPassword) {
+      toast.error('Les mots de passe ne correspondent pas');
+      return;
     }
-  } catch (err: any) {
-    toast.error(err.message || "Erreur serveur");
-  } finally {
-    setLoadingRegister(false);
-  }
-};
 
+    if (password.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    // Format pour le backend : uniquement 9 chiffres
+    let phoneForBackend: string | undefined;
+    if (phone) {
+      let cleaned = phone.replace(/\D/g, '');
+      if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+      if (cleaned.length === 9) phoneForBackend = cleaned;
+      else {
+        toast.error('Numéro de téléphone invalide');
+        return;
+      }
+    }
+
+    setLoadingRegister(true);
+    try {
+      const result = await register({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phoneForBackend,
+        password: password.trim(),
+      });
+
+      if (result.success) {
+        toast.success("Inscription réussie ! Bienvenue !");
+        navigate('/');
+      } else {
+        toast.error(result.error || "Erreur lors de l'inscription");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erreur serveur");
+    } finally {
+      setLoadingRegister(false);
+    }
+  };
 
   // ------------------- RENDER -------------------
   return (
@@ -138,6 +151,7 @@ const Auth = () => {
                       />
                     </div>
                   </div>
+
                   <div className="space-y-2">
                     <Label>Mot de passe</Label>
                     <div className="relative">
@@ -158,6 +172,7 @@ const Auth = () => {
                       </button>
                     </div>
                   </div>
+
                   <Button type="submit" className="w-full" disabled={loadingLogin}>
                     {loadingLogin ? 'Connexion...' : 'Se connecter'}
                   </Button>
@@ -180,6 +195,7 @@ const Auth = () => {
                       />
                     </div>
                   </div>
+
                   <div className="space-y-2">
                     <Label>Email *</Label>
                     <div className="relative">
@@ -194,30 +210,23 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  {/* INPUT TELEPHONE CORRIGÉ */}
+                  {/* Input téléphone */}
                   <div className="space-y-2">
                     <Label>Téléphone</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                      
-                      {/* Affichage visuel du préfixe */}
                       <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
                         <span className="text-sm text-muted-foreground font-medium">+243</span>
                       </div>
-
                       <Input
-                        className="pl-24" // Espace pour l'icône + le préfixe
+                        className="pl-24"
                         type="tel"
                         placeholder="81 234 5678"
                         value={registerData.phone}
                         onChange={(e) => {
-                          // Nettoyage : que des chiffres
                           let val = e.target.value.replace(/\D/g, '');
-                          // Si l'user tape un 0 au début (ex: 081...), on l'enlève
-                          if(val.startsWith('0')) val = val.substring(1);
-                          // Limite à 9 chiffres max
+                          if (val.startsWith('0')) val = val.substring(1);
                           if (val.length > 9) return;
-                          
                           setRegisterData({ ...registerData, phone: val });
                         }}
                       />
