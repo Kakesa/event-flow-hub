@@ -38,7 +38,6 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Card } from '@/components/ui/card';
 import { usersApi } from '@/services/api';
 import type { User, ModulePermission, UserRole, ModuleName } from '@/types/models';
 import { MODULES, DEFAULT_USER_PERMISSIONS, ADMIN_PERMISSIONS } from '@/types/models';
