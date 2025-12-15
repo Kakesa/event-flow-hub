@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Plus, Search, Shield, Trash2, MoreHorizontal } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -37,10 +38,12 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { usersApi } from '@/services/api';
 import type { User, ModulePermission, UserRole, ModuleName } from '@/types/models';
 import { MODULES, DEFAULT_USER_PERMISSIONS, ADMIN_PERMISSIONS } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -53,12 +56,19 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
+    role: 'user' as UserRole,
+  });
+  const [editUser, setEditUser] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
     role: 'user' as UserRole,
   });
   const [editingPermissions, setEditingPermissions] = useState<ModulePermission[]>([]);
@@ -74,6 +84,7 @@ const Users = () => {
       setUsers(res.data);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
+      toast({ title: 'Erreur', description: 'Impossible de charger les utilisateurs', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -382,6 +393,63 @@ const Users = () => {
             )}
           </Card>
         )}
+
+        {/* Edit User Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier l'utilisateur</DialogTitle>
+              <DialogDescription>
+                Modifiez les informations de l'utilisateur
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Nom complet *</Label>
+                <Input
+                  value={editUser.fullName}
+                  onChange={(e) => setEditUser({ ...editUser, fullName: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={editUser.email}
+                  onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Téléphone</Label>
+                <Input
+                  value={editUser.phone}
+                  onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Rôle</Label>
+                <Select
+                  value={editUser.role}
+                  onValueChange={(value: UserRole) => setEditUser({ ...editUser, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="user">Utilisateur</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleEditUser}>Enregistrer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Permissions Dialog */}
         <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>

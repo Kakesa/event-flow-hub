@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Download, Filter } from 'lucide-react';
+import { Plus, Search, Download, Filter, FileSpreadsheet } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import GuestTable from '@/components/guests/GuestTable';
 import QRCodeModal from '@/components/guests/QRCodeModal';
+import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,10 +22,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { exportGuestsToCSV, exportGuestsToExcel } from '@/utils/exportUtils';
 
 const Guests = () => {
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -38,6 +47,7 @@ const Guests = () => {
   const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const { toast } = useToast();
+  const { canCreate, canDelete, canRead } = usePermissions();
 
   useEffect(() => {
     fetchData();
@@ -100,6 +110,10 @@ const Guests = () => {
   };
 
   const handleDelete = async (guestId: string) => {
+    if (!canDelete('guests')) {
+      toast({ title: 'Erreur', description: 'Vous n\'avez pas la permission de supprimer', variant: 'destructive' });
+      return;
+    }
     try {
       await guestsApi.delete(guestId);
       toast({ title: 'Succès', description: 'Invité supprimé' });
@@ -107,6 +121,20 @@ const Guests = () => {
     } catch (error) {
       toast({ title: 'Erreur', description: 'Impossible de supprimer l\'invité', variant: 'destructive' });
     }
+  };
+
+  const handleExportCSV = () => {
+    const event = events.find(e => e.id === eventFilter);
+    const filename = eventFilter === 'all' ? 'tous-les-invites' : `invites-${event?.title || 'event'}`;
+    exportGuestsToCSV(filteredGuests, events, filename);
+    toast({ title: 'Succès', description: 'Export CSV téléchargé' });
+  };
+
+  const handleExportExcel = () => {
+    const event = events.find(e => e.id === eventFilter);
+    const filename = eventFilter === 'all' ? 'tous-les-invites' : `invites-${event?.title || 'event'}`;
+    exportGuestsToExcel(filteredGuests, events, filename);
+    toast({ title: 'Succès', description: 'Export Excel téléchargé' });
   };
 
   return (
@@ -121,16 +149,31 @@ const Guests = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportExcel}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export Excel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="shadow-gold">
+                <PermissionButton module="guests" action="create" className="shadow-gold">
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter un invité
-                </Button>
+                </PermissionButton>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>

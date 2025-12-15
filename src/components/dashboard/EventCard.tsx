@@ -30,9 +30,11 @@ interface EventCardProps {
   event: Event;
   guestCount?: number;
   onDelete?: (eventId: string) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-const EventCard = ({ event, guestCount = 0, onDelete }: EventCardProps) => {
+const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete = true }: EventCardProps) => {
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -70,22 +72,28 @@ const EventCard = ({ event, guestCount = 0, onDelete }: EventCardProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover">
-                <DropdownMenuItem onClick={() => navigate(`/events/edit/${event.id}`)}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </DropdownMenuItem>
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${event.id}`)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => navigate(`/invitations/templates?eventId=${event.id}`)}>
                   <Users className="h-4 w-4 mr-2" />
                   Envoyer invitations
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => setDeleteDialogOpen(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
-                </DropdownMenuItem>
+                {canDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => setDeleteDialogOpen(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -122,17 +130,19 @@ const EventCard = ({ event, guestCount = 0, onDelete }: EventCardProps) => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="default" 
-              className="flex-1"
-              onClick={() => navigate(`/events/edit/${event.id}`)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Modifier
-            </Button>
+            {canEdit && (
+              <Button 
+                variant="default" 
+                className="flex-1"
+                onClick={() => navigate(`/events/edit/${event.id}`)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+            )}
             <Button 
               variant="outline" 
-              className="flex-1"
+              className={canEdit ? "flex-1" : "w-full"}
               onClick={() => navigate(`/guests?eventId=${event.id}`)}
             >
               Invités

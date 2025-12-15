@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import EventCard from '@/components/dashboard/EventCard';
-import { Button } from '@/components/ui/button';
+import PermissionButton from '@/components/common/PermissionButton';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { eventsApi, guestsApi } from '@/services/api';
 import type { Event, Guest } from '@/types/models';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const Events = () => {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ const Events = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const { canCreate, canDelete, canUpdate } = usePermissions();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -75,10 +78,15 @@ const Events = () => {
               Gérez tous vos événements en un seul endroit
             </p>
           </div>
-          <Button onClick={() => navigate('/events/create')} className="shadow-gold">
+          <PermissionButton 
+            module="events" 
+            action="create"
+            onClick={() => navigate('/events/create')} 
+            className="shadow-gold"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nouvel événement
-          </Button>
+          </PermissionButton>
         </div>
 
         {/* Filters */}
@@ -118,6 +126,8 @@ const Events = () => {
                 event={event}
                 guestCount={getGuestCount(event.id)}
                 onDelete={handleDeleteEvent}
+                canEdit={canUpdate('events')}
+                canDelete={canDelete('events')}
               />
             ))}
           </div>
@@ -130,7 +140,7 @@ const Events = () => {
             <p className="text-muted-foreground mt-1">
               {searchQuery ? 'Essayez de modifier votre recherche' : 'Créez votre premier événement'}
             </p>
-            {!searchQuery && (
+            {!searchQuery && canCreate('events') && (
               <Button onClick={() => navigate('/events/create')} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
                 Créer un événement
