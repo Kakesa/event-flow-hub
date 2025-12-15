@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Organizer } from '@/types/models';
+import { User } from '@/types/models';
 import { authApi } from '@/services/api';
 
 interface AuthContextType {
-  user: Organizer | null;
+  user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
@@ -22,7 +22,7 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<Organizer | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -53,9 +53,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const res = await authApi.login(email.trim(), password);
       if (res.success) {
-        setUser(res.data.organizer);
+        setUser(res.data.user);
         localStorage.setItem('token', res.data.token);
-        localStorage.setItem('eventflow_user', JSON.stringify(res.data.organizer));
+        localStorage.setItem('eventflow_user', JSON.stringify(res.data.user));
         return { success: true };
       }
       return { success: false, error: 'Email ou mot de passe incorrect' };

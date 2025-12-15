@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Plus, Search, Shield, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Plus, Search, Shield, Trash2, MoreHorizontal } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,14 +36,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { usersApi } from '@/services/api';
 import type { User, ModulePermission, UserRole, ModuleName } from '@/types/models';
 import { MODULES, DEFAULT_USER_PERMISSIONS, ADMIN_PERMISSIONS } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Users = () => {
+  const { user: currentUser } = useAuth();
+  const { toast } = useToast();
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,20 +55,20 @@ const Users = () => {
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
-    fullName: '',
+    name: '',
     email: '',
     phone: '',
     password: '',
     role: 'user' as UserRole,
   });
   const [editingPermissions, setEditingPermissions] = useState<ModulePermission[]>([]);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const res = await usersApi.getAll();
       setUsers(res.data);
@@ -75,49 +79,95 @@ const Users = () => {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  // ================= PERMISSION HELPER =================
+  const hasPermission = (permissions: ModulePermission[], module: ModuleName, action: 'create' | 'read' | 'update' | 'delete') => {
+    if (!permissions) return false;
+    const perm = permissions.find((p) => p.module === module);
+    return perm ? perm[action] : false;
+  };
+
+  const filteredUsers = useMemo(
+    () =>
+      users.filter(
+        (u) =>
+          u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.email.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    [users, searchQuery]
   );
 
   const handleAddUser = async () => {
-    if (!newUser.fullName || !newUser.email || !newUser.password) {
-      toast({ title: 'Erreur', description: 'Veuillez remplir tous les champs obligatoires', variant: 'destructive' });
+    if (!newUser.name || !newUser.email || !newUser.password) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez remplir tous les champs obligatoires',
+        variant: 'destructive',
+      });
       return;
     }
+
     try {
-      const permissions = newUser.role === 'admin' ? ADMIN_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
+      const permissions =
+        newUser.role === 'admin' ? ADMIN_PERMISSIONS : DEFAULT_USER_PERMISSIONS;
       await usersApi.create({ ...newUser, permissions });
       toast({ title: 'Succès', description: 'Utilisateur créé avec succès' });
       setIsAddDialogOpen(false);
-      setNewUser({ fullName: '', email: '', phone: '', password: '', role: 'user' });
+      setNewUser({ name: '', email: '', phone: '', password: '', role: 'user' });
       fetchUsers();
     } catch (error) {
-      toast({ title: 'Erreur', description: "Impossible de créer l'utilisateur", variant: 'destructive' });
+      toast({
+        title: 'Erreur',
+        description: "Impossible de créer l'utilisateur",
+        variant: 'destructive',
+      });
     }
   };
 
   const handleDeleteUser = async (userId: string) => {
+    const userToDelete = users.find((u) => u.id === userId);
+    if (!userToDelete) return;
+
+    // Empêcher la suppression du dernier admin
+    const adminCount = users.filter((u) => u.role === 'admin').length;
+    if (userToDelete.role === 'admin' && adminCount <= 1) {
+      toast({
+        title: 'Erreur',
+        description: "Impossible de supprimer le dernier administrateur",
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await usersApi.delete(userId);
       toast({ title: 'Succès', description: 'Utilisateur supprimé' });
       fetchUsers();
     } catch (error) {
-      toast({ title: 'Erreur', description: "Impossible de supprimer l'utilisateur", variant: 'destructive' });
+      toast({
+        title: 'Erreur',
+        description: "Impossible de supprimer l'utilisateur",
+        variant: 'destructive',
+      });
     }
   };
 
   const openPermissionsDialog = (user: User) => {
     setSelectedUser(user);
-    setEditingPermissions(user.permissions || DEFAULT_USER_PERMISSIONS);
+    setEditingPermissions(
+      user.permissions && user.permissions.length > 0
+        ? user.permissions
+        : DEFAULT_USER_PERMISSIONS
+    );
     setIsPermissionsDialogOpen(true);
   };
 
-  const togglePermission = (module: ModuleName, action: 'create' | 'read' | 'update' | 'delete') => {
-    setEditingPermissions(prev =>
-      prev.map(p =>
-        p.module === module ? { ...p, [action]: !p[action] } : p
-      )
+  const togglePermission = (
+    module: ModuleName,
+    action: 'create' | 'read' | 'update' | 'delete',
+    value: boolean
+  ) => {
+    setEditingPermissions((prev) =>
+      prev.map((p) => (p.module === module ? { ...p, [action]: value } : p))
     );
   };
 
@@ -129,9 +179,15 @@ const Users = () => {
       setIsPermissionsDialogOpen(false);
       fetchUsers();
     } catch (error) {
-      toast({ title: 'Erreur', description: 'Impossible de mettre à jour les permissions', variant: 'destructive' });
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour les permissions',
+        variant: 'destructive',
+      });
     }
   };
+
+  const getRoleLabel = (role: UserRole) => (role === 'admin' ? 'Admin' : 'Utilisateur');
 
   return (
     <DashboardLayout>
@@ -139,12 +195,23 @@ const Users = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Utilisateurs</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
+              Utilisateurs
+            </h1>
             <p className="text-muted-foreground mt-1">
               Gérez les utilisateurs et leurs permissions d'accès
             </p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+
+          {/* Add User Dialog */}
+          <Dialog
+            open={isAddDialogOpen}
+            onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (!open)
+                setNewUser({ name: '', email: '', phone: '', password: '', role: 'user' });
+            }}
+          >
             <DialogTrigger asChild>
               <Button className="shadow-gold">
                 <Plus className="h-4 w-4 mr-2" />
@@ -162,8 +229,8 @@ const Users = () => {
                 <div className="grid gap-2">
                   <Label>Nom complet *</Label>
                   <Input
-                    value={newUser.fullName}
-                    onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                     placeholder="Jean Dupont"
                   />
                 </div>
@@ -197,7 +264,9 @@ const Users = () => {
                   <Label>Rôle</Label>
                   <Select
                     value={newUser.role}
-                    onValueChange={(value: UserRole) => setNewUser({ ...newUser, role: value })}
+                    onValueChange={(value: UserRole) =>
+                      setNewUser({ ...newUser, role: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -248,33 +317,33 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user, index) => (
+                {filteredUsers.map((userItem, index) => (
                   <TableRow
-                    key={user.id}
+                    key={userItem.id}
                     className="animate-fade-in"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <TableCell className="font-medium">{user.fullName}</TableCell>
+                    <TableCell className="font-medium">{userItem.name}</TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">
-                      {user.email}
+                      {userItem.email}
                     </TableCell>
                     <TableCell>
                       <Badge
                         className={cn(
                           'border',
-                          user.role === 'admin'
+                          userItem.role === 'admin'
                             ? 'bg-primary/10 text-primary border-primary/20'
                             : 'bg-muted text-muted-foreground border-border'
                         )}
                       >
-                        {user.role === 'admin' ? 'Admin' : 'Utilisateur'}
+                        {getRoleLabel(userItem.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openPermissionsDialog(user)}
+                        onClick={() => openPermissionsDialog(userItem)}
                       >
                         <Shield className="h-4 w-4 mr-2" />
                         Gérer
@@ -288,12 +357,12 @@ const Users = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
+                          <DropdownMenuItem onClick={() => openPermissionsDialog(userItem)}>
                             <Shield className="h-4 w-4 mr-2" />
                             Permissions
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleDeleteUser(userItem.id)}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -318,7 +387,7 @@ const Users = () => {
         <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Permissions de {selectedUser?.fullName}</DialogTitle>
+              <DialogTitle>Permissions de {selectedUser?.name}</DialogTitle>
               <DialogDescription>
                 Définissez les accès CRUD pour chaque module de l'application
               </DialogDescription>
@@ -336,38 +405,47 @@ const Users = () => {
                 </TableHeader>
                 <TableBody>
                   {MODULES.map((module) => {
-                    const perm = editingPermissions.find(p => p.module === module.name) || {
-                      module: module.name,
-                      create: false,
-                      read: false,
-                      update: false,
-                      delete: false,
-                    };
+                    const perm =
+                      editingPermissions.find((p) => p.module === module.name) || {
+                        module: module.name,
+                        create: false,
+                        read: false,
+                        update: false,
+                        delete: false,
+                      };
                     return (
                       <TableRow key={module.name}>
                         <TableCell className="font-medium">{module.label}</TableCell>
                         <TableCell className="text-center">
                           <Checkbox
                             checked={perm.create}
-                            onCheckedChange={() => togglePermission(module.name, 'create')}
+                            onCheckedChange={(v) =>
+                              togglePermission(module.name, 'create', !!v)
+                            }
                           />
                         </TableCell>
                         <TableCell className="text-center">
                           <Checkbox
                             checked={perm.read}
-                            onCheckedChange={() => togglePermission(module.name, 'read')}
+                            onCheckedChange={(v) =>
+                              togglePermission(module.name, 'read', !!v)
+                            }
                           />
                         </TableCell>
                         <TableCell className="text-center">
                           <Checkbox
                             checked={perm.update}
-                            onCheckedChange={() => togglePermission(module.name, 'update')}
+                            onCheckedChange={(v) =>
+                              togglePermission(module.name, 'update', !!v)
+                            }
                           />
                         </TableCell>
                         <TableCell className="text-center">
                           <Checkbox
                             checked={perm.delete}
-                            onCheckedChange={() => togglePermission(module.name, 'delete')}
+                            onCheckedChange={(v) =>
+                              togglePermission(module.name, 'delete', !!v)
+                            }
                           />
                         </TableCell>
                       </TableRow>

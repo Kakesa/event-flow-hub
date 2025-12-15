@@ -6,9 +6,8 @@ import type {
   Invitation,
   GuestbookMessage,
   Analytics,
-  Organizer,
-  ApiResponse,
   User,
+  ApiResponse,
   ModulePermission,
 } from '@/types/models';
 
@@ -41,7 +40,7 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 
 // ==================== AUTHENTIFICATION ====================
 export const authApi = {
-  register: async (data: { name: string; email: string; phone?: string; password: string }): Promise<ApiResponse<{ token: string; organizer: Organizer }>> => {
+  register: async (data: { name: string; email: string; phone?: string; password: string }): Promise<ApiResponse<{ token: string; user: User }>> => {
     const payload: any = {
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
@@ -60,7 +59,7 @@ export const authApi = {
     return handleResponse(response);
   },
 
-  login: async (email: string, password: string): Promise<ApiResponse<{ token: string; organizer: Organizer }>> => {
+  login: async (email: string, password: string): Promise<ApiResponse<{ token: string; user: User }>> => {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,7 +69,7 @@ export const authApi = {
     return handleResponse(response);
   },
 
-  me: async (): Promise<ApiResponse<Organizer>> => {
+  me: async (): Promise<ApiResponse<User>> => {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: getHeaders(),
     });

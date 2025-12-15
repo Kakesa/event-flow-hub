@@ -194,7 +194,7 @@ const Invitations = () => {
                       >
                         <Checkbox checked={selectedGuests.includes(guest.id)} />
                         <div className="flex-1">
-                          <p className="font-medium">{guest.fullName}</p>
+                          <p className="font-medium">{guest.name}</p>
                           <p className="text-sm text-muted-foreground">{guest.email}</p>
                         </div>
                         <Badge variant="outline">À inviter</Badge>

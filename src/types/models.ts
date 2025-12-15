@@ -3,16 +3,34 @@ export type GuestStatus = 'invited' | 'confirmed' | 'declined' | 'pending';
 export type DistributionMethod = 'whatsapp' | 'sms' | 'email';
 export type SubscriptionType = 'free' | 'premium' | 'enterprise';
 
-// ===================== ORGANIZER =====================
-export interface Organizer {
+// ===================== PERMISSIONS =====================
+export type ModuleName =
+  | 'events'
+  | 'guests'
+  | 'invitations'
+  | 'guestbook'
+  | 'analytics'
+  | 'users'
+  | 'settings';
+
+export interface ModulePermission {
+  module: ModuleName;
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+// ===================== USER =====================
+export interface User {
   id: string;
-  name: string;                // ⚠️ cohérent avec ton backend
+  name: string; // cohérent backend
   email: string;
   phone?: string;
-  role?: 'organizer' | 'admin';
+  role?: 'user' | 'admin';
 
   subscriptionType?: SubscriptionType;
-
+  permissions?: ModulePermission[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -20,10 +38,12 @@ export interface Organizer {
 // ===================== EVENT =====================
 export interface Event {
   id: string;
-  organizerId: string;
+  userId: string;
 
   title: string;
-  type: string;               // wedding, birthday, corporate...
+  slug: string; // ✅ AJOUT (cohérent backend)
+
+  type: string; // wedding, birthday, corporate...
   description?: string;
 
   date: string;
@@ -44,7 +64,7 @@ export interface Guest {
   id: string;
   eventId: string;
 
-  fullName: string;
+  name: string;
   phone?: string;
   email?: string;
 
@@ -78,7 +98,7 @@ export interface GuestbookMessage {
   eventId: string;
 
   guestId?: string;
-  guestName?: string;
+  name?: string; // ✅ aligné avec le backend (event.guestbook.push({ name }))
 
   message: string;
   createdAt: string;
@@ -125,7 +145,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// Modules disponibles avec labels
+// ===================== MODULES =====================
 export const MODULES: { name: ModuleName; label: string }[] = [
   { name: 'events', label: 'Événements' },
   { name: 'guests', label: 'Invités' },
@@ -136,7 +156,7 @@ export const MODULES: { name: ModuleName; label: string }[] = [
   { name: 'settings', label: 'Paramètres' },
 ];
 
-// Permissions par défaut pour un nouvel utilisateur
+// ===================== DEFAULT PERMISSIONS =====================
 export const DEFAULT_USER_PERMISSIONS: ModulePermission[] = MODULES.map(m => ({
   module: m.name,
   create: false,
@@ -145,7 +165,7 @@ export const DEFAULT_USER_PERMISSIONS: ModulePermission[] = MODULES.map(m => ({
   delete: false,
 }));
 
-// Permissions admin (tout autorisé)
+// ===================== ADMIN PERMISSIONS =====================
 export const ADMIN_PERMISSIONS: ModulePermission[] = MODULES.map(m => ({
   module: m.name,
   create: true,

@@ -34,7 +34,7 @@ const Guests = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [eventFilter, setEventFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newGuest, setNewGuest] = useState({ fullName: '', email: '', phone: '', eventId: '' });
+  const [newGuest, setNewGuest] = useState({ name: '', email: '', phone: '', eventId: '' });
   const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const { toast } = useToast();
@@ -59,7 +59,7 @@ const Guests = () => {
   };
 
   const filteredGuests = guests.filter(guest => {
-    const matchesSearch = guest.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       guest.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || guest.status === statusFilter;
     const matchesEvent = eventFilter === 'all' || guest.eventId === eventFilter;
@@ -67,7 +67,7 @@ const Guests = () => {
   });
 
   const handleAddGuest = async () => {
-    if (!newGuest.fullName || !newGuest.email || !newGuest.eventId) {
+    if (!newGuest.name || !newGuest.email || !newGuest.eventId) {
       toast({ title: 'Erreur', description: 'Veuillez remplir tous les champs obligatoires', variant: 'destructive' });
       return;
     }
@@ -75,7 +75,7 @@ const Guests = () => {
       await guestsApi.create(newGuest.eventId, newGuest);
       toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
       setIsAddDialogOpen(false);
-      setNewGuest({ fullName: '', email: '', phone: '', eventId: '' });
+      setNewGuest({ name: '', email: '', phone: '', eventId: '' });
       fetchData();
     } catch (error) {
       toast({ title: 'Erreur', description: 'Impossible d\'ajouter l\'invité', variant: 'destructive' });
@@ -159,11 +159,11 @@ const Guests = () => {
                     </Select>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="fullName">Nom complet *</Label>
+                    <Label htmlFor="name">Nom complet *</Label>
                     <Input
-                      id="fullName"
-                      value={newGuest.fullName}
-                      onChange={(e) => setNewGuest({ ...newGuest, fullName: e.target.value })}
+                      id="name"
+                      value={newGuest.name}
+                      onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
                       placeholder="Jean Dupont"
                     />
                   </div>
