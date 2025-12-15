@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Shield, Edit, Trash2, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Shield, Trash2, MoreHorizontal, Download, Edit } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -36,12 +37,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { usersApi } from '@/services/api';
 import type { User, ModulePermission, UserRole, ModuleName } from '@/types/models';
 import { MODULES, DEFAULT_USER_PERMISSIONS, ADMIN_PERMISSIONS } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
+import { exportUsersToCSV } from '@/utils/exportUtils';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -49,6 +52,7 @@ const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
     fullName: '',
@@ -57,8 +61,15 @@ const Users = () => {
     password: '',
     role: 'user' as UserRole,
   });
+  const [editUser, setEditUser] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    role: 'user' as UserRole,
+  });
   const [editingPermissions, setEditingPermissions] = useState<ModulePermission[]>([]);
   const { toast } = useToast();
+  const { canCreate, canUpdate, canDelete } = usePermissions();
 
   useEffect(() => {
     fetchUsers();
@@ -70,6 +81,7 @@ const Users = () => {
       setUsers(res.data);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
+      toast({ title: 'Erreur', description: 'Impossible de charger les utilisateurs', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -97,7 +109,37 @@ const Users = () => {
     }
   };
 
+  const openEditDialog = (user: User) => {
+    setSelectedUser(user);
+    setEditUser({
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!selectedUser || !editUser.fullName || !editUser.email) {
+      toast({ title: 'Erreur', description: 'Veuillez remplir tous les champs obligatoires', variant: 'destructive' });
+      return;
+    }
+    try {
+      await usersApi.update(selectedUser.id, editUser);
+      toast({ title: 'Succès', description: 'Utilisateur modifié avec succès' });
+      setIsEditDialogOpen(false);
+      fetchUsers();
+    } catch (error) {
+      toast({ title: 'Erreur', description: "Impossible de modifier l'utilisateur", variant: 'destructive' });
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
+    if (!canDelete('users')) {
+      toast({ title: 'Erreur', description: 'Vous n\'avez pas la permission de supprimer', variant: 'destructive' });
+      return;
+    }
     try {
       await usersApi.delete(userId);
       toast({ title: 'Succès', description: 'Utilisateur supprimé' });
@@ -133,6 +175,11 @@ const Users = () => {
     }
   };
 
+  const handleExport = () => {
+    exportUsersToCSV(filteredUsers);
+    toast({ title: 'Succès', description: 'Export CSV téléchargé' });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -144,79 +191,85 @@ const Users = () => {
               Gérez les utilisateurs et leurs permissions d'accès
             </p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="shadow-gold">
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvel utilisateur
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Ajouter un utilisateur</DialogTitle>
-                <DialogDescription>
-                  Créez un nouveau compte utilisateur avec un rôle
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label>Nom complet *</Label>
-                  <Input
-                    value={newUser.fullName}
-                    onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
-                    placeholder="Jean Dupont"
-                  />
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Exporter
+            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <PermissionButton module="users" action="create" className="shadow-gold">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouvel utilisateur
+                </PermissionButton>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Ajouter un utilisateur</DialogTitle>
+                  <DialogDescription>
+                    Créez un nouveau compte utilisateur avec un rôle
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Nom complet *</Label>
+                    <Input
+                      value={newUser.fullName}
+                      onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                      placeholder="Jean Dupont"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Email *</Label>
+                    <Input
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      placeholder="jean@example.com"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Téléphone</Label>
+                    <Input
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                      placeholder="+33 6 12 34 56 78"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Mot de passe *</Label>
+                    <Input
+                      type="password"
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Rôle</Label>
+                    <Select
+                      value={newUser.role}
+                      onValueChange={(value: UserRole) => setNewUser({ ...newUser, role: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin (tous les accès)</SelectItem>
+                        <SelectItem value="user">Utilisateur (accès limité)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label>Email *</Label>
-                  <Input
-                    type="email"
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="jean@example.com"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Téléphone</Label>
-                  <Input
-                    value={newUser.phone}
-                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                    placeholder="+33 6 12 34 56 78"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Mot de passe *</Label>
-                  <Input
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Rôle</Label>
-                  <Select
-                    value={newUser.role}
-                    onValueChange={(value: UserRole) => setNewUser({ ...newUser, role: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin (tous les accès)</SelectItem>
-                      <SelectItem value="user">Utilisateur (accès limité)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handleAddUser}>Créer</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Annuler
+                  </Button>
+                  <Button onClick={handleAddUser}>Créer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Search */}
@@ -271,14 +324,18 @@ const Users = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openPermissionsDialog(user)}
-                      >
-                        <Shield className="h-4 w-4 mr-2" />
-                        Gérer
-                      </Button>
+                      {canUpdate('users') ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openPermissionsDialog(user)}
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Gérer
+                        </Button>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -288,17 +345,27 @@ const Users = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Permissions
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteUser(user.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
+                          {canUpdate('users') && (
+                            <>
+                              <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openPermissionsDialog(user)}>
+                                <Shield className="h-4 w-4 mr-2" />
+                                Permissions
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {canDelete('users') && (
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -313,6 +380,63 @@ const Users = () => {
             )}
           </Card>
         )}
+
+        {/* Edit User Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Modifier l'utilisateur</DialogTitle>
+              <DialogDescription>
+                Modifiez les informations de l'utilisateur
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label>Nom complet *</Label>
+                <Input
+                  value={editUser.fullName}
+                  onChange={(e) => setEditUser({ ...editUser, fullName: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={editUser.email}
+                  onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Téléphone</Label>
+                <Input
+                  value={editUser.phone}
+                  onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Rôle</Label>
+                <Select
+                  value={editUser.role}
+                  onValueChange={(value: UserRole) => setEditUser({ ...editUser, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="user">Utilisateur</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleEditUser}>Enregistrer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Permissions Dialog */}
         <Dialog open={isPermissionsDialogOpen} onOpenChange={setIsPermissionsDialogOpen}>

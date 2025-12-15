@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { QrCode, CheckCircle2, XCircle, User, Wine, Calendar } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, User, Wine, Keyboard } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import CameraScanner from '@/components/scanner/CameraScanner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { qrCodeApi } from '@/services/api';
 import type { Guest } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
@@ -16,26 +18,32 @@ const Scanner = () => {
   const [result, setResult] = useState<{ guest: Guest; isValid: boolean } | null>(null);
   const { toast } = useToast();
 
-  const handleScan = async () => {
-    if (!code.trim()) {
+  const handleScan = async (scannedCode?: string) => {
+    const codeToScan = scannedCode || code;
+    if (!codeToScan.trim()) {
       toast({ title: 'Erreur', description: 'Veuillez entrer un code QR', variant: 'destructive' });
       return;
     }
 
     setScanning(true);
     try {
-      const res = await qrCodeApi.scan(code);
+      const res = await qrCodeApi.scan(codeToScan);
       setResult(res.data);
+      setCode(codeToScan);
       if (res.data.isValid) {
-        toast({ title: 'Succès', description: 'QR Code valide' });
+        toast({ title: 'Succès', description: 'QR Code valide - Accès autorisé' });
       } else {
-        toast({ title: 'Erreur', description: 'QR Code invalide', variant: 'destructive' });
+        toast({ title: 'Erreur', description: 'QR Code invalide - Accès refusé', variant: 'destructive' });
       }
     } catch (error) {
       toast({ title: 'Erreur', description: 'Impossible de scanner le code', variant: 'destructive' });
     } finally {
       setScanning(false);
     }
+  };
+
+  const handleCameraScan = (scannedCode: string) => {
+    handleScan(scannedCode);
   };
 
   const handleReset = () => {
@@ -54,35 +62,54 @@ const Scanner = () => {
           </p>
         </div>
 
-        {/* Scanner */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <QrCode className="h-5 w-5 text-primary" />
-              Scanner un code
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Entrez ou scannez le code QR..."
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleScan()}
-              />
-              <Button onClick={handleScan} disabled={scanning}>
-                {scanning ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
-                ) : (
-                  'Scanner'
-                )}
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Utilisez un lecteur de code-barres ou entrez le code manuellement
-            </p>
-          </CardContent>
-        </Card>
+        {/* Scanner Tabs */}
+        <Tabs defaultValue="camera" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="camera" className="flex items-center gap-2">
+              <QrCode className="h-4 w-4" />
+              Caméra
+            </TabsTrigger>
+            <TabsTrigger value="manual" className="flex items-center gap-2">
+              <Keyboard className="h-4 w-4" />
+              Manuel
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="camera" className="mt-4">
+            <CameraScanner onScan={handleCameraScan} isScanning={scanning} />
+          </TabsContent>
+
+          <TabsContent value="manual" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Keyboard className="h-5 w-5 text-primary" />
+                  Saisie manuelle
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Entrez le code QR..."
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleScan()}
+                  />
+                  <Button onClick={() => handleScan()} disabled={scanning}>
+                    {scanning ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground" />
+                    ) : (
+                      'Vérifier'
+                    )}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  Utilisez un lecteur de code-barres ou entrez le code manuellement
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Result */}
         {result && (
@@ -183,7 +210,7 @@ const Scanner = () => {
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
                     2
                   </span>
-                  <span>Scannez le code avec un lecteur ou entrez-le manuellement</span>
+                  <span>Utilisez la caméra ou entrez le code manuellement</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
