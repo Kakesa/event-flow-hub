@@ -22,9 +22,6 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import {
-  Calendar,
-  Clock,
-  MapPin,
   ArrowLeft,
   ArrowRight,
   Check,
@@ -36,8 +33,19 @@ import {
   Briefcase,
   Baby,
 } from 'lucide-react';
-
 import { eventsApi } from '@/services/api';
+
+type FormDataType = {
+  title: string;
+  type: string;
+  description: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  theme: string;
+  coverImage: File | null;
+};
 
 const eventThemes = [
   { id: 'elegant', name: 'Élégant', color: '#D4AF37', icon: Sparkles },
@@ -49,22 +57,22 @@ const eventThemes = [
 ];
 
 const eventTypes = [
-  { value: 'wedding', label: 'Mariage' },
-  { value: 'birthday', label: 'Anniversaire' },
-  { value: 'corporate', label: 'Événement corporate' },
-  { value: 'graduation', label: 'Remise de diplôme' },
-  { value: 'babyshower', label: 'Baby Shower' },
-  { value: 'party', label: 'Fête' },
-  { value: 'other', label: 'Autre' },
+  { value: 'Mariage', label: 'Mariage' },
+  { value: 'Anniversaire', label: 'Anniversaire' },
+  { value: 'Événement corporate', label: 'Événement corporate' },
+  { value: 'Remise de diplôme', label: 'Remise de diplôme' },
+  { value: 'Baby Shower', label: 'Baby Shower' },
+  { value: 'Fête', label: 'Fête' },
+  { value: 'Autre', label: 'Autre' },
 ];
 
-const CreateEvent = () => {
+const CreateEvent: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
     title: '',
     type: '',
     description: '',
@@ -73,9 +81,12 @@ const CreateEvent = () => {
     endTime: '',
     location: '',
     theme: 'elegant',
-    coverImage: null as File | null,
+    coverImage: null,
   });
 
+  /* =======================
+     IMAGE PREVIEW
+  ======================== */
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -87,6 +98,9 @@ const CreateEvent = () => {
     reader.readAsDataURL(file);
   };
 
+  /* =======================
+     SUBMIT FORM
+  ======================== */
   const handleSubmit = async () => {
     if (!formData.title || !formData.type || !formData.date || !formData.location) {
       toast.error('Veuillez remplir tous les champs obligatoires');
@@ -96,26 +110,28 @@ const CreateEvent = () => {
     setIsLoading(true);
 
     try {
-      const dateISO = new Date(
-        `${formData.date}T${formData.startTime || '00:00'}`
-      ).toISOString();
+      const payload = new FormData();
+      payload.append('title', formData.title.trim());
+      payload.append('type', formData.type);
+      payload.append('description', formData.description?.trim() || '');
+      payload.append('date', formData.date);
+      payload.append('startTime', formData.startTime || '');
+      payload.append('endTime', formData.endTime || '');
+      payload.append('location', formData.location.trim());
+      payload.append('theme', formData.theme);
+      if (formData.coverImage) payload.append('coverImage', formData.coverImage);
 
-      const payload = {
-        title: formData.title.trim(),
-        type: formData.type,
-        description: formData.description?.trim(),
-        date: dateISO,
-        location: formData.location.trim(),
-        theme: formData.theme,
-      };
+      const res = await eventsApi.create(payload); // Axios gère Content-Type automatiquement
 
-      const res = await eventsApi.create(payload);
-
-      toast.success('Événement créé avec succès 🎉');
-      navigate(`/events/${res.data.id}`);
+      if (res.data?.success) {
+        toast.success('Événement créé avec succès 🎉');
+        navigate(`/events/${res.data.data._id}`);
+      } else {
+        toast.error(res.data?.message || 'Erreur lors de la création de l’événement');
+      }
     } catch (error: any) {
       console.error(error);
-      toast.error(error.message || "Erreur lors de la création de l'événement");
+      toast.error(error.response?.data?.message || error.message || 'Erreur serveur');
     } finally {
       setIsLoading(false);
     }
@@ -138,20 +154,15 @@ const CreateEvent = () => {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <Button variant="ghost" onClick={() => navigate('/events')} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour aux événements
+            <ArrowLeft className="w-4 h-4 mr-2" /> Retour aux événements
           </Button>
-
           <h1 className="text-3xl font-bold">Créer un événement</h1>
-          <p className="text-muted-foreground">
-            Configurez votre événement en quelques étapes
-          </p>
+          <p className="text-muted-foreground">Configurez votre événement en quelques étapes</p>
         </div>
 
-        {/* Steps */}
+        {/* Progress Steps */}
         <div className="flex items-center justify-between mb-8">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center flex-1">
@@ -162,13 +173,7 @@ const CreateEvent = () => {
               >
                 {step > s ? <Check size={18} /> : s}
               </div>
-              {s < 3 && (
-                <div
-                  className={`flex-1 h-1 mx-2 ${
-                    step > s ? 'bg-primary' : 'bg-muted'
-                  }`}
-                />
-              )}
+              {s < 3 && <div className={`flex-1 h-1 mx-2 ${step > s ? 'bg-primary' : 'bg-muted'}`} />}
             </div>
           ))}
         </div>
@@ -188,27 +193,15 @@ const CreateEvent = () => {
           </CardHeader>
 
           <CardContent>
-            {/* STEP 1 */}
             {step === 1 && (
               <div className="space-y-5">
                 <div>
                   <Label>Titre *</Label>
-                  <Input
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                  />
+                  <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
                 </div>
-
                 <div>
                   <Label>Type *</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, type: value })
-                    }
-                  >
+                  <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez un type" />
                     </SelectTrigger>
@@ -221,82 +214,42 @@ const CreateEvent = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label>Description</Label>
                   <Textarea
                     rows={4}
                     value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
                 </div>
               </div>
             )}
 
-            {/* STEP 2 */}
             {step === 2 && (
               <div className="space-y-5">
                 <div>
                   <Label>Date *</Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
-                    }
-                  />
+                  <Input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startTime: e.target.value })
-                    }
-                  />
-                  <Input
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endTime: e.target.value })
-                    }
-                  />
+                  <Input type="time" value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} />
+                  <Input type="time" value={formData.endTime} onChange={(e) => setFormData({ ...formData, endTime: e.target.value })} />
                 </div>
-
                 <div>
                   <Label>Lieu *</Label>
-                  <Input
-                    value={formData.location}
-                    onChange={(e) =>
-                      setFormData({ ...formData, location: e.target.value })
-                    }
-                  />
+                  <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
                 </div>
               </div>
             )}
 
-            {/* STEP 3 */}
             {step === 3 && (
               <div className="space-y-6">
                 <Label>Image de couverture</Label>
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                    id="cover"
-                  />
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="cover" />
                   <label htmlFor="cover" className="cursor-pointer">
                     {coverPreview ? (
-                      <img
-                        src={coverPreview}
-                        alt="preview"
-                        className="mx-auto h-40 object-cover rounded"
-                      />
+                      <img src={coverPreview} alt="preview" className="mx-auto h-40 object-cover rounded" />
                     ) : (
                       <>
                         <Upload className="mx-auto mb-2" />
@@ -308,19 +261,17 @@ const CreateEvent = () => {
               </div>
             )}
 
-            {/* Buttons */}
             <div className="flex justify-between mt-8">
               <Button variant="outline" onClick={prevStep} disabled={step === 1}>
                 Précédent
               </Button>
-
               {step < 3 ? (
                 <Button onClick={nextStep}>
                   Suivant <ArrowRight size={16} className="ml-2" />
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={isLoading}>
-                  {isLoading ? 'Création...' : "Créer l'événement"}
+                  {isLoading ? 'Création...' : 'Créer l’événement'}
                 </Button>
               )}
             </div>

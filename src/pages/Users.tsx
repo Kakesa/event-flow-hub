@@ -53,7 +53,7 @@ import {
 
 import type { User, UserRole, ModulePermission, ModuleName } from "@/types/models";
 
-import Spinner from "@/components/ui/Spinner";
+import Spinner from "@/components/ui/spinner";
 
 const Users = () => {
   const { toast } = useToast();

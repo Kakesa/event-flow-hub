@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -26,44 +27,58 @@ const Events = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const { canCreate, canDelete, canUpdate } = usePermissions();
 
+  // 🔹 Fetch events & guests
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const [eventsRes, guestsRes] = await Promise.all([
-          eventsApi.getAll(),
-          guestsApi.getAll(),
-        ]);
-        setEvents(eventsRes.data);
-        setGuests(guestsRes.data);
+        const [eventsRes, guestsRes] = await Promise.all([eventsApi.getAll(), guestsApi.getAll()]);
+
+        // Vérifie success et map _id → id
+        const formattedEvents: Event[] = eventsRes.success
+          ? eventsRes.data.map((e: any) => ({ ...e, id: e._id }))
+          : [];
+        const formattedGuests: Guest[] = guestsRes.success
+          ? guestsRes.data.map((g: any) => ({ ...g, id: g._id }))
+          : [];
+
+        setEvents(formattedEvents);
+        setGuests(formattedGuests);
+
+        console.log('Événements chargés:', formattedEvents);
+        console.log('Invités chargés:', formattedGuests);
       } catch (error) {
         console.error('Erreur lors du chargement:', error);
+        setEvents([]);
+        setGuests([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
-  const getGuestCount = (eventId: string) => {
-    return guests.filter(g => g.eventId === eventId).length;
-  };
+  const getGuestCount = (eventId: string) =>
+    guests.filter((g) => g.eventId === eventId).length;
 
   const handleDeleteEvent = (eventId: string) => {
-    setEvents(prev => prev.filter(e => e.id !== eventId));
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
   };
 
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.location.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     if (statusFilter === 'all') return matchesSearch;
-    
-    const eventDate = new Date(event.date);
+
+    const eventDate = event.date ? new Date(event.date) : new Date();
     const now = new Date();
-    
+
     if (statusFilter === 'upcoming') return matchesSearch && eventDate > now;
     if (statusFilter === 'past') return matchesSearch && eventDate <= now;
-    
+
     return matchesSearch;
   });
 
@@ -73,15 +88,17 @@ const Events = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Événements</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
+              Événements
+            </h1>
             <p className="text-muted-foreground mt-1">
               Gérez tous vos événements en un seul endroit
             </p>
           </div>
-          <PermissionButton 
-            module="events" 
+          <PermissionButton
+            module="events"
             action="create"
-            onClick={() => navigate('/events/create')} 
+            onClick={() => navigate('/events/create')}
             className="shadow-gold"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -138,7 +155,9 @@ const Events = () => {
             </div>
             <h3 className="font-display text-lg font-semibold">Aucun événement trouvé</h3>
             <p className="text-muted-foreground mt-1">
-              {searchQuery ? 'Essayez de modifier votre recherche' : 'Créez votre premier événement'}
+              {searchQuery
+                ? 'Essayez de modifier votre recherche'
+                : 'Créez votre premier événement'}
             </p>
             {!searchQuery && canCreate('events') && (
               <Button onClick={() => navigate('/events/create')} className="mt-4">
