@@ -130,9 +130,9 @@ const Index = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               {events.slice(0, 4).map((event) => (
                 <EventCard
-                  key={event.id}
+                  key={event._id}
                   event={event}
-                  guestCount={getGuestCount(event.id)}
+                  guestCount={getGuestCount(event._id)}
                 />
               ))}
             </div>

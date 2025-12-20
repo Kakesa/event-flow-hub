@@ -37,7 +37,7 @@ export interface User {
 
 // ===================== EVENT =====================
 export interface Event {
-  id: string;
+  _id: string;
   userId: string;
 
   title: string;

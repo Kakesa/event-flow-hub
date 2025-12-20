@@ -6,7 +6,6 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import EventCard from '@/components/dashboard/EventCard';
 import PermissionButton from '@/components/common/PermissionButton';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -21,64 +20,67 @@ import { usePermissions } from '@/hooks/usePermissions';
 const Events = () => {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
-  const [guests, setGuests] = useState<Guest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [guestsMap, setGuestsMap] = useState<Record<string, Guest[]>>({});
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingGuests, setLoadingGuests] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const { canCreate, canDelete, canUpdate } = usePermissions();
 
-  // 🔹 Fetch events & guests
+  // 🔹 Récupération des événements
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchEvents = async () => {
+      setLoadingEvents(true);
       try {
-        const [eventsRes, guestsRes] = await Promise.all([eventsApi.getAll(), guestsApi.getAll()]);
-
-        // Vérifie success et map _id → id
-        const formattedEvents: Event[] = eventsRes.success
-          ? eventsRes.data.map((e: any) => ({ ...e, id: e._id }))
-          : [];
-        const formattedGuests: Guest[] = guestsRes.success
-          ? guestsRes.data.map((g: any) => ({ ...g, id: g._id }))
-          : [];
-
-        setEvents(formattedEvents);
-        setGuests(formattedGuests);
-
-        console.log('Événements chargés:', formattedEvents);
-        console.log('Invités chargés:', formattedGuests);
-      } catch (error) {
-        console.error('Erreur lors du chargement:', error);
+        const res = await eventsApi.getAll();
+        if (res.success) setEvents(res.data);
+      } catch (err) {
+        console.error('Erreur lors du chargement des événements:', err);
         setEvents([]);
-        setGuests([]);
       } finally {
-        setLoading(false);
+        setLoadingEvents(false);
       }
     };
-
-    fetchData();
+    fetchEvents();
   }, []);
 
-  const getGuestCount = (eventId: string) =>
-    guests.filter((g) => g.eventId === eventId).length;
-
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+  // 🔹 Charger les invités d’un événement **uniquement quand l’utilisateur en a besoin**
+  const fetchGuestsForEvent = async (eventId: string) => {
+    if (guestsMap[eventId] || loadingGuests[eventId]) return;
+    setLoadingGuests(prev => ({ ...prev, [eventId]: true }));
+    try {
+      const res = await guestsApi.getByEvent(eventId);
+      if (res.success) setGuestsMap(prev => ({ ...prev, [eventId]: res.data }));
+      else setGuestsMap(prev => ({ ...prev, [eventId]: [] }));
+    } catch (err) {
+      console.error(`Erreur chargement invités pour l'événement ${eventId}:`, err);
+      setGuestsMap(prev => ({ ...prev, [eventId]: [] }));
+    } finally {
+      setLoadingGuests(prev => ({ ...prev, [eventId]: false }));
+    }
   };
 
-  const filteredEvents = events.filter((event) => {
+  const getGuestCount = (eventId: string) => guestsMap[eventId]?.length || 0;
+
+  const handleDeleteEvent = (eventId: string) => {
+    setEvents(prev => prev.filter(e => e._id !== eventId));
+    setGuestsMap(prev => {
+      const copy = { ...prev };
+      delete copy[eventId];
+      return copy;
+    });
+  };
+
+  const filteredEvents = events.filter(event => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.location.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (statusFilter === 'all') return matchesSearch;
-
-    const eventDate = event.date ? new Date(event.date) : new Date();
+    const eventDate = new Date(event.date);
     const now = new Date();
-
     if (statusFilter === 'upcoming') return matchesSearch && eventDate > now;
     if (statusFilter === 'past') return matchesSearch && eventDate <= now;
-
     return matchesSearch;
   });
 
@@ -88,22 +90,19 @@ const Events = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
-              Événements
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Gérez tous vos événements en un seul endroit
-            </p>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Événements</h1>
+            <p className="text-muted-foreground mt-1">Gérez tous vos événements en un seul endroit</p>
           </div>
-          <PermissionButton
-            module="events"
-            action="create"
-            onClick={() => navigate('/events/create')}
-            className="shadow-gold"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvel événement
-          </PermissionButton>
+          {canCreate('events') && (
+            <PermissionButton
+              module="events"
+              action="create"
+              onClick={() => navigate('/events/create')}
+              className="shadow-gold"
+            >
+              <Plus className="h-4 w-4 mr-2" /> Nouvel événement
+            </PermissionButton>
+          )}
         </div>
 
         {/* Filters */}
@@ -113,11 +112,11 @@ const Events = () => {
             <Input
               placeholder="Rechercher un événement..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={value => setStatusFilter(value as any)}>
             <SelectTrigger className="w-full sm:w-48">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filtrer par statut" />
@@ -131,40 +130,27 @@ const Events = () => {
         </div>
 
         {/* Events grid */}
-        {loading ? (
+        {loadingEvents ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : filteredEvents.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredEvents.map((event) => (
+            {filteredEvents.map(event => (
               <EventCard
-                key={event.id}
+                key={event._id}
                 event={event}
-                guestCount={getGuestCount(event.id)}
+                guestCount={getGuestCount(event._id)}
                 onDelete={handleDeleteEvent}
                 canEdit={canUpdate('events')}
                 canDelete={canDelete('events')}
+                onOpen={() => fetchGuestsForEvent(event._id)} // 👈 chargé uniquement à l'ouverture
               />
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <Search className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-display text-lg font-semibold">Aucun événement trouvé</h3>
-            <p className="text-muted-foreground mt-1">
-              {searchQuery
-                ? 'Essayez de modifier votre recherche'
-                : 'Créez votre premier événement'}
-            </p>
-            {!searchQuery && canCreate('events') && (
-              <Button onClick={() => navigate('/events/create')} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Créer un événement
-              </Button>
-            )}
+            <p>Aucun événement trouvé</p>
           </div>
         )}
       </div>

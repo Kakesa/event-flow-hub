@@ -59,10 +59,7 @@ export const authApi = {
     });
 
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return {
-      success: result.success ?? true,
-      data: result.data,
-    };
+    return { success: result.success ?? true, data: result.data };
   },
 
   login: async (email: string, password: string): Promise<ApiResponse<{ token: string; user: User }>> => {
@@ -73,19 +70,13 @@ export const authApi = {
     });
 
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return {
-      success: result.success ?? true,
-      data: result.data,
-    };
+    return { success: result.success ?? true, data: result.data };
   },
 
   me: async (): Promise<ApiResponse<User>> => {
     const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: getHeaders() });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return {
-      success: result.success ?? true,
-      data: result.data,
-    };
+    return { success: result.success ?? true, data: result.data };
   },
 };
 
@@ -94,15 +85,16 @@ export const eventsApi = {
   getAll: async (): Promise<ApiResponse<Event[]>> => {
     const res = await fetch(`${API_BASE_URL}/events`, { headers: getHeaders() });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    const events: Event[] = result.data?.map(e => ({ ...e, id: e._id })) || [];
+
+    // On garde l'id tel qu'il est dans la DB (pas besoin de le renommer)
+    const events: Event[] = result.data || [];
     return { success: result.success ?? true, data: events };
   },
 
   getById: async (id: string): Promise<ApiResponse<Event>> => {
     const res = await fetch(`${API_BASE_URL}/events/${id}`, { headers: getHeaders() });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    const event: Event = { ...result.data, id: result.data._id };
-    return { success: result.success ?? true, data: event };
+    return { success: result.success ?? true, data: result.data };
   },
 
   create: async (data: FormData): Promise<ApiResponse<Event>> => {
@@ -112,8 +104,7 @@ export const eventsApi = {
       body: data,
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    const event: Event = { ...result.data, id: result.data._id };
-    return { success: result.success ?? true, data: event };
+    return { success: result.success ?? true, data: result.data };
   },
 
   update: async (id: string, data: FormData): Promise<ApiResponse<Event>> => {
@@ -123,8 +114,7 @@ export const eventsApi = {
       body: data,
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    const event: Event = { ...result.data, id: result.data._id };
-    return { success: result.success ?? true, data: event };
+    return { success: result.success ?? true, data: result.data };
   },
 
   delete: async (id: string): Promise<ApiResponse<void>> => {
@@ -136,6 +126,7 @@ export const eventsApi = {
     return { success: result.success ?? true, data: undefined };
   },
 };
+
 
 // ==================== INVITÉS ====================
 export const guestsApi = {
@@ -181,7 +172,7 @@ export const guestsApi = {
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data?: any }>(res);
-    return { success: result.success ?? true, data: result.data };
+    return { success: result.success ?? true, data: undefined };
   },
 
   updateStatus: async (id: string, status: Guest['status']): Promise<ApiResponse<Guest>> =>
@@ -321,6 +312,6 @@ export const usersApi = {
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data?: any }>(res);
-    return { success: result.success ?? true, data: result.data };
+    return { success: result.success ?? true, data: undefined };
   },
 };

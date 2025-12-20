@@ -58,7 +58,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
 
     const downloadLink = document.createElement('a');
     downloadLink.href = svgUrl;
-    downloadLink.download = `qrcode-${guest?.fullName.replace(/\s+/g, '_')}.svg`;
+    downloadLink.download = `qrcode-${guest?.name.replace(/\s+/g, '_')}.svg`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
@@ -71,7 +71,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
     if (!guest) return;
     const subject = encodeURIComponent("Votre invitation - QR Code");
     const body = encodeURIComponent(
-      `Bonjour ${guest.fullName},\n\nVeuillez trouver ci-joint votre QR code d'invitation.\n\nCode: ${qrData?.code || ''}\n\nCordialement`
+      `Bonjour ${guest.name},\n\nVeuillez trouver ci-joint votre QR code d'invitation.\n\nCode: ${qrData?.code || ''}\n\nCordialement`
     );
     window.open(`mailto:${guest.email}?subject=${subject}&body=${body}`);
   };
@@ -79,7 +79,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
   const handleSendByWhatsApp = () => {
     if (!guest) return;
     const message = encodeURIComponent(
-      `Bonjour ${guest.fullName}! 🎉\n\nVoici votre code d'invitation: ${qrData?.code || ''}\n\nPrésentez ce code à l'entrée de l'événement.`
+      `Bonjour ${guest.name}! 🎉\n\nVoici votre code d'invitation: ${qrData?.code || ''}\n\nPrésentez ce code à l'entrée de l'événement.`
     );
     window.open(`https://wa.me/${guest.phone.replace(/\D/g, '')}?text=${message}`);
   };
@@ -90,7 +90,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
         <DialogHeader>
           <DialogTitle>QR Code d'invitation</DialogTitle>
           <DialogDescription>
-            {guest?.fullName} - {guest?.email}
+            {guest?.name} - {guest?.email}
           </DialogDescription>
         </DialogHeader>
 

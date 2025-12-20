@@ -19,22 +19,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import type { Event } from '@/types/models';
 import { format, parseISO, isAfter } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Event } from '../../types/models';
+
+// 🔹 URL de ton backend
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface EventCardProps {
   event: Event;
   guestCount?: number;
   onDelete?: (eventId: string) => void;
+  onOpen?: (eventId: string) => void;
   canEdit?: boolean;
   canDelete?: boolean;
 }
 
-const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete = true }: EventCardProps) => {
+const EventCard = ({ event, guestCount = 0, onDelete, onOpen, canEdit = true, canDelete = true }: EventCardProps) => {
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,12 +48,12 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    // Simulation d'appel API
+    // Simulation d'appel API pour suppression
     await new Promise(resolve => setTimeout(resolve, 800));
     setIsDeleting(false);
     setDeleteDialogOpen(false);
     toast.success('Événement supprimé');
-    onDelete?.(event.id);
+    onDelete?.(event._id);
   };
 
   return (
@@ -57,12 +61,12 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
       <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg animate-slide-up">
         <div className="relative h-48 overflow-hidden">
           <img
-            src={event.coverImage || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'}
+            src={event.coverImage ? `${API_BASE_URL}${event.coverImage}` : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'}
             alt={event.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-          
+
           {/* Dropdown Menu */}
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <DropdownMenu>
@@ -73,12 +77,12 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-popover">
                 {canEdit && (
-                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${event.id}`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/events/edit/${event._id}`)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => navigate(`/invitations/templates?eventId=${event.id}`)}>
+                <DropdownMenuItem onClick={() => navigate(`/invitations/templates?eventId=${event._id}`)}>
                   <Users className="h-4 w-4 mr-2" />
                   Envoyer invitations
                 </DropdownMenuItem>
@@ -97,7 +101,7 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
+
           <div className="absolute bottom-4 left-4 right-4">
             <Badge
               variant={isUpcoming ? 'default' : 'secondary'}
@@ -110,6 +114,7 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
             </h3>
           </div>
         </div>
+
         <CardContent className="p-4 space-y-4">
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
@@ -134,7 +139,7 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
               <Button 
                 variant="default" 
                 className="flex-1"
-                onClick={() => navigate(`/events/edit/${event.id}`)}
+                onClick={() => navigate(`/events/edit/${event._id}`)}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Modifier
@@ -143,7 +148,7 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
             <Button 
               variant="outline" 
               className={canEdit ? "flex-1" : "w-full"}
-              onClick={() => navigate(`/guests?eventId=${event.id}`)}
+              onClick={() => navigate(`/guests?eventId=${event._id}`)}
             >
               Invités
             </Button>
@@ -155,7 +160,7 @@ const EventCard = ({ event, guestCount = 0, onDelete, canEdit = true, canDelete 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cet événement?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer cet événement ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. L'événement "{event.title}" et tous les invités associés seront supprimés.
             </AlertDialogDescription>
