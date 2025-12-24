@@ -124,7 +124,7 @@ const CreateEvent: React.FC = () => {
       const res = await eventsApi.create(payload); // Axios gère Content-Type automatiquement
 
       if (res.data?.success) {
-        toast.success('Événement créé avec succès 🎉');
+        toast.success('Événement créé avec succès');
         navigate(`/events/${res.data.data._id}`);
       } else {
         toast.error(res.data?.message || 'Erreur lors de la création de l’événement');

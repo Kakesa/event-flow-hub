@@ -37,7 +37,8 @@ export interface User {
 
 // ===================== EVENT =====================
 export interface Event {
-  _id: string;
+  id: string;          // 👈 utilisé par le frontend
+  _id?: string;        // 👈 optionnel si jamais reçu
   userId: string;
 
   title: string;
