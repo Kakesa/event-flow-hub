@@ -6,13 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import EventCard from '@/components/dashboard/EventCard';
 import PermissionButton from '@/components/common/PermissionButton';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { eventsApi, guestsApi } from '@/services/api';
 import type { Event, Guest } from '@/types/models';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -27,13 +21,20 @@ const Events = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const { canCreate, canDelete, canUpdate } = usePermissions();
 
+  // 🔹 Fonction pour corriger les chemins locaux
+  const getEventImage = (image?: string) => {
+    if (!image) return '/placeholder.png'; // Image par défaut si vide
+    if (image.startsWith('http')) return image; // URL externe
+    return `/src/uploads/${image}`; // Image locale
+  };
+
   // 🔹 Récupération des événements
   useEffect(() => {
     const fetchEvents = async () => {
       setLoadingEvents(true);
       try {
         const res = await eventsApi.getAll();
-        if (res.success) setEvents(res.data);
+        if (res.success) setEvents(res.data.map(ev => ({ ...ev, coverImage: getEventImage(ev.coverImage) })));
       } catch (err) {
         console.error('Erreur lors du chargement des événements:', err);
         setEvents([]);
@@ -44,7 +45,7 @@ const Events = () => {
     fetchEvents();
   }, []);
 
-  // 🔹 Charger les invités d’un événement **uniquement quand l’utilisateur en a besoin**
+  // 🔹 Charger les invités d’un événement uniquement quand nécessaire
   const fetchGuestsForEvent = async (eventId: string) => {
     if (guestsMap[eventId] || loadingGuests[eventId]) return;
     setLoadingGuests(prev => ({ ...prev, [eventId]: true }));
@@ -139,12 +140,12 @@ const Events = () => {
             {filteredEvents.map(event => (
               <EventCard
                 key={event._id}
-                event={event}
+                event={{ ...event, coverImage: getEventImage(event.coverImage) }}
                 guestCount={getGuestCount(event._id)}
                 onDelete={handleDeleteEvent}
                 canEdit={canUpdate('events')}
                 canDelete={canDelete('events')}
-                onOpen={() => fetchGuestsForEvent(event._id)} // 👈 chargé uniquement à l'ouverture
+                onOpen={() => fetchGuestsForEvent(event._id)}
               />
             ))}
           </div>
