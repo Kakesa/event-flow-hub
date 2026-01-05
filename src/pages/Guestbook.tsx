@@ -144,13 +144,13 @@ const Guestbook = () => {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                      {message.guestName?.charAt(0) || 'A'}
+                      {message.name?.charAt(0) || 'A'}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{message.guestName || 'Anonyme'}</h4>
+                        <h4 className="font-semibold">{message.name || 'Anonyme'}</h4>
                         <span className="text-xs text-muted-foreground">
                           {format(parseISO(message.createdAt), 'd MMM yyyy', { locale: fr })}
                         </span>

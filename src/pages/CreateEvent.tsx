@@ -121,13 +121,13 @@ const CreateEvent: React.FC = () => {
       payload.append('theme', formData.theme);
       if (formData.coverImage) payload.append('coverImage', formData.coverImage);
 
-      const res = await eventsApi.create(payload); // Axios gère Content-Type automatiquement
+      const res = await eventsApi.create(payload);
 
-      if (res.data?.success) {
+      if (res.success) {
         toast.success('Événement créé avec succès');
-        navigate(`/events/${res.data.data._id}`);
+        navigate(`/events/${res.data._id || res.data.id}`);
       } else {
-        toast.error(res.data?.message || 'Erreur lors de la création de l’événement');
+        toast.error('Erreur lors de la création de l\'événement');
       }
     } catch (error: any) {
       console.error(error);
@@ -271,7 +271,7 @@ const CreateEvent: React.FC = () => {
                 </Button>
               ) : (
                 <Button onClick={handleSubmit} disabled={isLoading}>
-                  {isLoading ? 'Création...' : 'Créer l’événement'}
+                  {isLoading ? 'Création...' : "Créer l'événement"}
                 </Button>
               )}
             </div>

@@ -27,7 +27,7 @@ export const exportGuestsToCSV = (
   const rows = guests.map((guest) => {
     const event = events.find(e => e.id === guest.eventId);
     return [
-      guest.fullName,
+      guest.name,
       guest.email || '',
       guest.phone || '',
       event?.title || 'N/A',
@@ -64,7 +64,7 @@ export const exportGuestsToExcel = (
   const rows = guests.map((guest) => {
     const event = events.find(e => e.id === guest.eventId);
     return [
-      guest.fullName,
+      guest.name,
       guest.email || '',
       guest.phone || '',
       event?.title || 'N/A',
@@ -129,10 +129,10 @@ const downloadFile = (content: string, filename: string, mimeType: string) => {
 };
 
 // Export users to CSV
-export const exportUsersToCSV = (users: { fullName: string; email: string; phone?: string; role: string }[]) => {
+export const exportUsersToCSV = (users: { name: string; email: string; phone?: string; role?: string }[]) => {
   const headers = ['Nom complet', 'Email', 'Téléphone', 'Rôle'];
   const rows = users.map(user => [
-    user.fullName,
+    user.name,
     user.email,
     user.phone || '',
     user.role === 'admin' ? 'Administrateur' : 'Utilisateur',

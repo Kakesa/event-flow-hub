@@ -94,9 +94,9 @@ const Users = () => {
 
     try {
       setLoading(true);
-      const res = await usersApi.getAll(page, limit);
+      const res = await usersApi.getAll();
       setUsers(res.data);
-      setTotal(res.pagination.total);
+      setTotal(res.data.length);
     } catch {
       toast({
         title: "Erreur",
