@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -7,14 +7,41 @@ import StatCard from '@/components/dashboard/StatCard';
 import EventCard from '@/components/dashboard/EventCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 import { eventsApi, analyticsApi, guestsApi } from '@/services/api';
 import type { Event, Guest } from '@/types/models';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  BarChart,
+  Bar,
+} from 'recharts';
+
+const COLORS = ['hsl(142, 76%, 36%)', 'hsl(0, 84%, 60%)', 'hsl(38, 92%, 50%)'];
+
+interface Notification {
+  id: string;
+  type: 'confirmation' | 'decline' | 'new_guest';
+  message: string;
+  timestamp: Date;
+  read: boolean;
+}
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -25,35 +52,137 @@ const Index = () => {
     upcomingEvents: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
- useEffect(() => {
-  const fetchData = async () => {
+  // Données pour les graphiques
+  const [chartData, setChartData] = useState<{
+    statusData: { name: string; value: number; color: string }[];
+    trendData: { date: string; confirmations: number; declines: number }[];
+    eventStats: { name: string; guests: number; confirmed: number }[];
+  }>({
+    statusData: [],
+    trendData: [],
+    eventStats: [],
+  });
+
+  const fetchData = useCallback(async () => {
     try {
       const eventsRes = await eventsApi.getAll();
       setEvents(eventsRes.data);
 
-      // valeurs par défaut tant que l’API n’existe pas
+      // Récupérer tous les invités
+      let allGuests: Guest[] = [];
+      try {
+        const guestsRes = await guestsApi.getAll();
+        allGuests = guestsRes.data;
+        setGuests(allGuests);
+      } catch {
+        // Si l'API getAll n'existe pas, on récupère par événement
+        for (const event of eventsRes.data.slice(0, 5)) {
+          try {
+            const guestsRes = await guestsApi.getByEvent(event._id || event.id);
+            allGuests = [...allGuests, ...guestsRes.data];
+          } catch {
+            // Ignorer les erreurs individuelles
+          }
+        }
+        setGuests(allGuests);
+      }
+
+      // Calculer les statistiques
+      const confirmedCount = allGuests.filter(g => g.status === 'confirmed').length;
+      const declinedCount = allGuests.filter(g => g.status === 'declined').length;
+      const pendingCount = allGuests.filter(g => g.status === 'pending' || g.status === 'invited').length;
+      const upcomingEvents = eventsRes.data.filter(e => new Date(e.date) >= new Date()).length;
+
       setOverview({
         totalEvents: eventsRes.data.length,
-        totalGuests: 0,
-        totalConfirmed: 0,
-        upcomingEvents: 0,
+        totalGuests: allGuests.length,
+        totalConfirmed: confirmedCount,
+        upcomingEvents,
       });
 
-      setGuests([]);
+      // Données pour les graphiques
+      setChartData({
+        statusData: [
+          { name: 'Confirmés', value: confirmedCount, color: COLORS[0] },
+          { name: 'Déclinés', value: declinedCount, color: COLORS[1] },
+          { name: 'En attente', value: pendingCount, color: COLORS[2] },
+        ],
+        trendData: generateTrendData(allGuests),
+        eventStats: eventsRes.data.slice(0, 5).map(event => {
+          const eventGuests = allGuests.filter(g => g.eventId === event._id || g.eventId === event.id);
+          return {
+            name: event.title.substring(0, 15) + (event.title.length > 15 ? '...' : ''),
+            guests: eventGuests.length,
+            confirmed: eventGuests.filter(g => g.status === 'confirmed').length,
+          };
+        }),
+      });
+
+      // Générer des notifications simulées
+      const recentConfirmations = allGuests
+        .filter(g => g.status === 'confirmed')
+        .slice(0, 3)
+        .map((g, i) => ({
+          id: `notif-${i}`,
+          type: 'confirmation' as const,
+          message: `${g.name} a confirmé sa présence`,
+          timestamp: new Date(Date.now() - i * 3600000),
+          read: false,
+        }));
+      setNotifications(recentConfirmations);
+
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  fetchData();
-}, []);
+  useEffect(() => {
+    fetchData();
+
+    // Rafraîchir les données toutes les 30 secondes pour simuler le temps réel
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const generateTrendData = (allGuests: Guest[]) => {
+    const days = 7;
+    const data = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('fr-FR', { weekday: 'short' });
+      
+      // Simuler des données basées sur le nombre d'invités
+      const baseValue = Math.floor(allGuests.length / 7);
+      data.push({
+        date: dateStr,
+        confirmations: Math.max(0, baseValue + Math.floor(Math.random() * 5) - 2),
+        declines: Math.max(0, Math.floor(baseValue / 3) + Math.floor(Math.random() * 2)),
+      });
+    }
+    return data;
+  };
 
   const getGuestCount = (eventId: string) => {
     return guests.filter(g => g.eventId === eventId).length;
   };
+
+  const handleNotificationClick = (notif: Notification) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === notif.id ? { ...n, read: true } : n)
+    );
+    toast({
+      title: 'Notification',
+      description: notif.message,
+    });
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   if (loading) {
     return (
@@ -80,10 +209,77 @@ const Index = () => {
             </p>
           </div>
 
-          <Button onClick={() => navigate('/events/create')} className="shadow-gold">
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvel événement
-          </Button>
+          <div className="flex gap-2">
+            {/* Notifications */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              {showNotifications && (
+                <Card className="absolute right-0 top-12 w-80 z-50 shadow-lg">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      Notifications récentes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-0 pb-3">
+                    {notifications.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-2">
+                        Aucune notification
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {notifications.map(notif => (
+                          <button
+                            key={notif.id}
+                            onClick={() => handleNotificationClick(notif)}
+                            className={`w-full text-left p-2 rounded-lg transition-colors ${
+                              notif.read ? 'bg-muted/50' : 'bg-primary/10 hover:bg-primary/20'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
+                              <div>
+                                <p className="text-sm">{notif.message}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {notif.timestamp.toLocaleTimeString('fr-FR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </p>
+                              </div>
+                              {!notif.read && (
+                                <Badge variant="secondary" className="ml-auto text-xs">
+                                  Nouveau
+                                </Badge>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <Button onClick={() => navigate('/events/create')} className="shadow-gold">
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvel événement
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -113,6 +309,112 @@ const Index = () => {
           />
         </div>
 
+        {/* Charts */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Status Pie Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Répartition des réponses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData.statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {chartData.statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-4 mt-2">
+                {chartData.statusData.map((item) => (
+                  <div key={item.name} className="flex items-center gap-1">
+                    <div
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {item.name} ({item.value})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Trend Area Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Tendance (7 jours)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData.trendData}>
+                    <defs>
+                      <linearGradient id="colorConfirmations" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Area
+                      type="monotone"
+                      dataKey="confirmations"
+                      stroke="hsl(142, 76%, 36%)"
+                      fillOpacity={1}
+                      fill="url(#colorConfirmations)"
+                      name="Confirmations"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Event Stats Bar Chart */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Par événement
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.eventStats} layout="vertical">
+                    <XAxis type="number" tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 10 }} />
+                    <Tooltip />
+                    <Bar dataKey="guests" fill="hsl(38, 92%, 50%)" name="Total" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="confirmed" fill="hsl(142, 76%, 36%)" name="Confirmés" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Main content */}
         <div className="grid gap-8 lg:grid-cols-3">
 
@@ -138,9 +440,9 @@ const Index = () => {
               ) : (
                 events.slice(0, 4).map(event => (
                   <EventCard
-                    key={event._id}
+                    key={event._id || event.id}
                     event={event}
-                    guestCount={getGuestCount(event._id)}
+                    guestCount={getGuestCount(event._id || event.id)}
                   />
                 ))
               )}

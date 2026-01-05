@@ -2,6 +2,8 @@
 export type GuestStatus = 'invited' | 'confirmed' | 'declined' | 'pending';
 export type DistributionMethod = 'whatsapp' | 'sms' | 'email';
 export type SubscriptionType = 'free' | 'premium' | 'enterprise';
+export type UserRole = 'user' | 'admin' | 'organizer';
+export type PermissionAction = 'create' | 'read' | 'update' | 'delete';
 
 // ===================== PERMISSIONS =====================
 export type ModuleName =

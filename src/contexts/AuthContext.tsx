@@ -28,17 +28,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initializeUser = async () => {
       const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('eventflow_user');
+      
       if (!token) {
         setIsLoading(false);
         return;
       }
 
+      // Restaurer l'utilisateur depuis localStorage immédiatement
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          // JSON invalide, on continue avec l'appel API
+        }
+      }
+
       try {
         const res = await authApi.me();
-        if (res.success) setUser(res.data);
-        else logout();
+        if (res.success) {
+          setUser(res.data);
+          localStorage.setItem('eventflow_user', JSON.stringify(res.data));
+        } else {
+          logout();
+        }
       } catch {
-        logout();
+        // Si l'API échoue mais qu'on a un user local, on le garde
+        if (!savedUser) {
+          logout();
+        }
       } finally {
         setIsLoading(false);
       }

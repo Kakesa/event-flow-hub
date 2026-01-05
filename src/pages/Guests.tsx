@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, Download, Filter, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Download, Filter, FileSpreadsheet, Upload } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import GuestTable from '@/components/guests/GuestTable';
 import QRCodeModal from '@/components/guests/QRCodeModal';
+import GuestImportModal from '@/components/guests/GuestImportModal';
 import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ const Guests = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [eventFilter, setEventFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [newGuest, setNewGuest] = useState({ name: '', email: '', phone: '', eventId: '' });
   const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -137,6 +139,11 @@ const Guests = () => {
     toast({ title: 'Succès', description: 'Export Excel téléchargé' });
   };
 
+  const handleImportComplete = (importedGuests: Guest[]) => {
+    setGuests(prev => [...importedGuests, ...prev]);
+    toast({ title: 'Succès', description: `${importedGuests.length} invités importés` });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -167,6 +174,14 @@ const Guests = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Importer
+            </Button>
             
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
@@ -303,6 +318,14 @@ const Guests = () => {
           setIsQRModalOpen(false);
           setSelectedGuestForQR(null);
         }}
+      />
+
+      {/* Import Modal */}
+      <GuestImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        eventId={eventFilter !== 'all' ? eventFilter : events[0]?.id || ''}
+        onImportComplete={handleImportComplete}
       />
     </DashboardLayout>
   );
