@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Send, Mail, MessageSquare, Smartphone, CheckCircle, Palette } from 'lucide-react';
+import { Send, Mail, MessageSquare, Smartphone, CheckCircle, Palette, PenLine } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -19,6 +19,7 @@ import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
 import type { Guest, Event, DistributionMethod } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import EmailComposer from '@/components/invitations/EmailComposer';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
@@ -37,6 +38,7 @@ const Invitations = () => {
   const [selectedMethod, setSelectedMethod] = useState<DistributionMethod>('email');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showEmailComposer, setShowEmailComposer] = useState(false);
 
   // 🔹 Charger les événements
   useEffect(() => {
@@ -228,18 +230,42 @@ const Invitations = () => {
                   </div>
                 ))}
 
+                {/* Bouton Composer Email (si méthode email) */}
+                {selectedMethod === 'email' && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={selectedGuests.length === 0}
+                    onClick={() => setShowEmailComposer(true)}
+                  >
+                    <PenLine className="h-4 w-4 mr-2" />
+                    Composer l'email
+                  </Button>
+                )}
+
                 <Button
                   className="w-full"
                   disabled={sending || selectedGuests.length === 0}
                   onClick={handleSendInvitations}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Envoyer ({selectedGuests.length})
+                  Envoi rapide ({selectedGuests.length})
                 </Button>
               </CardContent>
             </Card>
           </div>
         )}
+
+        {/* Email Composer Modal */}
+        <EmailComposer
+          open={showEmailComposer}
+          onClose={() => setShowEmailComposer(false)}
+          selectedGuests={guests.filter(g => selectedGuests.includes(g.id))}
+          event={events.find(e => e.id === selectedEvent) || null}
+          onSuccess={() => {
+            setSelectedGuests([]);
+          }}
+        />
       </div>
     </DashboardLayout>
   );

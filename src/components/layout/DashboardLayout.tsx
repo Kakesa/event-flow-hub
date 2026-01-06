@@ -15,6 +15,7 @@ import {
   X,
   LogOut,
   Plus,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Scanner QR', href: '/scanner', icon: QrCode },
   { name: 'Utilisateurs', href: '/users', icon: Users },
+  { name: 'Administration', href: '/admin', icon: Shield, adminOnly: true },
 ];
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -105,25 +107,33 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Navigation */}
           <ScrollArea className="flex-1 px-4">
             <nav className="space-y-1">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200',
-                      isActive
-                        ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-gold'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                    )}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.name}
-                  </Link>
-                );
-              })}
+              {navigation
+                .filter((item) => {
+                  // Masquer les éléments admin si l'utilisateur n'est pas admin
+                  if ('adminOnly' in item && item.adminOnly) {
+                    return user?.role === 'admin' || user?.role === 'superadmin';
+                  }
+                  return true;
+                })
+                .map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200',
+                        isActive
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-gold'
+                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      )}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
             </nav>
           </ScrollArea>
 
