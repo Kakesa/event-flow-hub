@@ -202,6 +202,99 @@ export const invitationsApi = {
   },
 };
 
+// ==================== EMAILS ====================
+export interface EmailTemplate {
+  subject: string;
+  body: string;
+  templateId?: string;
+}
+
+export interface EmailRequest {
+  to: string | string[];
+  subject: string;
+  body: string;
+  html?: string;
+  templateId?: string;
+  templateData?: Record<string, any>;
+}
+
+export interface EmailResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+}
+
+export const emailsApi = {
+  // Envoyer un email simple
+  send: async (data: EmailRequest): Promise<ApiResponse<EmailResult>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/send`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Envoyer une invitation par email
+  sendInvitation: async (guestId: string, eventId: string, customMessage?: string): Promise<ApiResponse<EmailResult>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/invitation`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ guestId, eventId, customMessage }),
+    });
+    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Envoyer des invitations en masse
+  sendBulkInvitations: async (guestIds: string[], eventId: string, customMessage?: string): Promise<ApiResponse<{ sent: number; failed: number; results: EmailResult[] }>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/invitation/bulk`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ guestIds, eventId, customMessage }),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Envoyer une confirmation de RSVP
+  sendConfirmation: async (guestId: string, eventId: string): Promise<ApiResponse<EmailResult>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/confirmation`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ guestId, eventId }),
+    });
+    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Envoyer un rappel
+  sendReminder: async (guestIds: string[], eventId: string): Promise<ApiResponse<{ sent: number; failed: number }>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/reminder`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ guestIds, eventId }),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Récupérer les templates d'emails
+  getTemplates: async (): Promise<ApiResponse<EmailTemplate[]>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/templates`, { headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: EmailTemplate[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Tester l'envoi d'email
+  testConnection: async (): Promise<ApiResponse<{ connected: boolean; provider: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/test`, { headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+};
+
 // ==================== LIVRE D'OR ====================
 export const guestbookApi = {
   getByEvent: async (eventId: string): Promise<ApiResponse<GuestbookMessage[]>> => {
