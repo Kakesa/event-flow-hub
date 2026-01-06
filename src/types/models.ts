@@ -1,8 +1,8 @@
 // ===================== ENUMS =====================
 export type GuestStatus = 'invited' | 'confirmed' | 'declined' | 'pending';
 export type DistributionMethod = 'whatsapp' | 'sms' | 'email';
-export type SubscriptionType = 'free' | 'premium' | 'enterprise';
-export type UserRole = 'user' | 'admin' | 'organizer';
+export type SubscriptionType = 'free' | 'basic' | 'premium' | 'enterprise';
+export type UserRole = 'user' | 'admin' | 'organizer' | 'superadmin';
 export type PermissionAction = 'create' | 'read' | 'update' | 'delete';
 
 // ===================== PERMISSIONS =====================
@@ -26,10 +26,12 @@ export interface ModulePermission {
 // ===================== USER =====================
 export interface User {
   _id: string;
-  name: string; // cohérent backend
+  id?: string; // alias pour compatibilité frontend
+  name: string;
   email: string;
   phone?: string;
-  role?: 'user' | 'admin' | 'organizer'; // <-- ajout rôle organizer
+  role?: UserRole;
+  isActive?: boolean;
 
   subscriptionType?: SubscriptionType;
   permissions?: ModulePermission[];
@@ -38,15 +40,21 @@ export interface User {
 }
 
 // ===================== EVENT =====================
+export interface Organizer {
+  name: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface Event {
-  id: string;          // 👈 utilisé par le frontend
-  _id?: string;        // 👈 optionnel si jamais reçu
+  id: string;
+  _id?: string;
   userId: string;
 
   title: string;
-  slug: string; // ✅ AJOUT (cohérent backend)
+  slug: string;
 
-  type: string; // wedding, birthday, corporate...
+  type: string;
   description?: string;
 
   date: string;
@@ -57,6 +65,8 @@ export interface Event {
 
   coverImage?: string;
   theme?: string;
+  
+  organizer?: Organizer;
 
   createdAt?: string;
   updatedAt?: string;
