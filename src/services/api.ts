@@ -224,6 +224,37 @@ export interface EmailResult {
   error?: string;
 }
 
+export interface EmailLog {
+  id: string;
+  eventId?: string;
+  guestId?: string;
+  recipientEmail: string;
+  recipientName?: string;
+  subject: string;
+  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  sentAt?: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  clickedAt?: string;
+  clickCount?: number;
+  errorMessage?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface EmailAnalytics {
+  totalSent: number;
+  totalDelivered: number;
+  totalOpened: number;
+  totalClicked: number;
+  totalBounced: number;
+  totalFailed: number;
+  deliveryRate: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+  lastUpdated: string;
+}
+
 export const emailsApi = {
   // Envoyer un email simple
   send: async (data: EmailRequest): Promise<ApiResponse<EmailResult>> => {
@@ -291,6 +322,46 @@ export const emailsApi = {
   testConnection: async (): Promise<ApiResponse<{ connected: boolean; provider: string }>> => {
     const res = await fetch(`${API_BASE_URL}/emails/test`, { headers: getHeaders() });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+};
+
+// ==================== EMAIL HISTORY ====================
+export const emailHistoryApi = {
+  // Récupérer l'historique des emails
+  getLogs: async (eventId?: string): Promise<ApiResponse<EmailLog[]>> => {
+    const url = eventId 
+      ? `${API_BASE_URL}/emails/history?eventId=${eventId}`
+      : `${API_BASE_URL}/emails/history`;
+    const res = await fetch(url, { headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: EmailLog[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Récupérer les analytics des emails
+  getAnalytics: async (eventId?: string): Promise<ApiResponse<EmailAnalytics>> => {
+    const url = eventId 
+      ? `${API_BASE_URL}/emails/analytics?eventId=${eventId}`
+      : `${API_BASE_URL}/emails/analytics`;
+    const res = await fetch(url, { headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: EmailAnalytics }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Récupérer le détail d'un email
+  getById: async (id: string): Promise<ApiResponse<EmailLog>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/history/${id}`, { headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: EmailLog }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Renvoyer un email
+  resend: async (id: string): Promise<ApiResponse<EmailResult>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/history/${id}/resend`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 };
