@@ -35,6 +35,7 @@ const navigation = [
   { name: 'Scanner QR', href: '/scanner', icon: QrCode },
   { name: 'Utilisateurs', href: '/users', icon: Users },
   { name: 'Administration', href: '/admin', icon: Shield, adminOnly: true },
+  { name: 'Super Admin', href: '/superadmin', icon: Shield, superAdminOnly: true },
 ];
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -109,6 +110,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <nav className="space-y-1">
               {navigation
                 .filter((item) => {
+                  // Masquer Super Admin si l'utilisateur n'est pas superadmin
+                  if ('superAdminOnly' in item && item.superAdminOnly) {
+                    return user?.role === 'superadmin';
+                  }
                   // Masquer les éléments admin si l'utilisateur n'est pas admin
                   if ('adminOnly' in item && item.adminOnly) {
                     return user?.role === 'admin' || user?.role === 'superadmin';
