@@ -4,7 +4,7 @@ import {
   UserCheck, UserX, DollarSign, Activity, Shield,
   Eye, Mail, Send, Clock, AlertTriangle, CheckCircle2,
   Globe, Server, Database, Zap, RefreshCw, Search,
-  MoreVertical, Ban, Edit, Trash2, ExternalLink
+  MoreVertical, Ban, Edit, Trash2, ExternalLink, FileText
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -42,13 +42,16 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 import { usersApi, analyticsApi, eventsApi, emailHistoryApi } from '@/services/api';
-import type { User, Event } from '@/types/models';
+import type { User, Event, SubscriptionType } from '@/types/models';
 import type { EmailLog, EmailAnalytics } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import AuditLogsPanel from '@/components/superadmin/AuditLogsPanel';
+import UserImpersonation from '@/components/superadmin/UserImpersonation';
+import SubscriptionManager from '@/components/superadmin/SubscriptionManager';
 
 interface PlatformStats {
   totalUsers: number;
@@ -390,22 +393,34 @@ const SuperAdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="activity" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="activity">
               <Activity className="h-4 w-4 mr-2" />
-              Activité en temps réel
+              Activité
+            </TabsTrigger>
+            <TabsTrigger value="audit">
+              <FileText className="h-4 w-4 mr-2" />
+              Logs d'audit
+            </TabsTrigger>
+            <TabsTrigger value="impersonation">
+              <Eye className="h-4 w-4 mr-2" />
+              Usurpation
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Abonnements
             </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="h-4 w-4 mr-2" />
-              Tous les utilisateurs
+              Utilisateurs
             </TabsTrigger>
             <TabsTrigger value="events">
               <Calendar className="h-4 w-4 mr-2" />
-              Tous les événements
+              Événements
             </TabsTrigger>
             <TabsTrigger value="emails">
               <Mail className="h-4 w-4 mr-2" />
-              Emails envoyés
+              Emails
             </TabsTrigger>
             <TabsTrigger value="analytics">
               <TrendingUp className="h-4 w-4 mr-2" />
@@ -495,6 +510,27 @@ const SuperAdminDashboard = () => {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          {/* Audit Logs Tab */}
+          <TabsContent value="audit">
+            <AuditLogsPanel />
+          </TabsContent>
+
+          {/* Impersonation Tab */}
+          <TabsContent value="impersonation">
+            <UserImpersonation users={users} />
+          </TabsContent>
+
+          {/* Subscriptions Tab */}
+          <TabsContent value="subscriptions">
+            <SubscriptionManager 
+              users={users} 
+              onUpdateSubscription={async (userId, newPlan) => {
+                await usersApi.update(userId, { subscriptionType: newPlan });
+                fetchAllData();
+              }}
+            />
           </TabsContent>
 
           {/* Users Tab */}
