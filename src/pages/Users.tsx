@@ -285,6 +285,7 @@ const Users = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="superadmin">Super Admin</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                     <SelectItem value="user">Utilisateur</SelectItem>
                   </SelectContent>
