@@ -15,6 +15,8 @@ import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle
 import type { Event, Guest, ApiResponse } from "@/types/models";
 import { rsvpApi, eventsApi } from "@/services/api";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const drinkOptions = [
   { value: "champagne", label: "Champagne" },
   { value: "wine", label: "Vin rouge/blanc" },
