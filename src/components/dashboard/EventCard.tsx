@@ -61,11 +61,19 @@ const EventCard = ({ event, guestCount = 0, onDelete, onOpen, canEdit = true, ca
       <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg animate-slide-up">
         <div className="relative h-48 overflow-hidden">
           <img
-            src={event.coverImage ? `${API_BASE_URL}${event.coverImage}` : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'}
+            src={event.coverImage 
+              ? (event.coverImage.startsWith('http') 
+                  ? event.coverImage 
+                  : `${API_BASE_URL}${event.coverImage}`)
+              : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
+            }
             alt={event.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
           {/* Dropdown Menu */}
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
