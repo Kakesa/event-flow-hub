@@ -1,68 +1,104 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Sparkles, Heart } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart } from "lucide-react";
 
-// Mock event data - À remplacer par appel API
-const MOCK_EVENT = {
-  id: '1',
-  title: 'Mariage de Sophie & Pierre',
-  description: 'Nous avons le plaisir de vous convier à notre mariage. Votre présence nous comblerait de bonheur.',
-  date: '2024-06-15',
-  startTime: '14:00',
-  endTime: '02:00',
-  location: 'Château de Versailles, 78000 Versailles',
-  coverImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800',
-  theme: 'elegant',
-};
+import type { Event, Guest, ApiResponse } from "@/types/models";
+import { rsvpApi, eventsApi } from "@/services/api";
 
 const drinkOptions = [
-  { value: 'champagne', label: 'Champagne' },
-  { value: 'wine', label: 'Vin rouge/blanc' },
-  { value: 'cocktail', label: 'Cocktails' },
-  { value: 'beer', label: 'Bière' },
-  { value: 'soft', label: 'Boissons sans alcool' },
-  { value: 'none', label: 'Pas de préférence' },
+  { value: "champagne", label: "Champagne" },
+  { value: "wine", label: "Vin rouge/blanc" },
+  { value: "cocktail", label: "Cocktails" },
+  { value: "beer", label: "Bière" },
+  { value: "soft", label: "Boissons sans alcool" },
+  { value: "none", label: "Pas de préférence" },
 ];
 
 const RSVP = () => {
-  const { eventId, guestId } = useParams();
+  const { eventId, guestId } = useParams<{ eventId: string; guestId: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [guest, setGuest] = useState<Guest | null>(null);
+  const [event, setEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState({
-    status: '' as 'confirmed' | 'declined' | 'pending',
-    drinkPreference: '',
-    message: '',
-    dietaryRestrictions: '',
+    status: "pending" as "confirmed" | "declined" | "pending",
+    drinkPreference: "",
+    message: "",
+    dietaryRestrictions: "",
     plusOne: false,
-    plusOneName: '',
+    plusOneName: "",
   });
+
+  // Récupérer l'événement et le guest
+  useEffect(() => {
+    if (!eventId || !guestId) return;
+
+    const fetchData = async () => {
+      try {
+        const [eventRes, guestRes] = await Promise.all([
+          eventsApi.getById(eventId),
+          rsvpApi.getStatus(eventId, guestId),
+        ]);
+
+        if (eventRes.success) setEvent(eventRes.data);
+        if (guestRes.success) {
+          setGuest(guestRes.data);
+          setFormData({
+            status: guestRes.data.status === "invited" ? "pending" : guestRes.data.status,
+            drinkPreference: guestRes.data.drinkPreference || "",
+            message: "",
+            dietaryRestrictions: "",
+            plusOne: false,
+            plusOneName: "",
+          });
+        }
+      } catch (error) {
+        toast.error("Impossible de récupérer les informations.");
+        console.error(error);
+      }
+    };
+
+    fetchData();
+  }, [eventId, guestId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!guest) return;
+
     if (!formData.status) {
-      toast.error('Veuillez indiquer votre réponse');
+      toast.error("Veuillez indiquer votre réponse");
       return;
     }
-    
+
     setIsLoading(true);
-    
-    // Simulation d'appel API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsLoading(false);
-    setIsSubmitted(true);
-    toast.success('Votre réponse a été enregistrée!');
+
+    try {
+      const res: ApiResponse<Guest> = await rsvpApi.submit(guest.id, formData);
+      if (res.success) {
+        setGuest(res.data);
+        setIsSubmitted(true);
+        toast.success("Votre réponse a été enregistrée!");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Une erreur est survenue");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (!guest || !event) {
+    return <p className="text-center mt-20">Chargement des informations...</p>;
+  }
 
   if (isSubmitted) {
     return (
@@ -70,7 +106,7 @@ const RSVP = () => {
         <Card className="w-full max-w-md text-center border-border/50 shadow-2xl">
           <CardContent className="pt-12 pb-8">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              {formData.status === 'confirmed' ? (
+              {formData.status === "confirmed" ? (
                 <Heart className="w-10 h-10 text-primary" />
               ) : (
                 <Check className="w-10 h-10 text-primary" />
@@ -78,9 +114,9 @@ const RSVP = () => {
             </div>
             <h2 className="font-display text-2xl font-bold mb-2">Merci pour votre réponse!</h2>
             <p className="text-muted-foreground">
-              {formData.status === 'confirmed' 
-                ? 'Nous sommes ravis de vous compter parmi nous!'
-                : 'Nous comprenons et vous remercions d\'avoir pris le temps de répondre.'}
+              {formData.status === "confirmed"
+                ? "Nous sommes ravis de vous compter parmi nous!"
+                : "Nous comprenons et vous remercions d'avoir pris le temps de répondre."}
             </p>
           </CardContent>
         </Card>
@@ -93,26 +129,20 @@ const RSVP = () => {
       {/* Hero Section */}
       <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden">
         <img
-          src={MOCK_EVENT.coverImage}
-          alt={MOCK_EVENT.title}
+          src={event.coverImage}
+          alt={event.title}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
           <div className="max-w-2xl mx-auto text-center">
-  <div
-    className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto" // Ajout de mx-auto pour centrer
-  >
-    <img
-      src="/src/assets/black.png"
-      alt="logo"
-      className="h-full w-full object-cover" // Assurez-vous que l'image remplit le cercle
-    />
-  </div>
-  <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground mb-2">
-    {MOCK_EVENT.title}
-  </h1>
-</div>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto">
+              <img src="/src/assets/black.png" alt="logo" className="h-full w-full object-cover" />
+            </div>
+            <h1 className="font-display text-2xl sm:text-4xl font-bold text-foreground mb-2">
+              {event.title}
+            </h1>
+          </div>
         </div>
       </div>
 
@@ -121,37 +151,39 @@ const RSVP = () => {
         {/* Event Details Card */}
         <Card className="mb-6 border-border/50 shadow-lg">
           <CardContent className="pt-6">
-            <p className="text-muted-foreground text-center mb-6">{MOCK_EVENT.description}</p>
-            
+            <p className="text-muted-foreground text-center mb-6">{event.description}</p>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Date</p>
                   <p className="text-sm font-medium">
-                    {new Date(MOCK_EVENT.date).toLocaleDateString('fr-FR', { 
-                      weekday: 'long', 
-                      day: 'numeric', 
-                      month: 'long', 
-                      year: 'numeric' 
+                    {new Date(event.date).toLocaleDateString("fr-FR", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
                     })}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <Clock className="w-5 h-5 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Horaire</p>
-                  <p className="text-sm font-medium">{MOCK_EVENT.startTime} - {MOCK_EVENT.endTime}</p>
+                  <p className="text-sm font-medium">
+                    {event.startTime || "—"} - {event.endTime || "—"}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Lieu</p>
-                  <p className="text-sm font-medium line-clamp-2">{MOCK_EVENT.location}</p>
+                  <p className="text-sm font-medium line-clamp-2">{event.location}</p>
                 </div>
               </div>
             </div>
@@ -171,51 +203,53 @@ const RSVP = () => {
                 <Label>Votre réponse *</Label>
                 <RadioGroup
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value as any })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, status: value as "confirmed" | "declined" | "pending" })
+                  }
                   className="grid grid-cols-1 sm:grid-cols-3 gap-3"
                 >
                   <Label
                     htmlFor="confirmed"
                     className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      formData.status === 'confirmed' 
-                        ? 'border-green-500 bg-green-500/10' 
-                        : 'border-border hover:border-green-500/50'
+                      formData.status === "confirmed"
+                        ? "border-green-500 bg-green-500/10"
+                        : "border-border hover:border-green-500/50"
                     }`}
                   >
                     <RadioGroupItem value="confirmed" id="confirmed" className="sr-only" />
-                    <Check className={`w-5 h-5 ${formData.status === 'confirmed' ? 'text-green-500' : 'text-muted-foreground'}`} />
+                    <Check className={`w-5 h-5 ${formData.status === "confirmed" ? "text-green-500" : "text-muted-foreground"}`} />
                     <span className="font-medium">Je serai présent</span>
                   </Label>
-                  
+
                   <Label
                     htmlFor="declined"
                     className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      formData.status === 'declined' 
-                        ? 'border-red-500 bg-red-500/10' 
-                        : 'border-border hover:border-red-500/50'
+                      formData.status === "declined"
+                        ? "border-red-500 bg-red-500/10"
+                        : "border-border hover:border-red-500/50"
                     }`}
                   >
                     <RadioGroupItem value="declined" id="declined" className="sr-only" />
-                    <X className={`w-5 h-5 ${formData.status === 'declined' ? 'text-red-500' : 'text-muted-foreground'}`} />
+                    <X className={`w-5 h-5 ${formData.status === "declined" ? "text-red-500" : "text-muted-foreground"}`} />
                     <span className="font-medium">Je décline</span>
                   </Label>
-                  
+
                   <Label
                     htmlFor="pending"
                     className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      formData.status === 'pending' 
-                        ? 'border-amber-500 bg-amber-500/10' 
-                        : 'border-border hover:border-amber-500/50'
+                      formData.status === "pending"
+                        ? "border-amber-500 bg-amber-500/10"
+                        : "border-border hover:border-amber-500/50"
                     }`}
                   >
                     <RadioGroupItem value="pending" id="pending" className="sr-only" />
-                    <HelpCircle className={`w-5 h-5 ${formData.status === 'pending' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                    <HelpCircle className={`w-5 h-5 ${formData.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`} />
                     <span className="font-medium">Incertain</span>
                   </Label>
                 </RadioGroup>
               </div>
 
-              {formData.status === 'confirmed' && (
+              {formData.status === "confirmed" && (
                 <>
                   {/* Drink Preference */}
                   <div className="space-y-2">
@@ -264,7 +298,7 @@ const RSVP = () => {
               </div>
 
               <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? 'Envoi en cours...' : 'Envoyer ma réponse'}
+                {isLoading ? "Envoi en cours..." : "Envoyer ma réponse"}
               </Button>
             </form>
           </CardContent>

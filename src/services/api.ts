@@ -8,14 +8,15 @@ import type {
   User,
   ApiResponse,
   ModulePermission,
-} from '@/types/models';
+} from "@/types/models";
 
 // ==================== CONFIG ====================
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const getHeaders = (isJson: boolean = true) => ({
-  ...(isJson ? { 'Content-Type': 'application/json' } : {}),
-  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+  ...(isJson ? { "Content-Type": "application/json" } : {}),
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
 });
 
 // ==================== RESPONSE HANDLER ====================
@@ -26,12 +27,12 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    data = { message: text || 'Erreur serveur' };
+    data = { message: text || "Erreur serveur" };
   }
 
   if (!response.ok) {
-    console.error('API ERROR:', response.status, data);
-    throw new Error(data.message || 'Une erreur est survenue');
+    console.error("API ERROR:", response.status, data);
+    throw new Error(data.message || "Une erreur est survenue");
   }
 
   return data;
@@ -53,7 +54,7 @@ export const authApi = {
     if (data.phone?.trim()) payload.phone = data.phone.trim();
 
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(payload),
     });
@@ -62,9 +63,12 @@ export const authApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
-  login: async (email: string, password: string): Promise<ApiResponse<{ token: string; user: User }>> => {
+  login: async (
+    email: string,
+    password: string,
+  ): Promise<ApiResponse<{ token: string; user: User }>> => {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
     });
@@ -74,7 +78,9 @@ export const authApi = {
   },
 
   me: async (): Promise<ApiResponse<User>> => {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
@@ -83,7 +89,9 @@ export const authApi = {
 // ==================== ÉVÉNEMENTS ====================
 export const eventsApi = {
   getAll: async (): Promise<ApiResponse<Event[]>> => {
-    const res = await fetch(`${API_BASE_URL}/events`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE_URL}/events`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
 
     // On garde l'id tel qu'il est dans la DB (pas besoin de le renommer)
@@ -92,14 +100,16 @@ export const eventsApi = {
   },
 
   getById: async (id: string): Promise<ApiResponse<Event>> => {
-    const res = await fetch(`${API_BASE_URL}/events/${id}`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE_URL}/events/${id}`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   create: async (data: FormData): Promise<ApiResponse<Event>> => {
     const res = await fetch(`${API_BASE_URL}/events`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(false),
       body: data,
     });
@@ -109,7 +119,7 @@ export const eventsApi = {
 
   update: async (id: string, data: FormData): Promise<ApiResponse<Event>> => {
     const res = await fetch(`${API_BASE_URL}/events/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: getHeaders(false),
       body: data,
     });
@@ -119,7 +129,7 @@ export const eventsApi = {
 
   delete: async (id: string): Promise<ApiResponse<void>> => {
     const res = await fetch(`${API_BASE_URL}/events/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data?: any }>(res);
@@ -127,63 +137,134 @@ export const eventsApi = {
   },
 };
 
-
 // ==================== INVITÉS ====================
 export const guestsApi = {
-  getAll: async (): Promise<ApiResponse<Guest[]>> => {
-    const res = await fetch(`${API_BASE_URL}/guests`, { headers: getHeaders() });
-    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    const guests: Guest[] = result.data?.map(g => ({ ...g, id: g._id })) || [];
-    return { success: result.success ?? true, data: guests };
-  },
+  // ❌ supprimé : getAll (route inexistante)
 
+  // ✅ GET /guests/event/:eventId
   getByEvent: async (eventId: string): Promise<ApiResponse<Guest[]>> => {
-    const res = await fetch(`${API_BASE_URL}/events/${eventId}/guests`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE_URL}/guests/event/${eventId}`, {
+      headers: getHeaders(),
+    });
+
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    const guests: Guest[] = result.data?.map(g => ({ ...g, id: g._id })) || [];
+    const guests: Guest[] =
+      result.data?.map((g) => ({ ...g, id: g._id })) || [];
+
     return { success: result.success ?? true, data: guests };
   },
 
-  create: async (eventId: string, data: Partial<Guest>): Promise<ApiResponse<Guest>> => {
-    const res = await fetch(`${API_BASE_URL}/events/${eventId}/guests`, {
-      method: 'POST',
+  // ✅ POST /guests
+  create: async (
+    _eventId: string,
+    data: Partial<Guest>,
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(`${API_BASE_URL}/guests`, {
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
+
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     const guest: Guest = { ...result.data, id: result.data._id };
+
     return { success: result.success ?? true, data: guest };
   },
 
-  update: async (id: string, data: Partial<Guest>): Promise<ApiResponse<Guest>> => {
+  // ✅ PATCH /guests/:id
+  update: async (
+    id: string,
+    data: Partial<Guest>,
+  ): Promise<ApiResponse<Guest>> => {
     const res = await fetch(`${API_BASE_URL}/guests/${id}`, {
-      method: 'PUT',
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
+
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     const guest: Guest = { ...result.data, id: result.data._id };
+
     return { success: result.success ?? true, data: guest };
   },
 
+  // ✅ DELETE /guests/:id
   delete: async (id: string): Promise<ApiResponse<void>> => {
     const res = await fetch(`${API_BASE_URL}/guests/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getHeaders(),
     });
-    const result = await handleResponse<{ success: boolean; data?: any }>(res);
+
+    const result = await handleResponse<{ success: boolean }>(res);
     return { success: result.success ?? true, data: undefined };
   },
 
-  updateStatus: async (id: string, status: Guest['status']): Promise<ApiResponse<Guest>> =>
+  // ✅ helper
+  updateStatus: async (id: string, status: Guest["status"]) =>
     guestsApi.update(id, { status }),
+
+  // 🌍 RSVP PUBLIC
+  updatePublic: async (
+    id: string,
+    data: Partial<Guest>,
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(`${API_BASE_URL}/guests/public/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    const guest: Guest = { ...result.data, id: result.data._id };
+
+    return { success: result.success ?? true, data: guest };
+  },
+};
+
+// ==================== RSVP PUBLIC ====================
+export const rsvpApi = {
+  // GET /api/public/rsvp/:eventId/:guestId
+  getStatus: async (
+    eventId: string,
+    guestId: string,
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(
+      `${API_BASE_URL}/public/rsvp/${eventId}/${guestId}`,
+      {
+        headers: getHeaders(), // pas besoin de token si public
+      },
+    );
+
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    const guest: Guest = { ...result.data, id: result.data._id };
+    return { success: result.success ?? true, data: guest };
+  },
+
+  // POST /api/public/rsvp/:guestId
+  submit: async (
+    guestId: string,
+    data: Partial<Guest> & { status: Guest["status"] },
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(`${API_BASE_URL}/public/rsvp/${guestId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }, // public
+      body: JSON.stringify(data),
+    });
+
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    const guest: Guest = { ...result.data, id: result.data._id };
+    return { success: result.success ?? true, data: guest };
+  },
 };
 
 // ==================== INVITATIONS ====================
 export const invitationsApi = {
-  send: async (guestId: string, method: Invitation['distributionMethod']): Promise<ApiResponse<Invitation>> => {
+  send: async (
+    guestId: string,
+    method: Invitation["distributionMethod"],
+  ): Promise<ApiResponse<Invitation>> => {
     const res = await fetch(`${API_BASE_URL}/invitations/send`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestId, method }),
     });
@@ -191,9 +272,12 @@ export const invitationsApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
-  sendBulk: async (guestIds: string[], method: Invitation['distributionMethod']): Promise<ApiResponse<Invitation[]>> => {
+  sendBulk: async (
+    guestIds: string[],
+    method: Invitation["distributionMethod"],
+  ): Promise<ApiResponse<Invitation[]>> => {
     const res = await fetch(`${API_BASE_URL}/invitations/send-bulk`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestIds, method }),
     });
@@ -231,7 +315,14 @@ export interface EmailLog {
   recipientEmail: string;
   recipientName?: string;
   subject: string;
-  status: 'pending' | 'sent' | 'delivered' | 'opened' | 'clicked' | 'bounced' | 'failed';
+  status:
+    | "pending"
+    | "sent"
+    | "delivered"
+    | "opened"
+    | "clicked"
+    | "bounced"
+    | "failed";
   sentAt?: string;
   deliveredAt?: string;
   openedAt?: string;
@@ -259,29 +350,45 @@ export const emailsApi = {
   // Envoyer un email simple
   send: async (data: EmailRequest): Promise<ApiResponse<EmailResult>> => {
     const res = await fetch(`${API_BASE_URL}/emails/send`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
-    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailResult;
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   // Envoyer une invitation par email
-  sendInvitation: async (guestId: string, eventId: string, customMessage?: string): Promise<ApiResponse<EmailResult>> => {
+  sendInvitation: async (
+    guestId: string,
+    eventId: string,
+    customMessage?: string,
+  ): Promise<ApiResponse<EmailResult>> => {
     const res = await fetch(`${API_BASE_URL}/emails/invitation`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestId, eventId, customMessage }),
     });
-    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailResult;
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   // Envoyer des invitations en masse
-  sendBulkInvitations: async (guestIds: string[], eventId: string, customMessage?: string): Promise<ApiResponse<{ sent: number; failed: number; results: EmailResult[] }>> => {
+  sendBulkInvitations: async (
+    guestIds: string[],
+    eventId: string,
+    customMessage?: string,
+  ): Promise<
+    ApiResponse<{ sent: number; failed: number; results: EmailResult[] }>
+  > => {
     const res = await fetch(`${API_BASE_URL}/emails/invitation/bulk`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestIds, eventId, customMessage }),
     });
@@ -290,20 +397,29 @@ export const emailsApi = {
   },
 
   // Envoyer une confirmation de RSVP
-  sendConfirmation: async (guestId: string, eventId: string): Promise<ApiResponse<EmailResult>> => {
+  sendConfirmation: async (
+    guestId: string,
+    eventId: string,
+  ): Promise<ApiResponse<EmailResult>> => {
     const res = await fetch(`${API_BASE_URL}/emails/confirmation`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestId, eventId }),
     });
-    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailResult;
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   // Envoyer un rappel
-  sendReminder: async (guestIds: string[], eventId: string): Promise<ApiResponse<{ sent: number; failed: number }>> => {
+  sendReminder: async (
+    guestIds: string[],
+    eventId: string,
+  ): Promise<ApiResponse<{ sent: number; failed: number }>> => {
     const res = await fetch(`${API_BASE_URL}/emails/reminder`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestIds, eventId }),
     });
@@ -313,14 +429,23 @@ export const emailsApi = {
 
   // Récupérer les templates d'emails
   getTemplates: async (): Promise<ApiResponse<EmailTemplate[]>> => {
-    const res = await fetch(`${API_BASE_URL}/emails/templates`, { headers: getHeaders() });
-    const result = await handleResponse<{ success: boolean; data: EmailTemplate[] }>(res);
+    const res = await fetch(`${API_BASE_URL}/emails/templates`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailTemplate[];
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   // Tester l'envoi d'email
-  testConnection: async (): Promise<ApiResponse<{ connected: boolean; provider: string }>> => {
-    const res = await fetch(`${API_BASE_URL}/emails/test`, { headers: getHeaders() });
+  testConnection: async (): Promise<
+    ApiResponse<{ connected: boolean; provider: string }>
+  > => {
+    const res = await fetch(`${API_BASE_URL}/emails/test`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
@@ -330,53 +455,75 @@ export const emailsApi = {
 export const emailHistoryApi = {
   // Récupérer l'historique des emails
   getLogs: async (eventId?: string): Promise<ApiResponse<EmailLog[]>> => {
-    const url = eventId 
+    const url = eventId
       ? `${API_BASE_URL}/emails/history?eventId=${eventId}`
       : `${API_BASE_URL}/emails/history`;
     const res = await fetch(url, { headers: getHeaders() });
-    const result = await handleResponse<{ success: boolean; data: EmailLog[] }>(res);
+    const result = await handleResponse<{ success: boolean; data: EmailLog[] }>(
+      res,
+    );
     return { success: result.success ?? true, data: result.data };
   },
 
   // Récupérer les analytics des emails
-  getAnalytics: async (eventId?: string): Promise<ApiResponse<EmailAnalytics>> => {
-    const url = eventId 
+  getAnalytics: async (
+    eventId?: string,
+  ): Promise<ApiResponse<EmailAnalytics>> => {
+    const url = eventId
       ? `${API_BASE_URL}/emails/analytics?eventId=${eventId}`
       : `${API_BASE_URL}/emails/analytics`;
     const res = await fetch(url, { headers: getHeaders() });
-    const result = await handleResponse<{ success: boolean; data: EmailAnalytics }>(res);
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailAnalytics;
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   // Récupérer le détail d'un email
   getById: async (id: string): Promise<ApiResponse<EmailLog>> => {
-    const res = await fetch(`${API_BASE_URL}/emails/history/${id}`, { headers: getHeaders() });
-    const result = await handleResponse<{ success: boolean; data: EmailLog }>(res);
+    const res = await fetch(`${API_BASE_URL}/emails/history/${id}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: EmailLog }>(
+      res,
+    );
     return { success: result.success ?? true, data: result.data };
   },
 
   // Renvoyer un email
   resend: async (id: string): Promise<ApiResponse<EmailResult>> => {
     const res = await fetch(`${API_BASE_URL}/emails/history/${id}/resend`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
     });
-    const result = await handleResponse<{ success: boolean; data: EmailResult }>(res);
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailResult;
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 };
 
 // ==================== LIVRE D'OR ====================
 export const guestbookApi = {
-  getByEvent: async (eventId: string): Promise<ApiResponse<GuestbookMessage[]>> => {
-    const res = await fetch(`${API_BASE_URL}/events/${eventId}/guestbook`, { headers: getHeaders() });
+  getByEvent: async (
+    eventId: string,
+  ): Promise<ApiResponse<GuestbookMessage[]>> => {
+    const res = await fetch(`${API_BASE_URL}/events/${eventId}/guestbook`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
-  addMessage: async (eventId: string, guestId: string, message: string): Promise<ApiResponse<GuestbookMessage>> => {
+  addMessage: async (
+    eventId: string,
+    guestId: string,
+    message: string,
+  ): Promise<ApiResponse<GuestbookMessage>> => {
     const res = await fetch(`${API_BASE_URL}/events/${eventId}/guestbook`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestId, message }),
     });
@@ -385,19 +532,32 @@ export const guestbookApi = {
   },
 
   download: async (eventId: string): Promise<Blob> =>
-    fetch(`${API_BASE_URL}/events/${eventId}/guestbook/download`, { headers: getHeaders() }).then(r => r.blob()),
+    fetch(`${API_BASE_URL}/events/${eventId}/guestbook/download`, {
+      headers: getHeaders(),
+    }).then((r) => r.blob()),
 };
 
 // ==================== ANALYTICS ====================
 export const analyticsApi = {
   getByEvent: async (eventId: string): Promise<ApiResponse<Analytics>> => {
-    const res = await fetch(`${API_BASE_URL}/events/${eventId}/analytics`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE_URL}/events/${eventId}/analytics`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
-  getOverview: async (): Promise<ApiResponse<{ totalEvents: number; totalGuests: number; totalConfirmed: number; upcomingEvents: number }>> => {
-    const res = await fetch(`${API_BASE_URL}/analytics/overview`, { headers: getHeaders() });
+  getOverview: async (): Promise<
+    ApiResponse<{
+      totalEvents: number;
+      totalGuests: number;
+      totalConfirmed: number;
+      upcomingEvents: number;
+    }>
+  > => {
+    const res = await fetch(`${API_BASE_URL}/analytics/overview`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
@@ -405,9 +565,11 @@ export const analyticsApi = {
 
 // ==================== QR CODES ====================
 export const qrCodeApi = {
-  generate: async (guestId: string): Promise<ApiResponse<{ qrCode: string; code: string }>> => {
+  generate: async (
+    guestId: string,
+  ): Promise<ApiResponse<{ qrCode: string; code: string }>> => {
     const res = await fetch(`${API_BASE_URL}/qrcodes/generate`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ guestId }),
     });
@@ -415,9 +577,11 @@ export const qrCodeApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
-  scan: async (code: string): Promise<ApiResponse<{ guest: Guest; isValid: boolean }>> => {
+  scan: async (
+    code: string,
+  ): Promise<ApiResponse<{ guest: Guest; isValid: boolean }>> => {
     const res = await fetch(`${API_BASE_URL}/qrcodes/scan`, {
-      method: 'POST',
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({ code }),
     });
@@ -429,30 +593,26 @@ export const qrCodeApi = {
 // ==================== UTILISATEURS (ROLES & PERMISSIONS) ====================
 export const usersApi = {
   getAll: async (): Promise<ApiResponse<User[]>> => {
-    const res = await fetch(`${API_BASE_URL}/auth/users`, { headers: getHeaders() });
+    const res = await fetch(`${API_BASE_URL}/auth/users`, {
+      headers: getHeaders(),
+    });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
   getById: async (id: string): Promise<ApiResponse<User>> => {
-    const res = await fetch(`${API_BASE_URL}/auth/users/${id}`, { headers: getHeaders() });
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return { success: result.success ?? true, data: result.data };
-  },
-
-  create: async (data: Partial<User> & { password: string }): Promise<ApiResponse<User>> => {
-    const res = await fetch(`${API_BASE_URL}/auth/users`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return { success: result.success ?? true, data: result.data };
-  },
-
-  update: async (id: string, data: Partial<User>): Promise<ApiResponse<User>> => {
     const res = await fetch(`${API_BASE_URL}/auth/users/${id}`, {
-      method: 'PUT',
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  create: async (
+    data: Partial<User> & { password: string },
+  ): Promise<ApiResponse<User>> => {
+    const res = await fetch(`${API_BASE_URL}/auth/users`, {
+      method: "POST",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
@@ -460,9 +620,25 @@ export const usersApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
-  updatePermissions: async (id: string, permissions: ModulePermission[]): Promise<ApiResponse<User>> => {
+  update: async (
+    id: string,
+    data: Partial<User>,
+  ): Promise<ApiResponse<User>> => {
+    const res = await fetch(`${API_BASE_URL}/auth/users/${id}`, {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  updatePermissions: async (
+    id: string,
+    permissions: ModulePermission[],
+  ): Promise<ApiResponse<User>> => {
     const res = await fetch(`${API_BASE_URL}/auth/users/${id}/permissions`, {
-      method: 'PUT',
+      method: "PUT",
       headers: getHeaders(),
       body: JSON.stringify({ permissions }),
     });
@@ -472,7 +648,7 @@ export const usersApi = {
 
   delete: async (id: string): Promise<ApiResponse<void>> => {
     const res = await fetch(`${API_BASE_URL}/auth/users/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data?: any }>(res);

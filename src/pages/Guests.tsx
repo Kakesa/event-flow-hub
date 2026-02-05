@@ -40,292 +40,256 @@ const Guests = () => {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [eventFilter, setEventFilter] = useState('all');
+  const [eventFilter, setEventFilter] = useState<string>('');
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [newGuest, setNewGuest] = useState({ name: '', email: '', phone: '', eventId: '' });
-  const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
-  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-  const { toast } = useToast();
-  const { canCreate, canDelete, canRead } = usePermissions();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [guestsRes, eventsRes] = await Promise.all([
-        guestsApi.getAll(),
-        eventsApi.getAll(),
-      ]);
-      setGuests(guestsRes.data);
-      setEvents(eventsRes.data);
-    } catch (error) {
-      console.error('Erreur lors du chargement:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredGuests = guests.filter(guest => {
-    const matchesSearch = guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      guest.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || guest.status === statusFilter;
-    const matchesEvent = eventFilter === 'all' || guest.eventId === eventFilter;
-    return matchesSearch && matchesStatus && matchesEvent;
+  const [newGuest, setNewGuest] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    eventId: '',
   });
 
+  const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+
+  const { toast } = useToast();
+  const { canDelete } = usePermissions();
+
+  /* =========================
+     INITIAL LOAD
+  ========================= */
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const eventsRes = await eventsApi.getAll();
+        setEvents(eventsRes.data);
+
+        if (eventsRes.data.length > 0) {
+          const firstEventId = eventsRes.data[0].id;
+          setEventFilter(firstEventId);
+
+          const guestsRes = await guestsApi.getByEvent(firstEventId);
+          setGuests(guestsRes.data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, []);
+
+  /* =========================
+     LOAD GUESTS BY EVENT
+  ========================= */
+  useEffect(() => {
+    if (!eventFilter) return;
+
+    const loadGuests = async () => {
+      try {
+        setLoading(true);
+        const res = await guestsApi.getByEvent(eventFilter);
+        setGuests(res.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGuests();
+  }, [eventFilter]);
+
+  /* =========================
+     FILTERS
+  ========================= */
+  const filteredGuests = guests.filter(guest => {
+    const matchesSearch =
+      guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      guest.email.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || guest.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  /* =========================
+     ACTIONS
+  ========================= */
   const handleAddGuest = async () => {
     if (!newGuest.name || !newGuest.email || !newGuest.eventId) {
-      toast({ title: 'Erreur', description: 'Veuillez remplir tous les champs obligatoires', variant: 'destructive' });
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez remplir tous les champs obligatoires',
+        variant: 'destructive',
+      });
       return;
     }
+
     try {
       await guestsApi.create(newGuest.eventId, newGuest);
+
       toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
       setIsAddDialogOpen(false);
       setNewGuest({ name: '', email: '', phone: '', eventId: '' });
-      fetchData();
-    } catch (error) {
-      toast({ title: 'Erreur', description: 'Impossible d\'ajouter l\'invité', variant: 'destructive' });
-    }
-  };
 
-  const handleSendInvitation = async (guestId: string, method: 'email' | 'whatsapp' | 'sms') => {
-    try {
-      await invitationsApi.send(guestId, method);
-      toast({ title: 'Succès', description: `Invitation envoyée par ${method}` });
-    } catch (error) {
-      toast({ title: 'Erreur', description: 'Impossible d\'envoyer l\'invitation', variant: 'destructive' });
-    }
-  };
-
-  const handleGenerateQR = (guestId: string) => {
-    const guest = guests.find(g => g.id === guestId);
-    if (guest) {
-      setSelectedGuestForQR(guest);
-      setIsQRModalOpen(true);
+      setEventFilter(newGuest.eventId);
+      const res = await guestsApi.getByEvent(newGuest.eventId);
+      setGuests(res.data);
+    } catch {
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'ajouter l'invité",
+        variant: 'destructive',
+      });
     }
   };
 
   const handleDelete = async (guestId: string) => {
     if (!canDelete('guests')) {
-      toast({ title: 'Erreur', description: 'Vous n\'avez pas la permission de supprimer', variant: 'destructive' });
+      toast({
+        title: 'Erreur',
+        description: "Vous n'avez pas la permission",
+        variant: 'destructive',
+      });
       return;
     }
+
     try {
       await guestsApi.delete(guestId);
+      setGuests(prev => prev.filter(g => g.id !== guestId));
       toast({ title: 'Succès', description: 'Invité supprimé' });
-      fetchData();
-    } catch (error) {
-      toast({ title: 'Erreur', description: 'Impossible de supprimer l\'invité', variant: 'destructive' });
+    } catch {
+      toast({
+        title: 'Erreur',
+        description: "Impossible de supprimer l'invité",
+        variant: 'destructive',
+      });
     }
   };
 
+  const handleSendInvitation = async (
+    guestId: string,
+    method: 'email' | 'whatsapp' | 'sms'
+  ) => {
+    try {
+      await invitationsApi.send(guestId, method);
+      toast({ title: 'Succès', description: `Invitation envoyée par ${method}` });
+    } catch {
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'envoyer l'invitation",
+        variant: 'destructive',
+      });
+    }
+  };
+
+  /* =========================
+     EXPORT
+  ========================= */
   const handleExportCSV = () => {
     const event = events.find(e => e.id === eventFilter);
-    const filename = eventFilter === 'all' ? 'tous-les-invites' : `invites-${event?.title || 'event'}`;
-    exportGuestsToCSV(filteredGuests, events, filename);
-    toast({ title: 'Succès', description: 'Export CSV téléchargé' });
+    exportGuestsToCSV(filteredGuests, events, `invites-${event?.title || 'event'}`);
   };
 
   const handleExportExcel = () => {
     const event = events.find(e => e.id === eventFilter);
-    const filename = eventFilter === 'all' ? 'tous-les-invites' : `invites-${event?.title || 'event'}`;
-    exportGuestsToExcel(filteredGuests, events, filename);
-    toast({ title: 'Succès', description: 'Export Excel téléchargé' });
-  };
-
-  const handleImportComplete = (importedGuests: Guest[]) => {
-    setGuests(prev => [...importedGuests, ...prev]);
-    toast({ title: 'Succès', description: `${importedGuests.length} invités importés` });
+    exportGuestsToExcel(filteredGuests, events, `invites-${event?.title || 'event'}`);
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Invités</h1>
-            <p className="text-muted-foreground mt-1">
-              {filteredGuests.length} invités au total
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporter
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportCSV}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportExcel}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export Excel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        {/* HEADER */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Invités</h1>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <PermissionButton module="guests" action="create">
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter
+              </PermissionButton>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Ajouter un invité</DialogTitle>
+                <DialogDescription>Informations de l'invité</DialogDescription>
+              </DialogHeader>
 
-            <Button
-              variant="outline"
-              onClick={() => setIsImportModalOpen(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Importer
-            </Button>
-            
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <PermissionButton module="guests" action="create" className="shadow-gold">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un invité
-                </PermissionButton>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Ajouter un invité</DialogTitle>
-                  <DialogDescription>
-                    Remplissez les informations de votre nouvel invité
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="event">Événement *</Label>
-                    <Select
-                      value={newGuest.eventId}
-                      onValueChange={(value) => setNewGuest({ ...newGuest, eventId: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un événement" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {events.map((event) => (
-                          <SelectItem key={event.id} value={event.id}>
-                            {event.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Nom complet *</Label>
-                    <Input
-                      id="name"
-                      value={newGuest.name}
-                      onChange={(e) => setNewGuest({ ...newGuest, name: e.target.value })}
-                      placeholder="Jean Dupont"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={newGuest.email}
-                      onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
-                      placeholder="jean@example.com"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="phone">Téléphone</Label>
-                    <Input
-                      id="phone"
-                      value={newGuest.phone}
-                      onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })}
-                      placeholder="+33 6 12 34 56 78"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Annuler
-                  </Button>
-                  <Button onClick={handleAddGuest}>Ajouter</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
+              <div className="space-y-3">
+                <Select
+                  value={newGuest.eventId}
+                  onValueChange={v => setNewGuest({ ...newGuest, eventId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Événement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {events.map(e => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Input
+                  placeholder="Nom"
+                  value={newGuest.name}
+                  onChange={e => setNewGuest({ ...newGuest, name: e.target.value })}
+                />
+                <Input
+                  placeholder="Email"
+                  value={newGuest.email}
+                  onChange={e => setNewGuest({ ...newGuest, email: e.target.value })}
+                />
+                <Input
+                  placeholder="Téléphone"
+                  value={newGuest.phone}
+                  onChange={e => setNewGuest({ ...newGuest, phone: e.target.value })}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button onClick={handleAddGuest}>Ajouter</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un invité..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={eventFilter} onValueChange={setEventFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Événement" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les événements</SelectItem>
-              {events.map((event) => (
-                <SelectItem key={event.id} value={event.id}>
-                  {event.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-40">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
-              <SelectItem value="invited">Invités</SelectItem>
-              <SelectItem value="confirmed">Confirmés</SelectItem>
-              <SelectItem value="declined">Déclinés</SelectItem>
-              <SelectItem value="pending">En attente</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Table */}
+        {/* TABLE */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
+          <div className="h-40 flex items-center justify-center">Chargement...</div>
         ) : (
           <GuestTable
             guests={filteredGuests}
-            onSendInvitation={handleSendInvitation}
             onDelete={handleDelete}
-            onGenerateQR={handleGenerateQR}
+            onSendInvitation={handleSendInvitation}
+            onGenerateQR={g =>
+              setSelectedGuestForQR(guests.find(x => x.id === g) || null)
+            }
           />
         )}
       </div>
 
-      {/* QR Code Modal */}
       <QRCodeModal
         guest={selectedGuestForQR}
         open={isQRModalOpen}
-        onClose={() => {
-          setIsQRModalOpen(false);
-          setSelectedGuestForQR(null);
-        }}
+        onClose={() => setIsQRModalOpen(false)}
       />
 
-      {/* Import Modal */}
       <GuestImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        eventId={eventFilter !== 'all' ? eventFilter : events[0]?.id || ''}
-        onImportComplete={handleImportComplete}
+        eventId={eventFilter}
+        onImportComplete={g => setGuests(prev => [...g, ...prev])}
       />
     </DashboardLayout>
   );
