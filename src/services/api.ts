@@ -290,6 +290,7 @@ export const rsvpApi = {
 
 // ==================== INVITATIONS ====================
 export const invitationsApi = {
+  // 🔹 Envoyer à un invité
   send: async (
     guestId: string,
     method: Invitation["distributionMethod"],
@@ -303,6 +304,7 @@ export const invitationsApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
+  // 🔹 Envoi bulk
   sendBulk: async (
     guestIds: string[],
     method: Invitation["distributionMethod"],
@@ -313,6 +315,54 @@ export const invitationsApi = {
       body: JSON.stringify({ guestIds, method }),
     });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // 🔹 Créer une invitation
+  create: async (
+    data: Partial<Invitation>,
+  ): Promise<ApiResponse<Invitation>> => {
+    const res = await fetch(`${API_BASE_URL}/invitations`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // 🔹 Récupérer toutes les invitations d’un événement
+  getByEvent: async (eventId: string): Promise<ApiResponse<Invitation[]>> => {
+    const res = await fetch(`${API_BASE_URL}/invitations/event/${eventId}`, {
+      method: "GET",
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // 🔹 Marquer comme envoyée
+  markSent: async (invitationId: string): Promise<ApiResponse<Invitation>> => {
+    const res = await fetch(
+      `${API_BASE_URL}/invitations/${invitationId}/sent`,
+      {
+        method: "PATCH",
+        headers: getHeaders(),
+      },
+    );
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // 🔹 Supprimer une invitation
+  delete: async (
+    invitationId: string,
+  ): Promise<ApiResponse<{ message: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/invitations/${invitationId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 };

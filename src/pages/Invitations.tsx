@@ -77,6 +77,17 @@ const Invitations = () => {
     fetchGuests();
   }, [selectedEvent, toast]);
 
+  // 🔹 Rafraîchir la liste des invités
+  const refreshGuests = async () => {
+    if (!selectedEvent) return;
+    try {
+      const res = await guestsApi.getByEvent(selectedEvent);
+      setGuests(res.data);
+    } catch {
+      // Erreur silencieuse pour le rafraîchissement
+    }
+  };
+
   const uninvitedGuests = guests.filter(
     g => !g.status || g.status === 'invited'
   );
@@ -97,6 +108,26 @@ const Invitations = () => {
     }
   };
 
+  // 🔹 Envoyer via WhatsApp
+  const handleWhatsAppSend = (guestsToSend: Guest[]) => {
+    const event = events.find(e => e.id === selectedEvent);
+    if (!event) return;
+
+    guestsToSend.forEach(guest => {
+      if (guest.phone) {
+        const rsvpLink = `${window.location.origin}/rsvp/${selectedEvent}/${guest.id}`;
+        const message = encodeURIComponent(
+          `Bonjour ${guest.name},\n\n` +
+          `Vous êtes invité(e) à ${event.title}\n` +
+          `📅 ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
+          `📍 ${event.location}\n\n` +
+          `Confirmez votre présence : ${rsvpLink}`
+        );
+        window.open(`https://wa.me/${guest.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+      }
+    });
+  };
+
   const handleSendInvitations = async () => {
     if (selectedGuests.length === 0) {
       toast({ title: 'Erreur', description: 'Sélectionnez au moins un invité', variant: 'destructive' });
@@ -105,14 +136,29 @@ const Invitations = () => {
 
     setSending(true);
     try {
-      await invitationsApi.sendBulk(selectedGuests, selectedMethod);
+      const selectedGuestObjects = guests.filter(g => selectedGuests.includes(g.id));
+
+      // Envoi selon la méthode choisie
+      if (selectedMethod === 'whatsapp') {
+        handleWhatsAppSend(selectedGuestObjects);
+        await invitationsApi.sendBulk(selectedGuests, 'whatsapp');
+      } else if (selectedMethod === 'sms') {
+        // Pour SMS, on utilise l'API backend
+        await invitationsApi.sendBulk(selectedGuests, 'sms');
+      } else {
+        // Email - utiliser l'API backend
+        await invitationsApi.sendBulk(selectedGuests, 'email');
+      }
+
       toast({
         title: 'Succès',
-        description: `${selectedGuests.length} invitation(s) envoyée(s)`,
+        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod === 'email' ? 'email' : selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}`,
       });
+      
       setSelectedGuests([]);
+      await refreshGuests(); // Rafraîchir la liste
     } catch {
-      toast({ title: 'Erreur', description: 'Échec de l’envoi', variant: 'destructive' });
+      toast({ title: 'Erreur', description: 'Échec de l\'envoi', variant: 'destructive' });
     } finally {
       setSending(false);
     }
