@@ -563,6 +563,38 @@ export const analyticsApi = {
   },
 };
 
+// ==================== ACTIVITÉS RÉCENTES ====================
+export interface Activity {
+  id: string;
+  type: 'confirmed' | 'declined' | 'pending' | 'invited' | 'message';
+  guestName: string;
+  guestId?: string;
+  eventId?: string;
+  eventTitle: string;
+  time: string;
+  createdAt?: string;
+}
+
+export const activitiesApi = {
+  // Récupérer les activités récentes
+  getRecent: async (limit: number = 10): Promise<ApiResponse<Activity[]>> => {
+    const res = await fetch(`${API_BASE_URL}/activities/recent?limit=${limit}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: Activity[] }>(res);
+    return { success: result.success ?? true, data: result.data || [] };
+  },
+
+  // Récupérer les activités par événement
+  getByEvent: async (eventId: string): Promise<ApiResponse<Activity[]>> => {
+    const res = await fetch(`${API_BASE_URL}/activities/event/${eventId}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: Activity[] }>(res);
+    return { success: result.success ?? true, data: result.data || [] };
+  },
+};
+
 // ==================== QR CODES ====================
 export const qrCodeApi = {
   generate: async (
