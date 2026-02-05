@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart } from "lucide-react";
+import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle } from "lucide-react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
 import { rsvpApi, eventsApi } from "@/services/api";
@@ -23,10 +24,67 @@ const drinkOptions = [
   { value: "none", label: "Pas de préférence" },
 ];
 
+// Skeleton de chargement
+const RSVPSkeleton = () => (
+  <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10">
+    <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden">
+      <Skeleton className="w-full h-full" />
+    </div>
+    <div className="max-w-2xl mx-auto px-4 py-8 -mt-8 relative z-10 space-y-6">
+      <Card className="border-border/50 shadow-lg">
+        <CardContent className="pt-6 space-y-4">
+          <Skeleton className="h-4 w-3/4 mx-auto" />
+          <Skeleton className="h-4 w-1/2 mx-auto" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+            <Skeleton className="h-20 rounded-lg" />
+            <Skeleton className="h-20 rounded-lg" />
+            <Skeleton className="h-20 rounded-lg" />
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-border/50 shadow-lg">
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+          </div>
+          <Skeleton className="h-24 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
+// Composant d'erreur
+const RSVPError = ({ message }: { message: string }) => (
+  <div className="min-h-screen bg-gradient-to-br from-background via-background to-destructive/10 flex items-center justify-center p-4">
+    <Card className="w-full max-w-md text-center border-destructive/30 shadow-2xl">
+      <CardContent className="pt-12 pb-8">
+        <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
+          <AlertCircle className="w-10 h-10 text-destructive" />
+        </div>
+        <h2 className="font-display text-2xl font-bold mb-2">Invitation introuvable</h2>
+        <p className="text-muted-foreground mb-6">{message}</p>
+        <p className="text-sm text-muted-foreground">
+          Vérifiez le lien d'invitation ou contactez l'organisateur.
+        </p>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 const RSVP = () => {
   const { eventId, guestId } = useParams<{ eventId: string; guestId: string }>();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [guest, setGuest] = useState<Guest | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState({
@@ -40,30 +98,48 @@ const RSVP = () => {
 
   // Récupérer l'événement et le guest
   useEffect(() => {
-    if (!eventId || !guestId) return;
+    if (!eventId || !guestId) {
+      setError("Lien d'invitation invalide");
+      setIsLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+
       try {
+        // Fetch event et guest en parallèle
         const [eventRes, guestRes] = await Promise.all([
-          eventsApi.getById(eventId),
-          rsvpApi.getStatus(eventId, guestId),
+          eventsApi.getById(eventId).catch(() => ({ success: false, data: null })),
+          rsvpApi.getStatus(eventId, guestId).catch(() => ({ success: false, data: null })),
         ]);
 
-        if (eventRes.success) setEvent(eventRes.data);
-        if (guestRes.success) {
-          setGuest(guestRes.data);
-          setFormData({
-            status: guestRes.data.status === "invited" ? "pending" : guestRes.data.status,
-            drinkPreference: guestRes.data.drinkPreference || "",
-            message: "",
-            dietaryRestrictions: "",
-            plusOne: false,
-            plusOneName: "",
-          });
+        if (!eventRes.success || !eventRes.data) {
+          setError("Événement introuvable ou lien expiré");
+          return;
         }
-      } catch (error) {
-        toast.error("Impossible de récupérer les informations.");
-        console.error(error);
+
+        if (!guestRes.success || !guestRes.data) {
+          setError("Invitation introuvable. Vérifiez votre lien.");
+          return;
+        }
+
+        setEvent(eventRes.data);
+        setGuest(guestRes.data);
+        setFormData({
+          status: guestRes.data.status === "invited" ? "pending" : guestRes.data.status,
+          drinkPreference: guestRes.data.drinkPreference || "",
+          message: "",
+          dietaryRestrictions: "",
+          plusOne: false,
+          plusOneName: "",
+        });
+      } catch (err: any) {
+        console.error("RSVP fetch error:", err);
+        setError(err.message || "Impossible de charger les informations");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -74,12 +150,12 @@ const RSVP = () => {
     e.preventDefault();
     if (!guest) return;
 
-    if (!formData.status) {
-      toast.error("Veuillez indiquer votre réponse");
+    if (!formData.status || formData.status === "pending") {
+      toast.error("Veuillez confirmer ou décliner l'invitation");
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const res: ApiResponse<Guest> = await rsvpApi.submit(guest.id, formData);
@@ -88,17 +164,18 @@ const RSVP = () => {
         setIsSubmitted(true);
         toast.success("Votre réponse a été enregistrée!");
       }
-    } catch (error: any) {
-      toast.error(error.message || "Une erreur est survenue");
-      console.error(error);
+    } catch (err: any) {
+      toast.error(err.message || "Une erreur est survenue");
+      console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (!guest || !event) {
-    return <p className="text-center mt-20">Chargement des informations...</p>;
-  }
+  // États de chargement et d'erreur
+  if (isLoading) return <RSVPSkeleton />;
+  if (error) return <RSVPError message={error} />;
+  if (!guest || !event) return <RSVPError message="Données introuvables" />;
 
   if (isSubmitted) {
     return (
@@ -297,8 +374,8 @@ const RSVP = () => {
                 />
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                {isLoading ? "Envoi en cours..." : "Envoyer ma réponse"}
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? "Envoi en cours..." : "Envoyer ma réponse"}
               </Button>
             </form>
           </CardContent>
