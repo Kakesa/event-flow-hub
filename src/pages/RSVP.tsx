@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail } from "lucide-react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
 import { rsvpApi, eventsApi } from "@/services/api";
@@ -100,7 +100,7 @@ const RSVP = () => {
 
   // Récupérer l'événement et le guest
   useEffect(() => {
-    if (!eventId || !guestId) {
+    if (!eventId) {
       setError("Lien d'invitation invalide");
       setIsLoading(false);
       return;
@@ -111,32 +111,39 @@ const RSVP = () => {
       setError(null);
 
       try {
-        // Fetch event et guest en parallèle
-        const [eventRes, guestRes] = await Promise.all([
-          eventsApi.getById(eventId).catch(() => ({ success: false, data: null })),
-          rsvpApi.getStatus(eventId, guestId).catch(() => ({ success: false, data: null })),
-        ]);
+        // Fetch event toujours
+        const eventRes = await eventsApi.getById(eventId).catch(() => ({ success: false, data: null }));
 
         if (!eventRes.success || !eventRes.data) {
           setError("Événement introuvable ou lien expiré");
-          return;
-        }
-
-        if (!guestRes.success || !guestRes.data) {
-          setError("Invitation introuvable. Vérifiez votre lien.");
+          setIsLoading(false);
           return;
         }
 
         setEvent(eventRes.data);
-        setGuest(guestRes.data);
-        setFormData({
-          status: guestRes.data.status === "invited" ? "pending" : guestRes.data.status,
-          drinkPreference: guestRes.data.drinkPreference || "",
-          message: "",
-          dietaryRestrictions: "",
-          plusOne: false,
-          plusOneName: "",
-        });
+
+        // Fetch guest seulement si guestId est présent
+        if (guestId) {
+          const guestRes = await rsvpApi.getStatus(eventId, guestId).catch(() => ({ success: false, data: null }));
+          
+          if (guestRes.success && guestRes.data) {
+            setGuest(guestRes.data);
+            setFormData({
+              status: guestRes.data.status === "invited" ? "pending" : guestRes.data.status,
+              drinkPreference: guestRes.data.drinkPreference || "",
+              message: "",
+              dietaryRestrictions: "",
+              plusOne: false,
+              plusOneName: "",
+            });
+          } else {
+             // Si guestId est invalide mais eventId valide, on peut soit erreur, soit juste afficher l'event
+             // Ici on choisit d'afficher l'erreur specifique au guest si l'ID était fourni
+             console.warn("Guest introuvable avec l'ID fourni");
+             // Optionnel : setError("Invitation introuvable pour ce code invité");
+          }
+        }
+
       } catch (err: any) {
         console.error("RSVP fetch error:", err);
         setError(err.message || "Impossible de charger les informations");
@@ -150,9 +157,9 @@ const RSVP = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guest) return;
+    if (!guest || !event) return;
 
-    if (!formData.status || formData.status === "pending") {
+    if (formData.status === "pending") {
       toast.error("Veuillez confirmer ou décliner l'invitation");
       return;
     }
@@ -160,24 +167,32 @@ const RSVP = () => {
     setIsSubmitting(true);
 
     try {
-      const res: ApiResponse<Guest> = await rsvpApi.submit(guest.id, formData);
+      const res = await rsvpApi.submit(guest.id, {
+        eventId: event.id,
+        status: formData.status, // confirmed | declined
+        drinkPreference: formData.drinkPreference,
+        dietaryRestrictions: formData.dietaryRestrictions,
+        message: formData.message,
+      });
+
       if (res.success) {
         setGuest(res.data);
         setIsSubmitted(true);
-        toast.success("Votre réponse a été enregistrée!");
+        toast.success("Votre réponse a été enregistrée !");
       }
     } catch (err: any) {
-      toast.error(err.message || "Une erreur est survenue");
       console.error(err);
+      toast.error(err.message || "Une erreur est survenue");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+
   // États de chargement et d'erreur
   if (isLoading) return <RSVPSkeleton />;
   if (error) return <RSVPError message={error} />;
-  if (!guest || !event) return <RSVPError message="Données introuvables" />;
+  if (!event) return <RSVPError message="Événement introuvable" />; // Si pas d'event, c'est une erreur fatale
 
   if (isSubmitted) {
     return (
@@ -237,7 +252,7 @@ const RSVP = () => {
       <div className="max-w-2xl mx-auto px-4 py-8 -mt-8 relative z-10">
         {/* Event Details Card */}
         <Card className="mb-6 border-border/50 shadow-lg">
-          <CardContent className="pt-6">
+            <CardContent className="pt-6">
             <p className="text-muted-foreground text-center mb-6">{event.description}</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -277,119 +292,138 @@ const RSVP = () => {
           </CardContent>
         </Card>
 
-        {/* RSVP Form */}
-        <Card className="border-border/50 shadow-lg">
-          <CardHeader>
-            <CardTitle className="font-display text-xl">Confirmer votre présence</CardTitle>
-            <CardDescription>Merci de nous indiquer votre réponse</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Response Selection */}
-              <div className="space-y-3">
-                <Label>Votre réponse *</Label>
-                <RadioGroup
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, status: value as "confirmed" | "declined" | "pending" })
-                  }
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-                >
-                  <Label
-                    htmlFor="confirmed"
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      formData.status === "confirmed"
-                        ? "border-green-500 bg-green-500/10"
-                        : "border-border hover:border-green-500/50"
-                    }`}
+        {/* RSVP Form OR Login Notice */}
+        {guest ? (
+          <Card className="border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="font-display text-xl">Confirmer votre présence</CardTitle>
+              <CardDescription>Bonjour {guest.name}, merci de nous indiquer votre réponse</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Response Selection */}
+                <div className="space-y-3">
+                  <Label>Votre réponse *</Label>
+                  <RadioGroup
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, status: value as "confirmed" | "declined" | "pending" })
+                    }
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-3"
                   >
-                    <RadioGroupItem value="confirmed" id="confirmed" className="sr-only" />
-                    <Check className={`w-5 h-5 ${formData.status === "confirmed" ? "text-green-500" : "text-muted-foreground"}`} />
-                    <span className="font-medium">Je serai présent</span>
-                  </Label>
-
-                  <Label
-                    htmlFor="declined"
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      formData.status === "declined"
-                        ? "border-red-500 bg-red-500/10"
-                        : "border-border hover:border-red-500/50"
-                    }`}
-                  >
-                    <RadioGroupItem value="declined" id="declined" className="sr-only" />
-                    <X className={`w-5 h-5 ${formData.status === "declined" ? "text-red-500" : "text-muted-foreground"}`} />
-                    <span className="font-medium">Je décline</span>
-                  </Label>
-
-                  <Label
-                    htmlFor="pending"
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      formData.status === "pending"
-                        ? "border-amber-500 bg-amber-500/10"
-                        : "border-border hover:border-amber-500/50"
-                    }`}
-                  >
-                    <RadioGroupItem value="pending" id="pending" className="sr-only" />
-                    <HelpCircle className={`w-5 h-5 ${formData.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`} />
-                    <span className="font-medium">Incertain</span>
-                  </Label>
-                </RadioGroup>
-              </div>
-
-              {formData.status === "confirmed" && (
-                <>
-                  {/* Drink Preference */}
-                  <div className="space-y-2">
-                    <Label htmlFor="drink">Préférence de boisson</Label>
-                    <Select
-                      value={formData.drinkPreference}
-                      onValueChange={(value) => setFormData({ ...formData, drinkPreference: value })}
+                    <Label
+                      htmlFor="confirmed"
+                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.status === "confirmed"
+                          ? "border-green-500 bg-green-500/10"
+                          : "border-border hover:border-green-500/50"
+                      }`}
                     >
-                      <SelectTrigger>
-                        <Wine className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <SelectValue placeholder="Sélectionnez votre préférence" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {drinkOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <RadioGroupItem value="confirmed" id="confirmed" className="sr-only" />
+                      <Check className={`w-5 h-5 ${formData.status === "confirmed" ? "text-green-500" : "text-muted-foreground"}`} />
+                      <span className="font-medium">Je serai présent</span>
+                    </Label>
 
-                  {/* Dietary Restrictions */}
-                  <div className="space-y-2">
-                    <Label htmlFor="dietary">Restrictions alimentaires</Label>
-                    <Input
-                      id="dietary"
-                      placeholder="Ex: végétarien, allergies..."
-                      value={formData.dietaryRestrictions}
-                      onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
-                    />
-                  </div>
-                </>
-              )}
+                    <Label
+                      htmlFor="declined"
+                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.status === "declined"
+                          ? "border-red-500 bg-red-500/10"
+                          : "border-border hover:border-red-500/50"
+                      }`}
+                    >
+                      <RadioGroupItem value="declined" id="declined" className="sr-only" />
+                      <X className={`w-5 h-5 ${formData.status === "declined" ? "text-red-500" : "text-muted-foreground"}`} />
+                      <span className="font-medium">Je décline</span>
+                    </Label>
 
-              {/* Message */}
-              <div className="space-y-2">
-                <Label htmlFor="message">Un petit mot (optionnel)</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Laissez un message pour les organisateurs..."
-                  rows={3}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                />
+                    <Label
+                      htmlFor="pending"
+                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.status === "pending"
+                          ? "border-amber-500 bg-amber-500/10"
+                          : "border-border hover:border-amber-500/50"
+                      }`}
+                    >
+                      <RadioGroupItem value="pending" id="pending" className="sr-only" />
+                      <HelpCircle className={`w-5 h-5 ${formData.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`} />
+                      <span className="font-medium">Incertain</span>
+                    </Label>
+                  </RadioGroup>
+                </div>
+
+                {formData.status === "confirmed" && (
+                  <>
+                    {/* Drink Preference */}
+                    <div className="space-y-2">
+                      <Label htmlFor="drink">Préférence de boisson</Label>
+                      <Select
+                        value={formData.drinkPreference}
+                        onValueChange={(value) => setFormData({ ...formData, drinkPreference: value })}
+                      >
+                        <SelectTrigger>
+                          <Wine className="w-4 h-4 mr-2 text-muted-foreground" />
+                          <SelectValue placeholder="Sélectionnez votre préférence" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {drinkOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Dietary Restrictions */}
+                    <div className="space-y-2">
+                      <Label htmlFor="dietary">Restrictions alimentaires</Label>
+                      <Input
+                        id="dietary"
+                        placeholder="Ex: végétarien, allergies..."
+                        value={formData.dietaryRestrictions}
+                        onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Message */}
+                <div className="space-y-2">
+                  <Label htmlFor="message">Un petit mot (optionnel)</Label>
+                  <Textarea
+                    id="message"
+                    placeholder="Laissez un message pour les organisateurs..."
+                    rows={3}
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                  {isSubmitting ? "Envoi en cours..." : "Envoyer ma réponse"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="font-display text-xl text-center">Invitation Personnelle Requise</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                <Mail className="w-8 h-8 text-muted-foreground" />
               </div>
-
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? "Envoi en cours..." : "Envoyer ma réponse"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              <p className="text-muted-foreground">
+                Cet événement est privé. Vous devriez avoir reçu un lien d'invitation personnel par email ou SMS.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Veuillez utiliser ce lien pour confirmer votre présence.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           Propulsé par HK Event

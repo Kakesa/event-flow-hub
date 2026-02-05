@@ -222,6 +222,9 @@ export const guestsApi = {
 };
 
 // ==================== RSVP PUBLIC ====================
+
+type RSVPStatus = "confirmed" | "declined";
+
 export const rsvpApi = {
   // GET /api/public/rsvp/:eventId/:guestId
   getStatus: async (
@@ -231,29 +234,57 @@ export const rsvpApi = {
     const res = await fetch(
       `${API_BASE_URL}/public/rsvp/${eventId}/${guestId}`,
       {
-        headers: getHeaders(), // pas besoin de token si public
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
     );
 
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
-    const guest: Guest = { ...result.data, id: result.data._id };
-    return { success: result.success ?? true, data: guest };
+    const result = await handleResponse<{
+      success: boolean;
+      data: Guest & { _id: string };
+    }>(res);
+
+    return {
+      success: result.success ?? true,
+      data: {
+        ...result.data,
+        id: result.data._id,
+      },
+    };
   },
 
   // POST /api/public/rsvp/:guestId
   submit: async (
     guestId: string,
-    data: Partial<Guest> & { status: Guest["status"] },
+    data: {
+      eventId: string;
+      status: RSVPStatus;
+      drinkPreference?: string;
+      dietaryRestrictions?: string;
+      message?: string;
+    },
   ): Promise<ApiResponse<Guest>> => {
     const res = await fetch(`${API_BASE_URL}/public/rsvp/${guestId}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" }, // public
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     });
 
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
-    const guest: Guest = { ...result.data, id: result.data._id };
-    return { success: result.success ?? true, data: guest };
+    const result = await handleResponse<{
+      success: boolean;
+      data: Guest & { _id: string };
+    }>(res);
+
+    return {
+      success: result.success ?? true,
+      data: {
+        ...result.data,
+        id: result.data._id,
+      },
+    };
   },
 };
 
@@ -566,7 +597,7 @@ export const analyticsApi = {
 // ==================== ACTIVITÉS RÉCENTES ====================
 export interface Activity {
   id: string;
-  type: 'confirmed' | 'declined' | 'pending' | 'invited' | 'message';
+  type: "confirmed" | "declined" | "pending" | "invited" | "message";
   guestName: string;
   guestId?: string;
   eventId?: string;
@@ -578,10 +609,15 @@ export interface Activity {
 export const activitiesApi = {
   // Récupérer les activités récentes
   getRecent: async (limit: number = 10): Promise<ApiResponse<Activity[]>> => {
-    const res = await fetch(`${API_BASE_URL}/activities/recent?limit=${limit}`, {
-      headers: getHeaders(),
-    });
-    const result = await handleResponse<{ success: boolean; data: Activity[] }>(res);
+    const res = await fetch(
+      `${API_BASE_URL}/activities/recent?limit=${limit}`,
+      {
+        headers: getHeaders(),
+      },
+    );
+    const result = await handleResponse<{ success: boolean; data: Activity[] }>(
+      res,
+    );
     return { success: result.success ?? true, data: result.data || [] };
   },
 
@@ -590,7 +626,9 @@ export const activitiesApi = {
     const res = await fetch(`${API_BASE_URL}/activities/event/${eventId}`, {
       headers: getHeaders(),
     });
-    const result = await handleResponse<{ success: boolean; data: Activity[] }>(res);
+    const result = await handleResponse<{ success: boolean; data: Activity[] }>(
+      res,
+    );
     return { success: result.success ?? true, data: result.data || [] };
   },
 };
