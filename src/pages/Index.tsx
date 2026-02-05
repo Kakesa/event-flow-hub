@@ -71,24 +71,20 @@ const Index = () => {
       const eventsRes = await eventsApi.getAll();
       setEvents(eventsRes.data);
 
-      // Récupérer tous les invités
+      // Récupérer tous les invités par événement
       let allGuests: Guest[] = [];
-      try {
-        const guestsRes = await guestsApi.getAll();
-        allGuests = guestsRes.data;
-        setGuests(allGuests);
-      } catch {
-        // Si l'API getAll n'existe pas, on récupère par événement
-        for (const event of eventsRes.data.slice(0, 5)) {
-          try {
-            const guestsRes = await guestsApi.getByEvent(event._id || event.id);
-            allGuests = [...allGuests, ...guestsRes.data];
-          } catch {
-            // Ignorer les erreurs individuelles
-          }
+      const guestPromises = eventsRes.data.slice(0, 10).map(async (event) => {
+        try {
+          const guestsRes = await guestsApi.getByEvent(event._id || event.id);
+          return guestsRes.data || [];
+        } catch {
+          return [];
         }
-        setGuests(allGuests);
-      }
+      });
+      
+      const guestResults = await Promise.all(guestPromises);
+      allGuests = guestResults.flat();
+      setGuests(allGuests);
 
       // Calculer les statistiques
       const confirmedCount = allGuests.filter(g => g.status === 'confirmed').length;
