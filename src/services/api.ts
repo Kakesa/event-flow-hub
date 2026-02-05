@@ -635,28 +635,50 @@ export const activitiesApi = {
 
 // ==================== QR CODES ====================
 export const qrCodeApi = {
+  /**
+   * Générer un QR code pour un invité
+   */
   generate: async (
     guestId: string,
-  ): Promise<ApiResponse<{ qrCode: string; code: string }>> => {
-    const res = await fetch(`${API_BASE_URL}/qrcodes/generate`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({ guestId }),
-    });
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
+  ): Promise<ApiResponse<{ qrCode: string }>> => {
+    const res = await fetch(
+      `${API_BASE_URL}/public/rsvp/${guestId}/generate-qr`,
+      {
+        method: "POST",
+        headers: getHeaders(),
+      },
+    );
+
+    const result = await handleResponse<{
+      success: boolean;
+      data: { qrCode: string };
+    }>(res);
     return { success: result.success ?? true, data: result.data };
   },
 
+  /**
+   * Scanner / valider un QR code
+   */
   scan: async (
     code: string,
   ): Promise<ApiResponse<{ guest: Guest; isValid: boolean }>> => {
-    const res = await fetch(`${API_BASE_URL}/qrcodes/scan`, {
-      method: "POST",
+    const res = await fetch(`${API_BASE_URL}/public/checkin/${code}`, {
+      method: "GET",
       headers: getHeaders(),
-      body: JSON.stringify({ code }),
     });
+
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return { success: result.success ?? true, data: result.data };
+
+    // isValid = true si succès et que le check-in a été effectué
+    const isValid = result.success === true;
+
+    return {
+      success: result.success ?? true,
+      data: {
+        guest: result.data?.guest,
+        isValid,
+      },
+    };
   },
 };
 

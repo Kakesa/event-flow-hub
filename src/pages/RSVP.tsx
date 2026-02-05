@@ -128,14 +128,20 @@ const RSVP = () => {
           
           if (guestRes.success && guestRes.data) {
             setGuest(guestRes.data);
+            const status = guestRes.data.status;
             setFormData({
-              status: guestRes.data.status === "invited" ? "pending" : guestRes.data.status,
+              status: status === "invited" ? "pending" : status,
               drinkPreference: guestRes.data.drinkPreference || "",
               message: "",
               dietaryRestrictions: "",
               plusOne: false,
               plusOneName: "",
             });
+
+            // Si déjà répondu, on empêche une 2e réponse en montrant l'écran de succès
+            if (status === "confirmed" || status === "declined") {
+              setIsSubmitted(true);
+            }
           } else {
              // Si guestId est invalide mais eventId valide, on peut soit erreur, soit juste afficher l'event
              // Ici on choisit d'afficher l'erreur specifique au guest si l'ID était fourni
@@ -207,10 +213,13 @@ const RSVP = () => {
               )}
             </div>
             <h2 className="font-display text-2xl font-bold mb-2">Merci pour votre réponse!</h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-6">
               {formData.status === "confirmed"
                 ? "Nous sommes ravis de vous compter parmi nous!"
                 : "Nous comprenons et vous remercions d'avoir pris le temps de répondre."}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Si vous souhaitez modifier votre réponse, veuillez contacter l'organisateur.
             </p>
           </CardContent>
         </Card>

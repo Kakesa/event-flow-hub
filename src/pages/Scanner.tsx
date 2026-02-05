@@ -18,7 +18,10 @@ const Scanner = () => {
   const [result, setResult] = useState<{ guest: Guest; isValid: boolean } | null>(null);
   const { toast } = useToast();
 
+  // ------------------- SCAN -------------------
   const handleScan = async (scannedCode?: string) => {
+    if (scanning) return; // bloque scans simultanés
+
     const codeToScan = scannedCode || code;
     if (!codeToScan.trim()) {
       toast({ title: 'Erreur', description: 'Veuillez entrer un code QR', variant: 'destructive' });
@@ -30,12 +33,13 @@ const Scanner = () => {
       const res = await qrCodeApi.scan(codeToScan);
       setResult(res.data);
       setCode(codeToScan);
+
       if (res.data.isValid) {
         toast({ title: 'Succès', description: 'QR Code valide - Accès autorisé' });
       } else {
         toast({ title: 'Erreur', description: 'QR Code invalide - Accès refusé', variant: 'destructive' });
       }
-    } catch (error) {
+    } catch {
       toast({ title: 'Erreur', description: 'Impossible de scanner le code', variant: 'destructive' });
     } finally {
       setScanning(false);
@@ -49,8 +53,10 @@ const Scanner = () => {
   const handleReset = () => {
     setCode('');
     setResult(null);
+    setScanning(false);
   };
 
+  // ------------------- RENDER -------------------
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
@@ -75,10 +81,12 @@ const Scanner = () => {
             </TabsTrigger>
           </TabsList>
 
+          {/* Camera */}
           <TabsContent value="camera" className="mt-4">
             <CameraScanner onScan={handleCameraScan} isScanning={scanning} />
           </TabsContent>
 
+          {/* Saisie manuelle */}
           <TabsContent value="manual" className="mt-4">
             <Card>
               <CardHeader>
@@ -145,21 +153,33 @@ const Scanner = () => {
                   </h3>
                   <p className="text-muted-foreground">
                     {result.isValid
-                      ? 'L\'invité peut entrer'
-                      : 'Ce code n\'est pas valide'}
+                      ? "L'invité peut entrer"
+                      : "Ce code n'est pas valide"}
                   </p>
                 </div>
               </div>
 
+              {/* Infos invité */}
               {result.isValid && (
                 <div className="space-y-4 p-4 rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Nom</p>
-                      <p className="font-medium">{result.guest.name}</p>
-                    </div>
-                  </div>
+                  {['name', 'drinkPreference', 'dietaryRestrictions'].map((key) => (
+                    result.guest[key as keyof Guest] && (
+                      <div key={key} className="flex items-center gap-3">
+                        {key === 'name' && <User className="h-5 w-5 text-primary" />}
+                        {key === 'drinkPreference' && <Wine className="h-5 w-5 text-primary" />}
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {key === 'name'
+                              ? 'Nom'
+                              : key === 'drinkPreference'
+                              ? 'Boisson préférée'
+                              : 'Restrictions alimentaires'}
+                          </p>
+                          <p className="font-medium">{result.guest[key as keyof Guest]}</p>
+                        </div>
+                      </div>
+                    )
+                  ))}
                   <div className="flex items-center gap-3">
                     <Badge
                       className={cn(
@@ -171,15 +191,6 @@ const Scanner = () => {
                       {result.guest.status === 'confirmed' ? 'Confirmé' : result.guest.status}
                     </Badge>
                   </div>
-                  {result.guest.drinkPreference && (
-                    <div className="flex items-center gap-3">
-                      <Wine className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Boisson préférée</p>
-                        <p className="font-medium">{result.guest.drinkPreference}</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
