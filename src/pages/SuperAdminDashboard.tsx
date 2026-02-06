@@ -130,19 +130,20 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       
-      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes, adminsRes] = await Promise.all([
+      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes] = await Promise.all([
         usersApi.getAll(),
         analyticsApi.getOverview(),
         eventsApi.getAllFromAllAdmins(),
         emailHistoryApi.getLogs(),
         emailHistoryApi.getAnalytics(),
         auditApi.getLogs({ limit: 20 }),
-        usersApi.getAdmins(),
       ]);
 
       const usersList = usersRes.data || [];
       setUsers(usersList);
-      setAdmins(adminsRes.data || []);
+      // Filtrer les admins depuis la liste des users
+      const adminsList = usersList.filter(u => u.role === 'admin' || u.role === 'superadmin');
+      setAdmins(adminsList);
       setEvents(eventsRes.data || []);
       setEmailLogs(emailLogsRes.data || []);
       setEmailAnalytics(emailAnalyticsRes.data || null);
