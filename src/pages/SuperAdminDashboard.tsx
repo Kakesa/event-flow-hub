@@ -708,7 +708,7 @@ const SuperAdminDashboard = () => {
                       <TableHead>Administrateur</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Statut</TableHead>
-                      <TableHead>Dernière Connexion</TableHead>
+                      <TableHead>Inscrit le</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
