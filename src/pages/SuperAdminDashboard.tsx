@@ -745,10 +745,18 @@ const SuperAdminDashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedUserForPermissions(admin);
+                                setPermissionsModalOpen(true);
+                              }}>
+                                <Key className="h-4 w-4 mr-2" />
+                                Permissions
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => navigate(`/admin-settings/users/${admin._id || admin.id}`)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Modifier
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleToggleUserStatus(admin._id || admin.id || '', admin.isActive !== false)}
                                 className={admin.isActive !== false ? 'text-destructive' : 'text-green-600'}
