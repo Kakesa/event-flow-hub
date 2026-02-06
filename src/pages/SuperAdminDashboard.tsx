@@ -178,7 +178,7 @@ const SuperAdminDashboard = () => {
       };
 
       setStats({
-        totalUsers: analyticsRes.data?.totalUsers || usersList.length,
+        totalUsers: usersList.length,
         activeUsers: usersList.filter(u => u.isActive !== false).length,
         totalEvents: analyticsRes.data?.totalEvents || eventsRes.data?.length || 0,
         totalGuests: analyticsRes.data?.totalGuests || 0,
