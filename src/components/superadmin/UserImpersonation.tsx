@@ -20,6 +20,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/components/ui/alert';
+import { usersApi } from '@/services/api';
 import {
   Table,
   TableBody,
@@ -106,7 +107,7 @@ const UserImpersonation = ({ users, className }: UserImpersonationProps) => {
     setShowConfirmDialog(true);
   };
 
-  const confirmImpersonation = () => {
+  const confirmImpersonation = async () => {
     if (!selectedUser || !impersonationReason.trim()) {
       toast({
         title: 'Erreur',
@@ -116,61 +117,63 @@ const UserImpersonation = ({ users, className }: UserImpersonationProps) => {
       return;
     }
 
-    // Créer une nouvelle session d'usurpation
-    const newSession: ImpersonationSession = {
-      id: `imp-${Date.now()}`,
-      superAdminId: currentUser?._id || currentUser?.id || '',
-      superAdminName: currentUser?.name || 'Super Admin',
-      targetUserId: selectedUser._id || selectedUser.id || '',
-      targetUserName: selectedUser.name,
-      targetUserEmail: selectedUser.email,
-      startedAt: new Date().toISOString(),
-      reason: impersonationReason,
-      actionsPerformed: 0,
-      status: 'active',
-    };
+    try {
+      const res = await usersApi.impersonate(selectedUser._id || selectedUser.id || '', impersonationReason);
+      
+      if (res.success && res.data) {
+        // Sauvegarder le token actuel pour pouvoir revenir
+        const currentToken = localStorage.getItem('token');
+        if (currentToken) {
+          localStorage.setItem('original_token', currentToken);
+        }
+        
+        // Appliquer le nouveau token d'usurpation
+        localStorage.setItem('token', res.data.token);
+        
+        // Mettre à jour l'état local pour la démonstration (l'app devra être rechargée pour vraiment agir en tant que user)
+        setImpersonatedUser(selectedUser);
+        setIsImpersonating(true);
+        setShowConfirmDialog(false);
+        setImpersonationReason('');
 
-    setImpersonationHistory([newSession, ...impersonationHistory]);
-    setImpersonatedUser(selectedUser);
-    setIsImpersonating(true);
-    setShowConfirmDialog(false);
-    setImpersonationReason('');
-
-    // En production, ceci appellerait l'API pour créer une session d'usurpation sécurisée
-    // localStorage.setItem('impersonation_token', response.impersonationToken);
-    // localStorage.setItem('original_token', currentToken);
-
-    toast({
-      title: 'Usurpation activée',
-      description: `Vous agissez maintenant en tant que ${selectedUser.name}`,
-    });
+        toast({
+          title: 'Usurpation activée',
+          description: `Vous agissez maintenant en tant que ${selectedUser.name}. Rechargez la page pour appliquer les changements.`,
+        });
+        
+        // Optionnel: recharger la page pour que l'AuthContext récupère le nouveau user
+        // window.location.reload();
+      }
+    } catch (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de démarrer l\'usurpation',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleEndImpersonation = () => {
-    if (!impersonatedUser) return;
+    if (!isImpersonating) return;
 
-    // Mettre à jour l'historique
-    setImpersonationHistory(prev => 
-      prev.map(session => 
-        session.status === 'active'
-          ? { ...session, status: 'ended' as const, endedAt: new Date().toISOString() }
-          : session
-      )
-    );
+    // Restaurer le token original
+    const originalToken = localStorage.getItem('original_token');
+    if (originalToken) {
+      localStorage.setItem('token', originalToken);
+      localStorage.removeItem('original_token');
+    }
 
     setIsImpersonating(false);
     setImpersonatedUser(null);
 
-    // En production, restaurer le token original
-    // const originalToken = localStorage.getItem('original_token');
-    // localStorage.setItem('token', originalToken);
-    // localStorage.removeItem('impersonation_token');
-    // localStorage.removeItem('original_token');
-
     toast({
       title: 'Usurpation terminée',
-      description: 'Vous êtes de retour sur votre compte super admin',
+      description: 'Vous êtes de retour sur votre compte super admin. L\'application va s\'actualiser.',
     });
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   const getRoleBadge = (role?: string) => {

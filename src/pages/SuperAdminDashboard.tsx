@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { 
   Users, Calendar, CreditCard, TrendingUp, Crown, 
   UserCheck, UserX, DollarSign, Activity, Shield,
@@ -41,7 +41,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { usersApi, analyticsApi, eventsApi, emailHistoryApi } from '@/services/api';
+import { usersApi, analyticsApi, eventsApi, emailHistoryApi, auditApi } from '@/services/api';
 import type { User, Event, SubscriptionType } from '@/types/models';
 import type { EmailLog, EmailAnalytics } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -105,6 +105,7 @@ const SuperAdminDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState('30d');
   const [searchTerm, setSearchTerm] = useState('');
+  const [adminFilter, setAdminFilter] = useState<string>('all'); // ✨ Filtre par admin
 
   // Données graphiques
   const revenueData = [
@@ -123,24 +124,47 @@ const SuperAdminDashboard = () => {
     { name: 'Enterprise', value: stats.subscriptions.enterprise, color: 'hsl(var(--primary))' },
   ];
 
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     try {
       setLoading(true);
       
-      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes] = await Promise.all([
+      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes] = await Promise.all([
         usersApi.getAll(),
         analyticsApi.getOverview(),
-        eventsApi.getAll(),
+        eventsApi.getAllFromAllAdmins(),
         emailHistoryApi.getLogs(),
         emailHistoryApi.getAnalytics(),
+        auditApi.getLogs({ limit: 20 }),
       ]);
 
-      setUsers(usersRes.data || []);
+      const usersList = usersRes.data || [];
+      setUsers(usersList);
       setEvents(eventsRes.data || []);
       setEmailLogs(emailLogsRes.data || []);
       setEmailAnalytics(emailAnalyticsRes.data || null);
       
-      const usersList = usersRes.data || [];
+      const realLogs: ActivityLog[] = (auditRes.data || []).map((audit: { 
+        _id?: string; 
+        id?: string; 
+        action: string; 
+        userId?: string; 
+        userName?: string; 
+        details?: { reason?: string }; 
+        timestamp?: string; 
+        createdAt?: string; 
+      }) => ({
+        id: audit._id || audit.id || '',
+        type: (audit.action.toLowerCase().includes('login') ? 'user_login' : 
+               audit.action.toLowerCase().includes('event') ? 'event_created' :
+               audit.action.toLowerCase().includes('subscription') ? 'subscription_changed' : 'activity') as any,
+        userId: audit.userId || '',
+        userName: audit.userName || 'Système',
+        description: audit.details?.reason || audit.action,
+        timestamp: audit.timestamp || audit.createdAt || new Date().toISOString(),
+      }));
+
+      setActivityLogs(realLogs);
+      
       const subscriptionCounts = {
         free: usersList.filter(u => !u.subscriptionType || u.subscriptionType === 'free').length,
         basic: usersList.filter(u => u.subscriptionType === 'basic').length,
@@ -159,44 +183,26 @@ const SuperAdminDashboard = () => {
         subscriptions: subscriptionCounts,
       });
 
-      // Générer des logs d'activité simulés
-      const mockLogs: ActivityLog[] = [
-        ...usersList.slice(0, 5).map((u, i) => ({
-          id: `log-${i}`,
-          type: 'user_login' as const,
-          userId: u._id || u.id || '',
-          userName: u.name,
-          description: `${u.name} s'est connecté`,
-          timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(),
-        })),
-        ...(eventsRes.data || []).slice(0, 3).map((e, i) => ({
-          id: `event-log-${i}`,
-          type: 'event_created' as const,
-          userId: e.userId,
-          userName: usersList.find(u => (u._id || u.id) === e.userId)?.name || 'Utilisateur',
-          description: `Événement "${e.title}" créé`,
-          timestamp: e.createdAt || new Date().toISOString(),
-        })),
-      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-      setActivityLogs(mockLogs);
-
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
       toast({ title: 'Erreur', description: 'Impossible de charger les données', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est super admin
-    if (currentUser?.role !== 'superadmin') {
+    if (currentUser && currentUser.role !== 'superadmin') {
+      toast({
+        title: 'Accès refusé',
+        description: 'Vous devez être super administrateur pour accéder à cette page',
+        variant: 'destructive',
+      });
       navigate('/admin');
       return;
     }
     fetchAllData();
-  }, [currentUser, navigate, timeRange]);
+  }, [currentUser, navigate, timeRange, fetchAllData, toast]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -204,12 +210,13 @@ const SuperAdminDashboard = () => {
     setRefreshing(false);
     toast({ title: 'Actualisé', description: 'Données mises à jour' });
   };
-
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
     try {
       await usersApi.update(userId, { role: newRole as User['role'] });
       toast({ title: 'Succès', description: 'Rôle mis à jour' });
-      fetchAllData();
+      // Rafraîchir les données
+      const updatedUsers = await usersApi.getAll();
+      if (updatedUsers.success) setUsers(updatedUsers.data);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de mettre à jour le rôle', variant: 'destructive' });
     }
@@ -219,7 +226,9 @@ const SuperAdminDashboard = () => {
     try {
       await usersApi.update(userId, { isActive: !currentStatus });
       toast({ title: 'Succès', description: currentStatus ? 'Utilisateur désactivé' : 'Utilisateur activé' });
-      fetchAllData();
+      // Rafraîchir les données
+      const updatedUsers = await usersApi.getAll();
+      if (updatedUsers.success) setUsers(updatedUsers.data);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de modifier le statut', variant: 'destructive' });
     }
@@ -230,9 +239,11 @@ const SuperAdminDashboard = () => {
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredEvents = events.filter(e => 
-    e.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEvents = events.filter(e => {
+    const matchesSearch = e.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesAdmin = adminFilter === 'all' || e.userId === adminFilter;
+    return matchesSearch && matchesAdmin;
+  });
 
   const getActivityIcon = (type: ActivityLog['type']) => {
     switch (type) {
@@ -393,38 +404,38 @@ const SuperAdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="activity" className="space-y-4">
-          <TabsList className="flex-wrap h-auto gap-1">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8 mb-8 h-auto">
             <TabsTrigger value="activity">
-              <Activity className="h-4 w-4 mr-2" />
+              <Activity className="h-4 w-4 mr-1" />
               Activité
             </TabsTrigger>
             <TabsTrigger value="audit">
-              <FileText className="h-4 w-4 mr-2" />
-              Logs d'audit
-            </TabsTrigger>
-            <TabsTrigger value="impersonation">
-              <Eye className="h-4 w-4 mr-2" />
-              Usurpation
-            </TabsTrigger>
-            <TabsTrigger value="subscriptions">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Abonnements
+              <FileText className="h-4 w-4 mr-1" />
+              Audit
             </TabsTrigger>
             <TabsTrigger value="users">
-              <Users className="h-4 w-4 mr-2" />
-              Utilisateurs
+              <Users className="h-4 w-4 mr-1" />
+              Administration
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions">
+              <CreditCard className="h-4 w-4 mr-1" />
+              Abonnements
             </TabsTrigger>
             <TabsTrigger value="events">
-              <Calendar className="h-4 w-4 mr-2" />
+              <Calendar className="h-4 w-4 mr-1" />
               Événements
             </TabsTrigger>
             <TabsTrigger value="emails">
-              <Mail className="h-4 w-4 mr-2" />
+              <Mail className="h-4 w-4 mr-1" />
               Emails
             </TabsTrigger>
             <TabsTrigger value="analytics">
-              <TrendingUp className="h-4 w-4 mr-2" />
+              <TrendingUp className="h-4 w-4 mr-1" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="impersonation">
+              <Eye className="h-4 w-4 mr-1" />
+              Usurpation
             </TabsTrigger>
           </TabsList>
 
@@ -523,18 +534,41 @@ const SuperAdminDashboard = () => {
           </TabsContent>
 
           {/* Subscriptions Tab */}
-          <TabsContent value="subscriptions">
+          <TabsContent value="subscriptions" className="space-y-4">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+              <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Gestion des Abonnements
+              </h2>
+              <p className="text-muted-foreground font-medium">
+                Gérez les plans d'abonnement de tous les utilisateurs de la plateforme.
+              </p>
+            </div>
             <SubscriptionManager 
               users={users} 
               onUpdateSubscription={async (userId, newPlan) => {
-                await usersApi.update(userId, { subscriptionType: newPlan });
-                fetchAllData();
+                const res = await usersApi.update(userId, { subscriptionType: newPlan });
+                if (res.success) {
+                  // Mettre à jour les stats locales sans tout recharger si possible
+                  // Mais fetchAllData est plus sûr pour les stats de revenus
+                  const updatedUsers = await usersApi.getAll();
+                  if (updatedUsers.success) setUsers(updatedUsers.data);
+                }
               }}
             />
           </TabsContent>
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-4">
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 mb-4">
+              <h2 className="text-xl font-bold text-blue-600 flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Gestion des Utilisateurs
+              </h2>
+              <p className="text-muted-foreground font-medium">
+                Gérez les comptes, les rôles et les plans d'abonnement de tous les utilisateurs.
+              </p>
+            </div>
             <div className="flex gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -640,10 +674,39 @@ const SuperAdminDashboard = () => {
 
           {/* Events Tab */}
           <TabsContent value="events" className="space-y-4">
+            {/* ✨ Filter by admin */}
+            <div className="flex gap-4 items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un événement..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={adminFilter} onValueChange={setAdminFilter}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Filtrer par admin" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les admins</SelectItem>
+                  {users.filter(u => u.role === 'admin' || u.role === 'superadmin').map(admin => (
+                    <SelectItem key={admin._id || admin.id} value={admin._id || admin.id || ''}>
+                      {admin.name} ({admin.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Card>
               <CardHeader>
                 <CardTitle>Tous les événements de la plateforme</CardTitle>
-                <CardDescription>{events.length} événements au total</CardDescription>
+                <CardDescription>
+                  {filteredEvents.length} événement{filteredEvents.length > 1 ? 's' : ''} 
+                  {adminFilter !== 'all' && ` (filtrés par ${users.find(u => (u._id || u.id) === adminFilter)?.name})`}
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>

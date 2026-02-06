@@ -135,6 +135,16 @@ export const eventsApi = {
     const result = await handleResponse<{ success: boolean; data?: any }>(res);
     return { success: result.success ?? true, data: undefined };
   },
+
+  // ✨ SUPERADMIN ONLY: Get all events from all admins
+  getAllFromAllAdmins: async (): Promise<ApiResponse<Event[]>> => {
+    const res = await fetch(`${API_BASE_URL}/events/all`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    const events: Event[] = result.data || [];
+    return { success: result.success ?? true, data: events };
+  },
 };
 
 // ==================== INVITÉS ====================
@@ -738,8 +748,10 @@ export const usersApi = {
     const res = await fetch(`${API_BASE_URL}/auth/users`, {
       headers: getHeaders(),
     });
-    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    return { success: result.success ?? true, data: result.data };
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    // Le backend renvoie { data: { data: [], pagination: {} } }
+    const userData = result.data?.data || result.data || [];
+    return { success: result.success ?? true, data: userData };
   },
 
   getById: async (id: string): Promise<ApiResponse<User>> => {
@@ -795,5 +807,43 @@ export const usersApi = {
     });
     const result = await handleResponse<{ success: boolean; data?: any }>(res);
     return { success: result.success ?? true, data: undefined };
+  },
+
+  // ✨ SUPERADMIN ONLY: Get all admin users
+  getAdmins: async (): Promise<ApiResponse<User[]>> => {
+    const res = await fetch(`${API_BASE_URL}/auth/users/admins`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+};
+
+export const auditApi = {
+  getLogs: async (params?: {
+    page?: number;
+    limit?: number;
+    action?: string;
+    userId?: string;
+  }): Promise<ApiResponse<any[]>> => {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${API_BASE_URL}/audit?${query}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+
+    // Mapper les données du backend (actor.id) vers le format frontend (userName, userEmail, timestamp)
+    const mappedLogs = (result.data || []).map((log: any) => ({
+      ...log,
+      id: log._id || log.id,
+      timestamp: log.timestamp || log.createdAt,
+      userName:
+        log.userName || log.actor?.id?.name || log.actor?.name || "Système",
+      userEmail:
+        log.userEmail || log.actor?.id?.email || log.actor?.email || "-",
+      action: log.action || "activity",
+    }));
+
+    return { success: result.success ?? true, data: mappedLogs };
   },
 };

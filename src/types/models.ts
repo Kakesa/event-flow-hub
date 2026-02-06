@@ -222,3 +222,12 @@ export const ORGANIZER_PERMISSIONS: ModulePermission[] = MODULES.map((m) => {
     delete: false,
   };
 });
+
+// ===================== SUPERADMIN PERMISSIONS =====================
+export const SUPERADMIN_PERMISSIONS: ModulePermission[] = MODULES.map((m) => ({
+  module: m.name,
+  create: true,
+  read: true,
+  update: true,
+  delete: true,
+}));

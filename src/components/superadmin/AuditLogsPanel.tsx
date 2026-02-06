@@ -40,6 +40,7 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { auditApi } from '@/services/api';
 
 // Types pour les logs d'audit
 export interface AuditLog {
@@ -169,20 +170,35 @@ const AuditLogsPanel = ({ className }: AuditLogsPanelProps) => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   useEffect(() => {
-    // Simuler le chargement des logs depuis l'API
-    const timer = setTimeout(() => {
-      setLogs(generateMockAuditLogs());
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchLogs = async () => {
+      try {
+        setLoading(true);
+        const res = await auditApi.getLogs();
+        if (res.success && res.data) {
+          setLogs(res.data);
+        }
+      } catch (error) {
+        console.error('Erreur logs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleRefresh = () => {
+    fetchLogs();
+  }, [categoryFilter, severityFilter]);
+
+  const handleRefresh = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setLogs(generateMockAuditLogs());
+    try {
+      const res = await auditApi.getLogs();
+      if (res.success && res.data) {
+        setLogs(res.data);
+      }
+    } catch (error) {
+      console.error('Erreur refresh logs:', error);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleExport = () => {
@@ -280,7 +296,7 @@ const AuditLogsPanel = ({ className }: AuditLogsPanelProps) => {
       high: { variant: 'outline', className: 'text-orange-600 border-orange-600' },
       critical: { variant: 'destructive', className: '' },
     };
-    const c = config[severity];
+    const c = config[severity] || config.low;
     return <Badge variant={c.variant} className={c.className}>{severity}</Badge>;
   };
 
@@ -290,16 +306,21 @@ const AuditLogsPanel = ({ className }: AuditLogsPanelProps) => {
       failed: { variant: 'destructive', className: '' },
       warning: { variant: 'outline', className: 'text-yellow-600 border-yellow-600' },
     };
-    const c = config[status];
+    const c = config[status] || config.success;
     return <Badge variant={c.variant} className={c.className}>{status}</Badge>;
   };
 
   const filteredLogs = logs.filter(log => {
+    const userName = log.userName || '';
+    const userEmail = log.userEmail || '';
+    const action = log.action || '';
+    const resourceName = log.resourceName || '';
+
     const matchesSearch = 
-      log.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (log.resourceName?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      resourceName.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
     const matchesSeverity = severityFilter === 'all' || log.severity === severityFilter;
@@ -428,35 +449,43 @@ const AuditLogsPanel = ({ className }: AuditLogsPanelProps) => {
                     )}
                   >
                     <TableCell className="font-mono text-xs">
-                      <div>{format(new Date(log.timestamp), 'dd/MM/yyyy', { locale: fr })}</div>
+                      <div>{log.timestamp ? format(new Date(log.timestamp), 'dd/MM/yyyy', { locale: fr }) : '-'}</div>
                       <div className="text-muted-foreground">
-                        {format(new Date(log.timestamp), 'HH:mm:ss')}
+                        {log.timestamp ? format(new Date(log.timestamp), 'HH:mm:ss') : '-'}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
                         <div>
-                          <p className="font-medium text-sm">{log.userName}</p>
-                          <p className="text-xs text-muted-foreground">{log.userEmail}</p>
+                          <p className="font-medium">{log.userName || 'Système'}</p>
+                          <p className="text-xs text-muted-foreground">{log.userEmail || '-'}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getActionIcon(log.action)}
-                        <span className="text-sm">{getActionLabel(log.action)}</span>
+                        <span className="font-medium">{getActionLabel(log.action)}</span>
                       </div>
+                      <p className="text-[10px] text-muted-foreground uppercase">{log.category}</p>
                     </TableCell>
                     <TableCell>
-                      <div>
-                        <p className="text-sm">{log.resourceName || '-'}</p>
-                        <p className="text-xs text-muted-foreground">{getCategoryLabel(log.category)}</p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm">{log.resourceType}</span>
+                        {log.resourceName && (
+                          <Badge variant="outline" className="text-[10px] py-0 h-4">
+                            {log.resourceName}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>{getSeverityBadge(log.severity)}</TableCell>
                     <TableCell>{getStatusBadge(log.status)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedLog(log)}>
+                      <Button variant="ghost" size="icon" onClick={() => setSelectedLog(log)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
