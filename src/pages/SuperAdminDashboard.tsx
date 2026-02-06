@@ -732,7 +732,7 @@ const SuperAdminDashboard = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {admin.lastLogin ? format(new Date(admin.lastLogin), 'dd MMM yyyy HH:mm', { locale: fr }) : 'Jamais'}
+                          {admin.createdAt ? format(new Date(admin.createdAt), 'dd MMM yyyy', { locale: fr }) : '-'}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
