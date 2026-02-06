@@ -45,7 +45,7 @@ export const PermissionsEditor = ({ user, open, onOpenChange, onSaved }: Permiss
   const [permissions, setPermissions] = useState<ModulePermission[]>([]);
 
   // Initialiser les permissions quand le dialog s'ouvre ou quand l'utilisateur change
-  useState(() => {
+  useEffect(() => {
     if (open && user) {
       if (user.permissions && user.permissions.length > 0) {
         setPermissions([...user.permissions]);
@@ -59,7 +59,7 @@ export const PermissionsEditor = ({ user, open, onOpenChange, onSaved }: Permiss
         })));
       }
     }
-  });
+  }, [open, user]);
 
   // Effect pour réinitialiser quand le dialog s'ouvre
   const handleOpenChange = (isOpen: boolean) => {
