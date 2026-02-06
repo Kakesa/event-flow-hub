@@ -5,9 +5,10 @@ import {
   UserCheck, UserX, DollarSign, Activity, Shield,
   Eye, Mail, Send, Clock, AlertTriangle, CheckCircle2,
   Globe, Server, Database, Zap, RefreshCw, Search,
-  MoreVertical, Ban, Edit, Trash2, ExternalLink, FileText
+  MoreVertical, Ban, Edit, Trash2, ExternalLink, FileText, Key
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import PermissionsEditor from '@/components/superadmin/PermissionsEditor';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
