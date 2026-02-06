@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useCallback } from 'react';
 import { 
   Users, Calendar, CreditCard, TrendingUp, Crown, 
@@ -101,6 +102,7 @@ const SuperAdminDashboard = () => {
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [emailAnalytics, setEmailAnalytics] = useState<EmailAnalytics | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [admins, setAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState('30d');
@@ -128,17 +130,19 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       
-      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes] = await Promise.all([
+      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes, adminsRes] = await Promise.all([
         usersApi.getAll(),
         analyticsApi.getOverview(),
         eventsApi.getAllFromAllAdmins(),
         emailHistoryApi.getLogs(),
         emailHistoryApi.getAnalytics(),
         auditApi.getLogs({ limit: 20 }),
+        usersApi.getAdmins(),
       ]);
 
       const usersList = usersRes.data || [];
       setUsers(usersList);
+      setAdmins(adminsRes.data || []);
       setEvents(eventsRes.data || []);
       setEmailLogs(emailLogsRes.data || []);
       setEmailAnalytics(emailAnalyticsRes.data || null);
@@ -173,7 +177,7 @@ const SuperAdminDashboard = () => {
       };
 
       setStats({
-        totalUsers: usersList.length,
+        totalUsers: analyticsRes.data?.totalUsers || usersList.length,
         activeUsers: usersList.filter(u => u.isActive !== false).length,
         totalEvents: analyticsRes.data?.totalEvents || eventsRes.data?.length || 0,
         totalGuests: analyticsRes.data?.totalGuests || 0,
@@ -215,8 +219,12 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { role: newRole as User['role'] });
       toast({ title: 'Succès', description: 'Rôle mis à jour' });
       // Rafraîchir les données
-      const updatedUsers = await usersApi.getAll();
+      const [updatedUsers, updatedAdmins] = await Promise.all([
+        usersApi.getAll(),
+        usersApi.getAdmins(),
+      ]);
       if (updatedUsers.success) setUsers(updatedUsers.data);
+      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de mettre à jour le rôle', variant: 'destructive' });
     }
@@ -227,8 +235,12 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { isActive: !currentStatus });
       toast({ title: 'Succès', description: currentStatus ? 'Utilisateur désactivé' : 'Utilisateur activé' });
       // Rafraîchir les données
-      const updatedUsers = await usersApi.getAll();
+      const [updatedUsers, updatedAdmins] = await Promise.all([
+        usersApi.getAll(),
+        usersApi.getAdmins(),
+      ]);
       if (updatedUsers.success) setUsers(updatedUsers.data);
+      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de modifier le statut', variant: 'destructive' });
     }
@@ -404,7 +416,7 @@ const SuperAdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="activity" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8 mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-9 mb-8 h-auto">
             <TabsTrigger value="activity">
               <Activity className="h-4 w-4 mr-1" />
               Activité
@@ -415,7 +427,11 @@ const SuperAdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="h-4 w-4 mr-1" />
-              Administration
+              Utilisateurs
+            </TabsTrigger>
+            <TabsTrigger value="admins">
+              <Shield className="h-4 w-4 mr-1" />
+              Administrateurs
             </TabsTrigger>
             <TabsTrigger value="subscriptions">
               <CreditCard className="h-4 w-4 mr-1" />
@@ -672,6 +688,99 @@ const SuperAdminDashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* Admins Tab */}
+          <TabsContent value="admins" className="space-y-4">
+            <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 mb-4">
+              <h2 className="text-xl font-bold text-red-600 flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Liste des Administrateurs
+                <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800">Debug: {admins.length} chargés</Badge>
+              </h2>
+              <p className="text-muted-foreground font-medium">
+                Visualisez et gérez tous les comptes avec des privilèges d'administration.
+              </p>
+            </div>
+            
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Administrateur</TableHead>
+                      <TableHead>Rôle</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>Dernière Connexion</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {admins.map((admin) => (
+                      <TableRow key={admin._id || admin.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{admin.name}</p>
+                            <p className="text-sm text-muted-foreground">{admin.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getRoleBadge(admin.role)}
+                        </TableCell>
+                        <TableCell>
+                          {admin.isActive !== false ? (
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Actif</Badge>
+                          ) : (
+                            <Badge variant="destructive">Banni</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {admin.lastLogin ? format(new Date(admin.lastLogin), 'dd MMM yyyy HH:mm', { locale: fr }) : 'Jamais'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/admin-settings/users/${admin._id || admin.id}`)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Modifier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleUserStatus(admin._id || admin.id || '', admin.isActive !== false)}
+                                className={admin.isActive !== false ? 'text-destructive' : 'text-green-600'}
+                              >
+                                {admin.isActive !== false ? (
+                                  <>
+                                    <Ban className="h-4 w-4 mr-2" />
+                                    Suspendre
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                    Réactiver
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {admins.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          Aucun administrateur trouvé.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Events Tab */}
           <TabsContent value="events" className="space-y-4">
             {/* ✨ Filter by admin */}
@@ -691,7 +800,7 @@ const SuperAdminDashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les admins</SelectItem>
-                  {users.filter(u => u.role === 'admin' || u.role === 'superadmin').map(admin => (
+                  {admins.map(admin => (
                     <SelectItem key={admin._id || admin.id} value={admin._id || admin.id || ''}>
                       {admin.name} ({admin.role})
                     </SelectItem>

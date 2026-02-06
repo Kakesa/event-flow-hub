@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Plus, MoreHorizontal, Trash2, Shield } from "lucide-react";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -79,10 +79,10 @@ const Users = () => {
   const [editingPermissions, setEditingPermissions] = useState<ModulePermission[]>([]);
 
   /* ================= FETCH USERS ================= */
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!currentUser) return;
 
-    if (currentUser.role !== "admin") {
+    if (currentUser.role !== "admin" && currentUser.role !== "superadmin") {
       setLoading(false);
       toast({
         title: "Accès refusé",
@@ -106,11 +106,11 @@ const Users = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, toast]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, limit, currentUser]);
+  }, [fetchUsers, page, limit]);
 
   /* ================= SEARCH ================= */
   const filteredUsers = useMemo(() => {
@@ -221,7 +221,7 @@ const Users = () => {
   };
 
   /* ================= UI ================= */
-  if (!currentUser || currentUser.role !== "admin") {
+  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "superadmin")) {
     return (
       <DashboardLayout>
         <Card className="p-6 text-center text-red-600 font-semibold">

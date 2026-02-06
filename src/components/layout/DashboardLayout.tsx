@@ -33,8 +33,8 @@ const navigation = [
   { name: 'Message', href: '/guestbook', icon: BookOpen },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Scanner QR', href: '/scanner', icon: QrCode },
-  { name: 'Utilisateurs', href: '/users', icon: Users },
-  { name: 'Administration', href: '/admin', icon: Shield, adminOnly: true },
+  { name: 'Gestion Utilisateurs', href: '/users', icon: Users, superAdminOnly: true },
+  { name: 'Administration', href: '/admin', icon: Shield, superAdminOnly: true },
   { name: 'Super Admin', href: '/superadmin', icon: Shield, superAdminOnly: true },
 ];
 
@@ -114,7 +114,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   if ('superAdminOnly' in item && item.superAdminOnly) {
                     return user?.role === 'superadmin';
                   }
-                  // Masquer les éléments admin si l'utilisateur n'est pas admin
+                  // Masquer les éléments admin si l'utilisateur n'est pas admin (ou superadmin)
                   if ('adminOnly' in item && item.adminOnly) {
                     return user?.role === 'admin' || user?.role === 'superadmin';
                   }

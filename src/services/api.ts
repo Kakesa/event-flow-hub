@@ -779,10 +779,26 @@ export const usersApi = {
     data: Partial<User>,
   ): Promise<ApiResponse<User>> => {
     const res = await fetch(`${API_BASE_URL}/auth/users/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  impersonate: async (
+    userId: string,
+    reason: string,
+  ): Promise<ApiResponse<{ token: string; user: User }>> => {
+    const res = await fetch(
+      `${API_BASE_URL}/auth/users/impersonate/${userId}`,
+      {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ reason }),
+      },
+    );
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
