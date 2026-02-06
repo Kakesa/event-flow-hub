@@ -109,6 +109,8 @@ const SuperAdminDashboard = () => {
   const [timeRange, setTimeRange] = useState('30d');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminFilter, setAdminFilter] = useState<string>('all'); // ✨ Filtre par admin
+  const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<User | null>(null);
 
   // Données graphiques
   const revenueData = [
