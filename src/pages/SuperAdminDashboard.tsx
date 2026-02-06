@@ -130,19 +130,20 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       
-      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes, adminsRes] = await Promise.all([
+      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes] = await Promise.all([
         usersApi.getAll(),
         analyticsApi.getOverview(),
         eventsApi.getAllFromAllAdmins(),
         emailHistoryApi.getLogs(),
         emailHistoryApi.getAnalytics(),
         auditApi.getLogs({ limit: 20 }),
-        usersApi.getAdmins(),
       ]);
 
       const usersList = usersRes.data || [];
       setUsers(usersList);
-      setAdmins(adminsRes.data || []);
+      // Filtrer les admins depuis la liste des users
+      const adminsList = usersList.filter(u => u.role === 'admin' || u.role === 'superadmin');
+      setAdmins(adminsList);
       setEvents(eventsRes.data || []);
       setEmailLogs(emailLogsRes.data || []);
       setEmailAnalytics(emailAnalyticsRes.data || null);
@@ -177,7 +178,7 @@ const SuperAdminDashboard = () => {
       };
 
       setStats({
-        totalUsers: analyticsRes.data?.totalUsers || usersList.length,
+        totalUsers: usersList.length,
         activeUsers: usersList.filter(u => u.isActive !== false).length,
         totalEvents: analyticsRes.data?.totalEvents || eventsRes.data?.length || 0,
         totalGuests: analyticsRes.data?.totalGuests || 0,
@@ -219,12 +220,11 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { role: newRole as User['role'] });
       toast({ title: 'Succès', description: 'Rôle mis à jour' });
       // Rafraîchir les données
-      const [updatedUsers, updatedAdmins] = await Promise.all([
-        usersApi.getAll(),
-        usersApi.getAdmins(),
-      ]);
-      if (updatedUsers.success) setUsers(updatedUsers.data);
-      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
+      const updatedUsers = await usersApi.getAll();
+      if (updatedUsers.success) {
+        setUsers(updatedUsers.data);
+        setAdmins(updatedUsers.data.filter(u => u.role === 'admin' || u.role === 'superadmin'));
+      }
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de mettre à jour le rôle', variant: 'destructive' });
     }
@@ -235,12 +235,11 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { isActive: !currentStatus });
       toast({ title: 'Succès', description: currentStatus ? 'Utilisateur désactivé' : 'Utilisateur activé' });
       // Rafraîchir les données
-      const [updatedUsers, updatedAdmins] = await Promise.all([
-        usersApi.getAll(),
-        usersApi.getAdmins(),
-      ]);
-      if (updatedUsers.success) setUsers(updatedUsers.data);
-      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
+      const updatedUsers = await usersApi.getAll();
+      if (updatedUsers.success) {
+        setUsers(updatedUsers.data);
+        setAdmins(updatedUsers.data.filter(u => u.role === 'admin' || u.role === 'superadmin'));
+      }
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de modifier le statut', variant: 'destructive' });
     }
@@ -709,7 +708,7 @@ const SuperAdminDashboard = () => {
                       <TableHead>Administrateur</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Statut</TableHead>
-                      <TableHead>Dernière Connexion</TableHead>
+                      <TableHead>Inscrit le</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -733,7 +732,7 @@ const SuperAdminDashboard = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          {admin.lastLogin ? format(new Date(admin.lastLogin), 'dd MMM yyyy HH:mm', { locale: fr }) : 'Jamais'}
+                          {admin.createdAt ? format(new Date(admin.createdAt), 'dd MMM yyyy', { locale: fr }) : '-'}
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

@@ -700,7 +700,7 @@ export const qrCodeApi = {
    */
   generate: async (
     guestId: string,
-  ): Promise<ApiResponse<{ qrCode: string }>> => {
+  ): Promise<ApiResponse<{ qrCode: string; code: string }>> => {
     const res = await fetch(
       `${API_BASE_URL}/public/rsvp/${guestId}/generate-qr`,
       {
@@ -711,9 +711,16 @@ export const qrCodeApi = {
 
     const result = await handleResponse<{
       success: boolean;
-      data: { qrCode: string };
+      data: { qrCode: string; code?: string };
     }>(res);
-    return { success: result.success ?? true, data: result.data };
+    
+    // Générer un code aléatoire si non fourni par le backend
+    const code = result.data?.code || `INV-${guestId.slice(-8).toUpperCase()}`;
+    
+    return { 
+      success: result.success ?? true, 
+      data: { qrCode: result.data?.qrCode || '', code } 
+    };
   },
 
   /**
