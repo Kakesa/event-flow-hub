@@ -220,12 +220,11 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { role: newRole as User['role'] });
       toast({ title: 'Succès', description: 'Rôle mis à jour' });
       // Rafraîchir les données
-      const [updatedUsers, updatedAdmins] = await Promise.all([
-        usersApi.getAll(),
-        usersApi.getAdmins(),
-      ]);
-      if (updatedUsers.success) setUsers(updatedUsers.data);
-      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
+      const updatedUsers = await usersApi.getAll();
+      if (updatedUsers.success) {
+        setUsers(updatedUsers.data);
+        setAdmins(updatedUsers.data.filter(u => u.role === 'admin' || u.role === 'superadmin'));
+      }
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de mettre à jour le rôle', variant: 'destructive' });
     }
