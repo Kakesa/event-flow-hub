@@ -130,20 +130,21 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       
-      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes] = await Promise.all([
+      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes, adminsRes] = await Promise.all([
         usersApi.getAll(),
         analyticsApi.getOverview(),
         eventsApi.getAllFromAllAdmins(),
         emailHistoryApi.getLogs(),
         emailHistoryApi.getAnalytics(),
         auditApi.getLogs({ limit: 20 }),
+        usersApi.getAdmins(),
       ]);
 
       const usersList = usersRes.data || [];
       setUsers(usersList);
-      // Filtrer les admins depuis la liste des users
-      const adminsList = usersList.filter(u => u.role === 'admin' || u.role === 'superadmin');
-      setAdmins(adminsList);
+      const adminsData = adminsRes.data || [];
+      setAdmins(adminsData);
+      console.log('Admins fetched:', adminsData.length, adminsData);
       setEvents(eventsRes.data || []);
       setEmailLogs(emailLogsRes.data || []);
       setEmailAnalytics(emailAnalyticsRes.data || null);
@@ -178,7 +179,7 @@ const SuperAdminDashboard = () => {
       };
 
       setStats({
-        totalUsers: usersList.length,
+        totalUsers: analyticsRes.data?.totalUsers || usersList.length,
         activeUsers: usersList.filter(u => u.isActive !== false).length,
         totalEvents: analyticsRes.data?.totalEvents || eventsRes.data?.length || 0,
         totalGuests: analyticsRes.data?.totalGuests || 0,
@@ -220,11 +221,12 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { role: newRole as User['role'] });
       toast({ title: 'Succès', description: 'Rôle mis à jour' });
       // Rafraîchir les données
-      const updatedUsers = await usersApi.getAll();
-      if (updatedUsers.success) {
-        setUsers(updatedUsers.data);
-        setAdmins(updatedUsers.data.filter(u => u.role === 'admin' || u.role === 'superadmin'));
-      }
+      const [updatedUsers, updatedAdmins] = await Promise.all([
+        usersApi.getAll(),
+        usersApi.getAdmins(),
+      ]);
+      if (updatedUsers.success) setUsers(updatedUsers.data);
+      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de mettre à jour le rôle', variant: 'destructive' });
     }
@@ -235,11 +237,12 @@ const SuperAdminDashboard = () => {
       await usersApi.update(userId, { isActive: !currentStatus });
       toast({ title: 'Succès', description: currentStatus ? 'Utilisateur désactivé' : 'Utilisateur activé' });
       // Rafraîchir les données
-      const updatedUsers = await usersApi.getAll();
-      if (updatedUsers.success) {
-        setUsers(updatedUsers.data);
-        setAdmins(updatedUsers.data.filter(u => u.role === 'admin' || u.role === 'superadmin'));
-      }
+      const [updatedUsers, updatedAdmins] = await Promise.all([
+        usersApi.getAll(),
+        usersApi.getAdmins(),
+      ]);
+      if (updatedUsers.success) setUsers(updatedUsers.data);
+      if (updatedAdmins.success) setAdmins(updatedAdmins.data);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de modifier le statut', variant: 'destructive' });
     }
@@ -248,6 +251,11 @@ const SuperAdminDashboard = () => {
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredAdmins = admins.filter(a => 
+    a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    a.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredEvents = events.filter(e => {
@@ -693,11 +701,22 @@ const SuperAdminDashboard = () => {
               <h2 className="text-xl font-bold text-red-600 flex items-center gap-2">
                 <Shield className="h-5 w-5" />
                 Liste des Administrateurs
-                <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800">Debug: {admins.length} chargés</Badge>
               </h2>
               <p className="text-muted-foreground font-medium">
                 Visualisez et gérez tous les comptes avec des privilèges d'administration.
               </p>
+            </div>
+
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un administrateur..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
             
             <Card>
@@ -713,7 +732,7 @@ const SuperAdminDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {admins.map((admin) => (
+                    {filteredAdmins.map((admin) => (
                       <TableRow key={admin._id || admin.id}>
                         <TableCell>
                           <div>
