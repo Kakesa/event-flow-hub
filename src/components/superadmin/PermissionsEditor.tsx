@@ -45,41 +45,40 @@ export const PermissionsEditor = ({ user, open, onOpenChange, onSaved }: Permiss
   const [loading, setLoading] = useState(false);
   const [permissions, setPermissions] = useState<ModulePermission[]>([]);
 
-  // Initialiser les permissions quand l'utilisateur change
+  // Initialiser les permissions quand le dialog s'ouvre ou quand l'utilisateur change
   useState(() => {
-    if (user?.permissions) {
-      setPermissions([...user.permissions]);
-    } else {
-      // Permissions par défaut
-      setPermissions(MODULES_CONFIG.map(m => ({
-        module: m.name,
-        create: false,
-        read: true,
-        update: false,
-        delete: false,
-      })));
+    if (open && user) {
+      if (user.permissions && user.permissions.length > 0) {
+        setPermissions([...user.permissions]);
+      } else {
+        setPermissions(MODULES_CONFIG.map(m => ({
+          module: m.name,
+          create: false,
+          read: true,
+          update: false,
+          delete: false,
+        })));
+      }
     }
   });
 
-  // Mettre à jour quand le user change
-  const initPermissions = () => {
-    if (user?.permissions) {
-      setPermissions([...user.permissions]);
-    } else {
-      setPermissions(MODULES_CONFIG.map(m => ({
-        module: m.name,
-        create: false,
-        read: true,
-        update: false,
-        delete: false,
-      })));
-    }
-  };
-
   // Effect pour réinitialiser quand le dialog s'ouvre
-  if (open && permissions.length === 0) {
-    initPermissions();
-  }
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen && user) {
+      if (user.permissions && user.permissions.length > 0) {
+        setPermissions([...user.permissions]);
+      } else {
+        setPermissions(MODULES_CONFIG.map(m => ({
+          module: m.name,
+          create: false,
+          read: true,
+          update: false,
+          delete: false,
+        })));
+      }
+    }
+    onOpenChange(isOpen);
+  };
 
   const handlePermissionChange = (module: ModuleName, action: keyof ModulePermission, value: boolean) => {
     setPermissions(prev => 
