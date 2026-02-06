@@ -756,8 +756,15 @@ export const usersApi = {
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
-    // Le backend renvoie { data: { data: [], pagination: {} } }
-    const userData = result.data?.data || result.data || [];
+    // Le backend peut renvoyer { data: [...] } ou { data: { data: [], pagination: {} } }
+    let userData: User[] = [];
+    if (Array.isArray(result.data)) {
+      userData = result.data;
+    } else if (Array.isArray(result.data?.data)) {
+      userData = result.data.data;
+    }
+    console.log('[usersApi.getAll] Raw result:', result);
+    console.log('[usersApi.getAll] Parsed users:', userData);
     return { success: result.success ?? true, data: userData };
   },
 
