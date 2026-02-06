@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, Save, X } from 'lucide-react';
 import {
   Dialog,
@@ -10,11 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { usersApi } from '@/services/api';
-import type { User, ModulePermission, ModuleName, MODULES } from '@/types/models';
+import type { User, ModulePermission, ModuleName } from '@/types/models';
 
 interface PermissionsEditorProps {
   user: User | null;
