@@ -5,9 +5,10 @@ import {
   UserCheck, UserX, DollarSign, Activity, Shield,
   Eye, Mail, Send, Clock, AlertTriangle, CheckCircle2,
   Globe, Server, Database, Zap, RefreshCw, Search,
-  MoreVertical, Ban, Edit, Trash2, ExternalLink, FileText
+  MoreVertical, Ban, Edit, Trash2, ExternalLink, FileText, Key
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import PermissionsEditor from '@/components/superadmin/PermissionsEditor';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,6 +109,8 @@ const SuperAdminDashboard = () => {
   const [timeRange, setTimeRange] = useState('30d');
   const [searchTerm, setSearchTerm] = useState('');
   const [adminFilter, setAdminFilter] = useState<string>('all'); // ✨ Filtre par admin
+  const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<User | null>(null);
 
   // Données graphiques
   const revenueData = [
@@ -742,10 +745,18 @@ const SuperAdminDashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedUserForPermissions(admin);
+                                setPermissionsModalOpen(true);
+                              }}>
+                                <Key className="h-4 w-4 mr-2" />
+                                Permissions
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => navigate(`/admin-settings/users/${admin._id || admin.id}`)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Modifier
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleToggleUserStatus(admin._id || admin.id || '', admin.isActive !== false)}
                                 className={admin.isActive !== false ? 'text-destructive' : 'text-green-600'}
@@ -953,6 +964,14 @@ const SuperAdminDashboard = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Permissions Editor Modal */}
+        <PermissionsEditor
+          user={selectedUserForPermissions}
+          open={permissionsModalOpen}
+          onOpenChange={setPermissionsModalOpen}
+          onSaved={fetchAllData}
+        />
       </div>
     </DashboardLayout>
   );
