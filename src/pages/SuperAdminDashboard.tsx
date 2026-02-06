@@ -964,6 +964,14 @@ const SuperAdminDashboard = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Permissions Editor Modal */}
+        <PermissionsEditor
+          user={selectedUserForPermissions}
+          open={permissionsModalOpen}
+          onOpenChange={setPermissionsModalOpen}
+          onSaved={fetchAllData}
+        />
       </div>
     </DashboardLayout>
   );
