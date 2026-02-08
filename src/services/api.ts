@@ -845,8 +845,20 @@ export const usersApi = {
     const res = await fetch(`${API_BASE_URL}/auth/users/admins`, {
       headers: getHeaders(),
     });
-    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    return { success: result.success ?? true, data: result.data };
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+
+    // Le backend peut renvoyer { data: [...] } ou { data: { data: [], pagination: {} } }
+    let adminData: User[] = [];
+    if (Array.isArray(result.data)) {
+      adminData = result.data;
+    } else if (Array.isArray(result.data?.data)) {
+      adminData = result.data.data;
+    }
+
+    console.log("[usersApi.getAdmins] Raw result:", result);
+    console.log("[usersApi.getAdmins] Parsed admins:", adminData);
+
+    return { success: result.success ?? true, data: adminData };
   },
 };
 
