@@ -640,6 +640,7 @@ export const analyticsApi = {
 
   getOverview: async (): Promise<
     ApiResponse<{
+      totalUsers: number;
       totalEvents: number;
       totalGuests: number;
       totalConfirmed: number;
@@ -713,13 +714,13 @@ export const qrCodeApi = {
       success: boolean;
       data: { qrCode: string; code?: string };
     }>(res);
-    
+
     // Générer un code aléatoire si non fourni par le backend
     const code = result.data?.code || `INV-${guestId.slice(-8).toUpperCase()}`;
-    
-    return { 
-      success: result.success ?? true, 
-      data: { qrCode: result.data?.qrCode || '', code } 
+
+    return {
+      success: result.success ?? true,
+      data: { qrCode: result.data?.qrCode || "", code },
     };
   },
 
@@ -763,8 +764,8 @@ export const usersApi = {
     } else if (Array.isArray(result.data?.data)) {
       userData = result.data.data;
     }
-    console.log('[usersApi.getAll] Raw result:', result);
-    console.log('[usersApi.getAll] Parsed users:', userData);
+    console.log("[usersApi.getAll] Raw result:", result);
+    console.log("[usersApi.getAll] Parsed users:", userData);
     return { success: result.success ?? true, data: userData };
   },
 
