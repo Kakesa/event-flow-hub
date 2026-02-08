@@ -338,7 +338,7 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* System Status */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="border-green-500/50 bg-green-500/5">
             <CardContent className="pt-4">
               <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ const SuperAdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
