@@ -49,7 +49,7 @@ export interface Organizer {
 export interface Event {
   id: string;
   _id?: string;
-  userId: string;
+  userId: string | User;
 
   title: string;
   slug: string;

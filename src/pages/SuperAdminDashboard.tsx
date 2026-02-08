@@ -149,6 +149,7 @@ const SuperAdminDashboard = () => {
       setAdmins(adminsData);
       console.log('Admins fetched:', adminsData.length, adminsData);
       setEvents(eventsRes.data || []);
+      console.log('Events fetched:', (eventsRes.data || []).length);
       setEmailLogs(emailLogsRes.data || []);
       setEmailAnalytics(emailAnalyticsRes.data || null);
       
@@ -263,7 +264,10 @@ const SuperAdminDashboard = () => {
 
   const filteredEvents = events.filter(e => {
     const matchesSearch = e.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAdmin = adminFilter === 'all' || e.userId === adminFilter;
+    const eventOwnerId = typeof e.userId === 'object' && e.userId !== null 
+      ? (e.userId as any)._id || (e.userId as any).id 
+      : e.userId;
+    const matchesAdmin = adminFilter === 'all' || eventOwnerId === adminFilter;
     return matchesSearch && matchesAdmin;
   });
 
@@ -867,7 +871,10 @@ const SuperAdminDashboard = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {users.find(u => (u._id || u.id) === event.userId)?.name || 'N/A'}
+                          {typeof event.userId === 'object' && event.userId !== null
+                            ? (event.userId as any).name
+                            : users.find(u => (u._id || u.id) === event.userId)?.name || 'N/A'
+                          }
                         </TableCell>
                         <TableCell>
                           {format(new Date(event.date), 'dd MMM yyyy', { locale: fr })}
