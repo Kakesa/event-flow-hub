@@ -293,26 +293,22 @@ const Invitations = () => {
                       </div>
                     ))}
 
-                    {/* Bouton Composer Email (si méthode email) */}
-                    {selectedMethod === 'email' && (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        disabled={selectedGuests.length === 0}
-                        onClick={() => setShowEmailComposer(true)}
-                      >
-                        <PenLine className="h-4 w-4 mr-2" />
-                        Composer l'email
-                      </Button>
-                    )}
-
                     <Button
                       className="w-full"
                       disabled={sending || selectedGuests.length === 0}
                       onClick={handleSendInvitations}
                     >
-                      <Send className="h-4 w-4 mr-2" />
-                      Envoi rapide ({selectedGuests.length})
+                      {selectedMethod === 'email' ? (
+                        <>
+                          <PenLine className="h-4 w-4 mr-2" />
+                          Composer & Envoyer ({selectedGuests.length})
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          {sending ? 'Envoi...' : `Envoyer (${selectedGuests.length})`}
+                        </>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
