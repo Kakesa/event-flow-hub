@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { usersApi } from '@/services/api';
+import { usersApi, auditApi } from '@/services/api';
 import type { User, ModulePermission, ModuleName } from '@/types/models';
 
 interface PermissionsEditorProps {
@@ -100,9 +100,40 @@ export const PermissionsEditor = ({ user, open, onOpenChange, onSaved }: Permiss
   const handleSave = async () => {
     if (!user) return;
     
+    const previousPermissions = user.permissions || [];
+    
     setLoading(true);
     try {
       await usersApi.update(user._id || user.id || '', { permissions });
+      
+      // Log dans l'audit
+      try {
+        await auditApi.createLog({
+          action: 'permission_changed',
+          category: 'security',
+          resourceType: 'user',
+          resourceId: user._id || user.id || '',
+          resourceName: user.name,
+          previousValue: previousPermissions,
+          newValue: permissions,
+          severity: 'high',
+          details: {
+            targetUser: user.name,
+            targetEmail: user.email,
+            targetRole: user.role,
+            modulesChanged: permissions
+              .filter((p, i) => {
+                const prev = previousPermissions.find(pp => pp.module === p.module);
+                if (!prev) return true;
+                return p.create !== prev.create || p.read !== prev.read || p.update !== prev.update || p.delete !== prev.delete;
+              })
+              .map(p => p.module),
+          },
+        });
+      } catch (auditError) {
+        console.warn('Audit log failed:', auditError);
+      }
+      
       toast({ title: 'Succès', description: 'Permissions mises à jour' });
       onSaved();
       onOpenChange(false);
