@@ -134,29 +134,30 @@ const Invitations = () => {
       return;
     }
 
+    const selectedGuestObjects = guests.filter(g => selectedGuests.includes(g.id));
+
+    // Email → ouvrir le compositeur pour personnaliser le template
+    if (selectedMethod === 'email') {
+      setShowEmailComposer(true);
+      return;
+    }
+
     setSending(true);
     try {
-      const selectedGuestObjects = guests.filter(g => selectedGuests.includes(g.id));
-
-      // Envoi selon la méthode choisie
       if (selectedMethod === 'whatsapp') {
         handleWhatsAppSend(selectedGuestObjects);
         await invitationsApi.sendBulk(selectedGuests, 'whatsapp');
       } else if (selectedMethod === 'sms') {
-        // Pour SMS, on utilise l'API backend
         await invitationsApi.sendBulk(selectedGuests, 'sms');
-      } else {
-        // Email - utiliser l'API backend
-        await invitationsApi.sendBulk(selectedGuests, 'email');
       }
 
       toast({
         title: 'Succès',
-        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod === 'email' ? 'email' : selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}`,
+        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}`,
       });
       
       setSelectedGuests([]);
-      await refreshGuests(); // Rafraîchir la liste
+      await refreshGuests();
     } catch {
       toast({ title: 'Erreur', description: 'Échec de l\'envoi', variant: 'destructive' });
     } finally {
@@ -292,26 +293,22 @@ const Invitations = () => {
                       </div>
                     ))}
 
-                    {/* Bouton Composer Email (si méthode email) */}
-                    {selectedMethod === 'email' && (
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        disabled={selectedGuests.length === 0}
-                        onClick={() => setShowEmailComposer(true)}
-                      >
-                        <PenLine className="h-4 w-4 mr-2" />
-                        Composer l'email
-                      </Button>
-                    )}
-
                     <Button
                       className="w-full"
                       disabled={sending || selectedGuests.length === 0}
                       onClick={handleSendInvitations}
                     >
-                      <Send className="h-4 w-4 mr-2" />
-                      Envoi rapide ({selectedGuests.length})
+                      {selectedMethod === 'email' ? (
+                        <>
+                          <PenLine className="h-4 w-4 mr-2" />
+                          Composer & Envoyer ({selectedGuests.length})
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          {sending ? 'Envoi...' : `Envoyer (${selectedGuests.length})`}
+                        </>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>
