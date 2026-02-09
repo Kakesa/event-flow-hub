@@ -203,26 +203,106 @@ const RSVP = () => {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center border-border/50 shadow-2xl">
-          <CardContent className="pt-12 pb-8">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              {formData.status === "confirmed" ? (
-                <Heart className="w-10 h-10 text-primary" />
-              ) : (
-                <Check className="w-10 h-10 text-primary" />
-              )}
-            </div>
-            <h2 className="font-display text-2xl font-bold mb-2">Merci pour votre réponse!</h2>
-            <p className="text-muted-foreground mb-6">
-              {formData.status === "confirmed"
-                ? "Nous sommes ravis de vous compter parmi nous!"
-                : "Nous comprenons et vous remercions d'avoir pris le temps de répondre."}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Si vous souhaitez modifier votre réponse, veuillez contacter l'organisateur.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-md space-y-4">
+          <Card className="text-center border-border/50 shadow-2xl">
+            <CardContent className="pt-12 pb-8">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                {formData.status === "confirmed" ? (
+                  <Heart className="w-10 h-10 text-primary" />
+                ) : (
+                  <Check className="w-10 h-10 text-primary" />
+                )}
+              </div>
+              <h2 className="font-display text-2xl font-bold mb-2">Merci pour votre réponse!</h2>
+              <p className="text-muted-foreground mb-6">
+                {formData.status === "confirmed"
+                  ? "Nous sommes ravis de vous compter parmi nous!"
+                  : "Nous comprenons et vous remercions d'avoir pris le temps de répondre."}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Si vous souhaitez modifier votre réponse, veuillez contacter l'organisateur.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Récapitulatif des détails soumis */}
+          {formData.status === "confirmed" && (
+            <Card className="border-border/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Wine className="w-4 h-4 text-primary" />
+                  Récapitulatif de votre réponse
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {guest?.name && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Nom</span>
+                    <span className="font-medium">{guest.name}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Statut</span>
+                  <span className="font-medium text-green-600">✓ Confirmé</span>
+                </div>
+                {formData.drinkPreference && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Boisson</span>
+                    <span className="font-medium">
+                      {drinkOptions.find(d => d.value === formData.drinkPreference)?.label || formData.drinkPreference}
+                    </span>
+                  </div>
+                )}
+                {formData.dietaryRestrictions && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Restrictions alimentaires</span>
+                    <span className="font-medium">{formData.dietaryRestrictions}</span>
+                  </div>
+                )}
+                {formData.plusOne && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Accompagnant</span>
+                    <span className="font-medium">{formData.plusOneName || "Oui"}</span>
+                  </div>
+                )}
+                {formData.message && (
+                  <div className="pt-2 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground mb-1">Votre message</p>
+                    <p className="text-sm italic">"{formData.message}"</p>
+                  </div>
+                )}
+
+                {/* Détails de l'événement */}
+                {event && (
+                  <div className="pt-3 mt-3 border-t border-border/50 space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Rappel événement</p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-3.5 h-3.5 text-primary" />
+                      <span>{new Date(event.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-3.5 h-3.5 text-primary" />
+                      <span>{event.startTime || "—"} - {event.endTime || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-3.5 h-3.5 text-primary" />
+                      <span>{event.location}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {formData.status === "declined" && formData.message && (
+            <Card className="border-border/50 shadow-lg">
+              <CardContent className="pt-4 pb-4">
+                <p className="text-xs text-muted-foreground mb-1">Votre message</p>
+                <p className="text-sm italic">"{formData.message}"</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     );
   }
