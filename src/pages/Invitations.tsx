@@ -134,29 +134,30 @@ const Invitations = () => {
       return;
     }
 
+    const selectedGuestObjects = guests.filter(g => selectedGuests.includes(g.id));
+
+    // Email → ouvrir le compositeur pour personnaliser le template
+    if (selectedMethod === 'email') {
+      setShowEmailComposer(true);
+      return;
+    }
+
     setSending(true);
     try {
-      const selectedGuestObjects = guests.filter(g => selectedGuests.includes(g.id));
-
-      // Envoi selon la méthode choisie
       if (selectedMethod === 'whatsapp') {
         handleWhatsAppSend(selectedGuestObjects);
         await invitationsApi.sendBulk(selectedGuests, 'whatsapp');
       } else if (selectedMethod === 'sms') {
-        // Pour SMS, on utilise l'API backend
         await invitationsApi.sendBulk(selectedGuests, 'sms');
-      } else {
-        // Email - utiliser l'API backend
-        await invitationsApi.sendBulk(selectedGuests, 'email');
       }
 
       toast({
         title: 'Succès',
-        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod === 'email' ? 'email' : selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}`,
+        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}`,
       });
       
       setSelectedGuests([]);
-      await refreshGuests(); // Rafraîchir la liste
+      await refreshGuests();
     } catch {
       toast({ title: 'Erreur', description: 'Échec de l\'envoi', variant: 'destructive' });
     } finally {
