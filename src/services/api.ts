@@ -875,7 +875,6 @@ export const auditApi = {
     });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
 
-    // Mapper les données du backend (actor.id) vers le format frontend (userName, userEmail, timestamp)
     const mappedLogs = (result.data || []).map((log: any) => ({
       ...log,
       id: log._id || log.id,
@@ -888,5 +887,25 @@ export const auditApi = {
     }));
 
     return { success: result.success ?? true, data: mappedLogs };
+  },
+
+  createLog: async (data: {
+    action: string;
+    category: string;
+    resourceType: string;
+    resourceId?: string;
+    resourceName?: string;
+    details?: Record<string, unknown>;
+    previousValue?: unknown;
+    newValue?: unknown;
+    severity?: string;
+  }): Promise<ApiResponse<any>> => {
+    const res = await fetch(`${API_BASE_URL}/audit`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
   },
 };

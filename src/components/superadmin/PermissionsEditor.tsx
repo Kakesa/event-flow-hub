@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { usersApi } from '@/services/api';
+import { usersApi, auditApi } from '@/services/api';
 import type { User, ModulePermission, ModuleName } from '@/types/models';
 
 interface PermissionsEditorProps {
