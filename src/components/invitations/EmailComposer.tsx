@@ -152,7 +152,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
         
         <!-- Header -->
         <div style="background: linear-gradient(180deg, #1a1710 0%, #2a2318 100%); padding: 40px 40px 30px; text-align: center;">
-          <img src="${window.location.origin}/src/assets/white.png" alt="HK Events Agency" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; object-fit: cover;" />
+          <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; object-fit: cover;" />
           <h1 style="color: #f5f0e8; margin: 0; font-size: 26px; font-weight: 400; line-height: 1.3; font-family: 'Georgia', serif;">${processedSubject}</h1>
           <div style="width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 20px auto 0;"></div>
         </div>
