@@ -220,46 +220,35 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
     const previewGuest = selectedGuests[0] || { name: 'Jean Dupont', email: 'jean@example.com' } as Guest;
     const processedSubject = replaceVariables(subject, previewGuest);
     const processedBody = replaceVariables(body, previewGuest);
+    const t = emailThemes.find(th => th.id === selectedTheme) || emailThemes[0];
 
     return `
-      <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: #1a1710; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        
-        <!-- Top gold accent line -->
-        <div style="height: 4px; background: linear-gradient(90deg, #b8860b, #daa520, #f5c842, #daa520, #b8860b);"></div>
-        
-        <!-- Header -->
-        <div style="background: linear-gradient(180deg, #1a1710 0%, #2a2318 100%); padding: 40px 40px 30px; text-align: center;">
+      <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: ${t.bg}; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
+        <div style="background: ${t.headerGradient}; padding: 40px 40px 30px; text-align: center;">
           <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; object-fit: cover;" />
           <h1 style="color: #f5f0e8; margin: 0; font-size: 26px; font-weight: 400; line-height: 1.3; font-family: 'Georgia', serif;">${processedSubject}</h1>
-          <div style="width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 20px auto 0;"></div>
+          <div style="width: 60px; height: 1px; background: ${t.divider}; margin: 20px auto 0;"></div>
         </div>
-        
-        <!-- Body -->
         <div style="padding: 0 40px;">
-          <div style="background: linear-gradient(180deg, #f9f6f0 0%, #ffffff 30%, #ffffff 70%, #f9f6f0 100%); border-radius: 12px; padding: 36px 32px; border: 1px solid #e8dcc8;">
-            <div style="white-space: pre-wrap; line-height: 1.8; color: #3d3428; font-size: 15px;">
+          <div style="background: ${t.bodyBg}; border-radius: 12px; padding: 36px 32px; border: 1px solid ${t.bodyBorder};">
+            <div style="white-space: pre-wrap; line-height: 1.8; color: ${t.bodyText}; font-size: 15px;">
               ${processedBody.replace(/\n/g, '<br />')}
             </div>
           </div>
         </div>
-        
-        <!-- RSVP Button area -->
         <div style="text-align: center; padding: 30px 40px 10px;">
-          <a href="#" style="display: inline-block; background: linear-gradient(135deg, #b8860b, #daa520, #f5c842); color: #1a1710; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 4px 20px rgba(218, 165, 32, 0.4);">
+          <a href="#" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: ${t.btnShadow};">
             Confirmer ma présence
           </a>
         </div>
-        
-        <!-- Footer -->
         <div style="padding: 24px 40px 32px; text-align: center;">
-          <div style="width: 40px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 0 auto 16px;"></div>
-          <p style="color: #6b5e4e; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
-            Envoyé avec élégance via <span style="color: #daa520;">HK Event</span>
+          <div style="width: 40px; height: 1px; background: ${t.divider}; margin: 0 auto 16px;"></div>
+          <p style="color: ${t.footerText}; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
+            Envoyé avec élégance via <span style="color: ${t.accent};">HK Event</span>
           </p>
         </div>
-        
-        <!-- Bottom gold accent line -->
-        <div style="height: 4px; background: linear-gradient(90deg, #b8860b, #daa520, #f5c842, #daa520, #b8860b);"></div>
+        <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
       </div>
     `;
   };
