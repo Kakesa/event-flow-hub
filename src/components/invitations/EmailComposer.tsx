@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Eye, Mail, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Eye, Mail, Sparkles, Loader2, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,82 @@ interface EmailTemplate {
   body: string;
   preview: string;
 }
+
+interface EmailColorTheme {
+  id: string;
+  name: string;
+  swatch: string; // tailwind bg class for selector
+  bg: string;
+  bgGradient: string;
+  headerGradient: string;
+  accent: string;
+  accentLight: string;
+  accentDark: string;
+  btnGradient: string;
+  btnShadow: string;
+  bodyBg: string;
+  bodyBorder: string;
+  bodyText: string;
+  divider: string;
+  footerText: string;
+}
+
+const emailThemes: EmailColorTheme[] = [
+  {
+    id: 'gold',
+    name: 'Doré',
+    swatch: 'bg-amber-500',
+    bg: '#1a1710',
+    bgGradient: 'linear-gradient(180deg, #1a1710 0%, #2a2318 100%)',
+    headerGradient: 'linear-gradient(180deg, #1a1710 0%, #2a2318 100%)',
+    accent: '#daa520',
+    accentLight: '#f5c842',
+    accentDark: '#b8860b',
+    btnGradient: 'linear-gradient(135deg, #b8860b, #daa520, #f5c842)',
+    btnShadow: '0 4px 20px rgba(218, 165, 32, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #f9f6f0 0%, #ffffff 30%, #ffffff 70%, #f9f6f0 100%)',
+    bodyBorder: '#e8dcc8',
+    bodyText: '#3d3428',
+    divider: 'linear-gradient(90deg, transparent, #daa520, transparent)',
+    footerText: '#6b5e4e',
+  },
+  {
+    id: 'blue',
+    name: 'Bleu',
+    swatch: 'bg-blue-500',
+    bg: '#0f1724',
+    bgGradient: 'linear-gradient(180deg, #0f1724 0%, #162032 100%)',
+    headerGradient: 'linear-gradient(180deg, #0f1724 0%, #162032 100%)',
+    accent: '#4a9eff',
+    accentLight: '#7dbdff',
+    accentDark: '#2563eb',
+    btnGradient: 'linear-gradient(135deg, #2563eb, #4a9eff, #7dbdff)',
+    btnShadow: '0 4px 20px rgba(74, 158, 255, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #f0f4fa 0%, #ffffff 30%, #ffffff 70%, #f0f4fa 100%)',
+    bodyBorder: '#c8d8e8',
+    bodyText: '#1e293b',
+    divider: 'linear-gradient(90deg, transparent, #4a9eff, transparent)',
+    footerText: '#64748b',
+  },
+  {
+    id: 'green',
+    name: 'Vert',
+    swatch: 'bg-emerald-500',
+    bg: '#0f1a14',
+    bgGradient: 'linear-gradient(180deg, #0f1a14 0%, #162a1e 100%)',
+    headerGradient: 'linear-gradient(180deg, #0f1a14 0%, #162a1e 100%)',
+    accent: '#34d399',
+    accentLight: '#6ee7b7',
+    accentDark: '#059669',
+    btnGradient: 'linear-gradient(135deg, #059669, #34d399, #6ee7b7)',
+    btnShadow: '0 4px 20px rgba(52, 211, 153, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #f0faf5 0%, #ffffff 30%, #ffffff 70%, #f0faf5 100%)',
+    bodyBorder: '#c8e8d8',
+    bodyText: '#1a3028',
+    divider: 'linear-gradient(90deg, transparent, #34d399, transparent)',
+    footerText: '#4b6b5e',
+  },
+];
 
 interface EmailComposerProps {
   open: boolean;
@@ -105,6 +181,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
   const [selectedTemplate, setSelectedTemplate] = useState<string>('invitation');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState<string>('gold');
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
 
@@ -143,46 +220,35 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
     const previewGuest = selectedGuests[0] || { name: 'Jean Dupont', email: 'jean@example.com' } as Guest;
     const processedSubject = replaceVariables(subject, previewGuest);
     const processedBody = replaceVariables(body, previewGuest);
+    const t = emailThemes.find(th => th.id === selectedTheme) || emailThemes[0];
 
     return `
-      <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: #1a1710; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        
-        <!-- Top gold accent line -->
-        <div style="height: 4px; background: linear-gradient(90deg, #b8860b, #daa520, #f5c842, #daa520, #b8860b);"></div>
-        
-        <!-- Header -->
-        <div style="background: linear-gradient(180deg, #1a1710 0%, #2a2318 100%); padding: 40px 40px 30px; text-align: center;">
+      <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: ${t.bg}; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
+        <div style="background: ${t.headerGradient}; padding: 40px 40px 30px; text-align: center;">
           <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; object-fit: cover;" />
           <h1 style="color: #f5f0e8; margin: 0; font-size: 26px; font-weight: 400; line-height: 1.3; font-family: 'Georgia', serif;">${processedSubject}</h1>
-          <div style="width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 20px auto 0;"></div>
+          <div style="width: 60px; height: 1px; background: ${t.divider}; margin: 20px auto 0;"></div>
         </div>
-        
-        <!-- Body -->
         <div style="padding: 0 40px;">
-          <div style="background: linear-gradient(180deg, #f9f6f0 0%, #ffffff 30%, #ffffff 70%, #f9f6f0 100%); border-radius: 12px; padding: 36px 32px; border: 1px solid #e8dcc8;">
-            <div style="white-space: pre-wrap; line-height: 1.8; color: #3d3428; font-size: 15px;">
+          <div style="background: ${t.bodyBg}; border-radius: 12px; padding: 36px 32px; border: 1px solid ${t.bodyBorder};">
+            <div style="white-space: pre-wrap; line-height: 1.8; color: ${t.bodyText}; font-size: 15px;">
               ${processedBody.replace(/\n/g, '<br />')}
             </div>
           </div>
         </div>
-        
-        <!-- RSVP Button area -->
         <div style="text-align: center; padding: 30px 40px 10px;">
-          <a href="#" style="display: inline-block; background: linear-gradient(135deg, #b8860b, #daa520, #f5c842); color: #1a1710; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 4px 20px rgba(218, 165, 32, 0.4);">
+          <a href="#" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: ${t.btnShadow};">
             Confirmer ma présence
           </a>
         </div>
-        
-        <!-- Footer -->
         <div style="padding: 24px 40px 32px; text-align: center;">
-          <div style="width: 40px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 0 auto 16px;"></div>
-          <p style="color: #6b5e4e; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
-            Envoyé avec élégance via <span style="color: #daa520;">HK Event</span>
+          <div style="width: 40px; height: 1px; background: ${t.divider}; margin: 0 auto 16px;"></div>
+          <p style="color: ${t.footerText}; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
+            Envoyé avec élégance via <span style="color: ${t.accent};">HK Event</span>
           </p>
         </div>
-        
-        <!-- Bottom gold accent line -->
-        <div style="height: 4px; background: linear-gradient(90deg, #b8860b, #daa520, #f5c842, #daa520, #b8860b);"></div>
+        <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
       </div>
     `;
   };
@@ -268,6 +334,30 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
               </div>
             </div>
 
+            {/* Theme Selection */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Thème de couleur
+              </Label>
+              <div className="flex gap-3">
+                {emailThemes.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setSelectedTheme(theme.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                      selectedTheme === theme.id
+                        ? 'border-primary ring-2 ring-primary/20 bg-accent'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full ${theme.swatch} shadow-inner`} />
+                    <span className="text-sm font-medium">{theme.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Subject */}
             <div className="space-y-2">
               <Label htmlFor="subject">Objet</Label>
