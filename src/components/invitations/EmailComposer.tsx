@@ -145,18 +145,44 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
     const processedBody = replaceVariables(body, previewGuest);
 
     return `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">${processedSubject}</h1>
+      <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: #1a1710; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        
+        <!-- Top gold accent line -->
+        <div style="height: 4px; background: linear-gradient(90deg, #b8860b, #daa520, #f5c842, #daa520, #b8860b);"></div>
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(180deg, #1a1710 0%, #2a2318 100%); padding: 40px 40px 30px; text-align: center;">
+          <div style="font-size: 12px; letter-spacing: 6px; text-transform: uppercase; color: #daa520; margin-bottom: 16px; font-family: 'Helvetica Neue', Arial, sans-serif;">✦ HK Event ✦</div>
+          <h1 style="color: #f5f0e8; margin: 0; font-size: 26px; font-weight: 400; line-height: 1.3; font-family: 'Georgia', serif;">${processedSubject}</h1>
+          <div style="width: 60px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 20px auto 0;"></div>
         </div>
-        <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-          <div style="white-space: pre-wrap; line-height: 1.6; color: #374151;">
-            ${processedBody.replace(/\n/g, '<br />')}
-          </div>
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-            <p>Cet email a été envoyé via HK Event</p>
+        
+        <!-- Body -->
+        <div style="padding: 0 40px;">
+          <div style="background: linear-gradient(180deg, #f9f6f0 0%, #ffffff 30%, #ffffff 70%, #f9f6f0 100%); border-radius: 12px; padding: 36px 32px; border: 1px solid #e8dcc8;">
+            <div style="white-space: pre-wrap; line-height: 1.8; color: #3d3428; font-size: 15px;">
+              ${processedBody.replace(/\n/g, '<br />')}
+            </div>
           </div>
         </div>
+        
+        <!-- RSVP Button area -->
+        <div style="text-align: center; padding: 30px 40px 10px;">
+          <a href="#" style="display: inline-block; background: linear-gradient(135deg, #b8860b, #daa520, #f5c842); color: #1a1710; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 4px 20px rgba(218, 165, 32, 0.4);">
+            Confirmer ma présence
+          </a>
+        </div>
+        
+        <!-- Footer -->
+        <div style="padding: 24px 40px 32px; text-align: center;">
+          <div style="width: 40px; height: 1px; background: linear-gradient(90deg, transparent, #daa520, transparent); margin: 0 auto 16px;"></div>
+          <p style="color: #6b5e4e; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
+            Envoyé avec élégance via <span style="color: #daa520;">HK Event</span>
+          </p>
+        </div>
+        
+        <!-- Bottom gold accent line -->
+        <div style="height: 4px; background: linear-gradient(90deg, #b8860b, #daa520, #f5c842, #daa520, #b8860b);"></div>
       </div>
     `;
   };
