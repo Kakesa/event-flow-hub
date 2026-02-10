@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Eye, Mail, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Eye, Mail, Sparkles, Loader2, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
