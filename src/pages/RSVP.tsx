@@ -112,7 +112,7 @@ const RSVP = () => {
 
       try {
         // Fetch event toujours
-        const eventRes = await eventsApi.getById(eventId).catch(() => ({ success: false, data: null }));
+        const eventRes = await eventsApi.getByIdPublic(eventId).catch(() => ({ success: false, data: null }));
 
         if (!eventRes.success || !eventRes.data) {
           setError("Événement introuvable ou lien expiré");
