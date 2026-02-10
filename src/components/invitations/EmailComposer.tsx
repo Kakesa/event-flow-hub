@@ -33,6 +33,82 @@ interface EmailTemplate {
   preview: string;
 }
 
+interface EmailColorTheme {
+  id: string;
+  name: string;
+  swatch: string; // tailwind bg class for selector
+  bg: string;
+  bgGradient: string;
+  headerGradient: string;
+  accent: string;
+  accentLight: string;
+  accentDark: string;
+  btnGradient: string;
+  btnShadow: string;
+  bodyBg: string;
+  bodyBorder: string;
+  bodyText: string;
+  divider: string;
+  footerText: string;
+}
+
+const emailThemes: EmailColorTheme[] = [
+  {
+    id: 'gold',
+    name: 'Doré',
+    swatch: 'bg-amber-500',
+    bg: '#1a1710',
+    bgGradient: 'linear-gradient(180deg, #1a1710 0%, #2a2318 100%)',
+    headerGradient: 'linear-gradient(180deg, #1a1710 0%, #2a2318 100%)',
+    accent: '#daa520',
+    accentLight: '#f5c842',
+    accentDark: '#b8860b',
+    btnGradient: 'linear-gradient(135deg, #b8860b, #daa520, #f5c842)',
+    btnShadow: '0 4px 20px rgba(218, 165, 32, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #f9f6f0 0%, #ffffff 30%, #ffffff 70%, #f9f6f0 100%)',
+    bodyBorder: '#e8dcc8',
+    bodyText: '#3d3428',
+    divider: 'linear-gradient(90deg, transparent, #daa520, transparent)',
+    footerText: '#6b5e4e',
+  },
+  {
+    id: 'blue',
+    name: 'Bleu',
+    swatch: 'bg-blue-500',
+    bg: '#0f1724',
+    bgGradient: 'linear-gradient(180deg, #0f1724 0%, #162032 100%)',
+    headerGradient: 'linear-gradient(180deg, #0f1724 0%, #162032 100%)',
+    accent: '#4a9eff',
+    accentLight: '#7dbdff',
+    accentDark: '#2563eb',
+    btnGradient: 'linear-gradient(135deg, #2563eb, #4a9eff, #7dbdff)',
+    btnShadow: '0 4px 20px rgba(74, 158, 255, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #f0f4fa 0%, #ffffff 30%, #ffffff 70%, #f0f4fa 100%)',
+    bodyBorder: '#c8d8e8',
+    bodyText: '#1e293b',
+    divider: 'linear-gradient(90deg, transparent, #4a9eff, transparent)',
+    footerText: '#64748b',
+  },
+  {
+    id: 'green',
+    name: 'Vert',
+    swatch: 'bg-emerald-500',
+    bg: '#0f1a14',
+    bgGradient: 'linear-gradient(180deg, #0f1a14 0%, #162a1e 100%)',
+    headerGradient: 'linear-gradient(180deg, #0f1a14 0%, #162a1e 100%)',
+    accent: '#34d399',
+    accentLight: '#6ee7b7',
+    accentDark: '#059669',
+    btnGradient: 'linear-gradient(135deg, #059669, #34d399, #6ee7b7)',
+    btnShadow: '0 4px 20px rgba(52, 211, 153, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #f0faf5 0%, #ffffff 30%, #ffffff 70%, #f0faf5 100%)',
+    bodyBorder: '#c8e8d8',
+    bodyText: '#1a3028',
+    divider: 'linear-gradient(90deg, transparent, #34d399, transparent)',
+    footerText: '#4b6b5e',
+  },
+];
+
 interface EmailComposerProps {
   open: boolean;
   onClose: () => void;
