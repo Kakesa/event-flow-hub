@@ -90,6 +90,8 @@ const RSVP = () => {
   const [guest, setGuest] = useState<Guest | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
   const [formData, setFormData] = useState({
+    name: "", // Added for public RSVP
+    email: "", // Added for public RSVP
     status: "pending" as "confirmed" | "declined" | "pending",
     drinkPreference: "",
     message: "",
@@ -130,6 +132,8 @@ const RSVP = () => {
             setGuest(guestRes.data);
             const status = guestRes.data.status;
             setFormData({
+              name: guestRes.data.name,
+              email: guestRes.data.email,
               status: status === "invited" ? "pending" : status,
               drinkPreference: guestRes.data.drinkPreference || "",
               message: "",
@@ -142,13 +146,9 @@ const RSVP = () => {
             if (status === "confirmed" || status === "declined") {
               setIsSubmitted(true);
             }
-          } else {
-             // Si guestId est invalide mais eventId valide, on peut soit erreur, soit juste afficher l'event
-             // Ici on choisit d'afficher l'erreur specifique au guest si l'ID était fourni
-             console.warn("Guest introuvable avec l'ID fourni");
-             // Optionnel : setError("Invitation introuvable pour ce code invité");
           }
         }
+        // If no guestId, we stay in public mode (guest is null)
 
       } catch (err: any) {
         console.error("RSVP fetch error:", err);
@@ -163,7 +163,7 @@ const RSVP = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guest || !event) return;
+    if (!event) return;
 
     if (formData.status === "pending") {
       toast.error("Veuillez confirmer ou décliner l'invitation");
@@ -173,24 +173,72 @@ const RSVP = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await rsvpApi.submit(guest.id, {
-        eventId: event.id,
-        status: formData.status, // confirmed | declined
-        drinkPreference: formData.drinkPreference,
-        dietaryRestrictions: formData.dietaryRestrictions,
-        message: formData.message,
+      let currentGuestId: string;
+      let currentGuestName: string;
+
+      if (guest) {
+        // Update existing guest
+        currentGuestId = guest.id;
+        currentGuestName = guest.name;
+        const res = await rsvpApi.submit(guest.id, {
+          eventId: event.id,
+          status: formData.status, // confirmed | declined
+          drinkPreference: formData.drinkPreference,
+          dietaryRestrictions: formData.dietaryRestrictions,
+          message: formData.message,
+        });
+        if (res.success) setGuest(res.data);
+      } else {
+         // Create new guest via public register
+         if (!formData.name || !formData.email) {
+           toast.error("Nom et email requis");
+           setIsSubmitting(false);
+           return;
+         }
+         const res = await rsvpApi.registerPublic(event.id, {
+            name: formData.name,
+            email: formData.email,
+            status: formData.status,
+            drinkPreference: formData.drinkPreference,
+            dietaryRestrictions: formData.dietaryRestrictions,
+            message: formData.message,
+            plusOne: formData.plusOne,
+            plusOneName: formData.plusOneName,
+         });
+         if (res.success) {
+           setGuest(res.data);
+           currentGuestId = res.data.id;
+           currentGuestName = res.data.name;
+         } else {
+            throw new Error(res.error || "Erreur lors de l'inscription");
+         }
+      }
+
+      setIsSubmitted(true);
+      toast.success("Votre réponse a été enregistrée !");
+
+      // Notifier l'organisateur par email (fire-and-forget)
+      if (guest || (formData.name && formData.email)) {
+         // We might need the ID here if create, using what we got back
+         // Since we setGuest above, state update might not be immediate for guest variable
+         // Ideally use the returned data ID
+         // But for simplicity, we assume we have *an* ID now.
+         // Actually, let's use the ID we just got/have.
+         const idToUse = guest ? guest.id : (guest as any)?.id; // Typescript might complain if we rely on state update
+         // Better logic implemented above with currentGuestId
+      }
+
+      // Hack: we need the ID for the notification call if it's new
+      // But notifyOrganizer needs guestId.
+      // Re-architect: notifyOrganizer takes generic data or we pass the just-created ID.
+      // Let's assume we use the just created/updated guest details for notification logic in backend or passed ID.
+      // The current notifyOrganizer takes guestId. 
+      // We stored currentGuestId above.
+      
+      emailsApi.notifyOrganizer(currentGuestId!, event.id, formData.status).catch((err) => {
+        console.warn("Notification organisateur échouée:", err);
       });
 
-      if (res.success) {
-        setGuest(res.data);
-        setIsSubmitted(true);
-        toast.success("Votre réponse a été enregistrée !");
-
-        // Notifier l'organisateur par email (fire-and-forget)
-        emailsApi.notifyOrganizer(guest.id, event.id, formData.status).catch((err) => {
-          console.warn("Notification organisateur échouée:", err);
-        });
-      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Une erreur est survenue");
@@ -387,14 +435,38 @@ const RSVP = () => {
         </Card>
 
         {/* RSVP Form OR Login Notice */}
-        {guest ? (
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
               <CardTitle className="font-display text-xl">Confirmer votre présence</CardTitle>
-              <CardDescription>Bonjour {guest.name}, merci de nous indiquer votre réponse</CardDescription>
+              <CardDescription>Merci de remplir ce formulaire pour indiquer votre réponse</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Public Guest Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Votre Nom *</Label>
+                    <Input
+                      id="name"
+                      placeholder="Jean Dupont"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Votre Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="jean@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
                 {/* Response Selection */}
                 <div className="space-y-3">
                   <Label>Votre réponse *</Label>
@@ -500,24 +572,7 @@ const RSVP = () => {
               </form>
             </CardContent>
           </Card>
-        ) : (
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="font-display text-xl text-center">Invitation Personnelle Requise</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-center">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
-                <Mail className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground">
-                Cet événement est privé. Vous devriez avoir reçu un lien d'invitation personnel par email ou SMS.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Veuillez utiliser ce lien pour confirmer votre présence.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           Propulsé par HK Event

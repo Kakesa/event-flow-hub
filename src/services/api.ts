@@ -145,6 +145,17 @@ export const eventsApi = {
     const events: Event[] = result.data || [];
     return { success: result.success ?? true, data: events };
   },
+
+  // 🌍 PUBLIC: Get event by ID (no auth)
+  getByIdPublic: async (id: string): Promise<ApiResponse<Event>> => {
+    const res = await fetch(`${API_BASE_URL}/public/events/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
 };
 
 // ==================== INVITÉS ====================
@@ -276,6 +287,42 @@ export const rsvpApi = {
     },
   ): Promise<ApiResponse<Guest>> => {
     const res = await fetch(`${API_BASE_URL}/public/rsvp/${guestId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await handleResponse<{
+      success: boolean;
+      data: Guest & { _id: string };
+    }>(res);
+
+    return {
+      success: result.success ?? true,
+      data: {
+        ...result.data,
+        id: result.data._id,
+      },
+    };
+  },
+
+  // POST /api/public/register/:eventId
+  registerPublic: async (
+    eventId: string,
+    data: {
+      name: string;
+      email: string;
+      status: RSVPStatus;
+      drinkPreference?: string;
+      dietaryRestrictions?: string;
+      message?: string;
+      plusOne?: boolean;
+      plusOneName?: string;
+    },
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(`${API_BASE_URL}/public/register/${eventId}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -554,23 +601,6 @@ export const emailsApi = {
   > => {
     const res = await fetch(`${API_BASE_URL}/emails/test`, {
       headers: getHeaders(),
-    });
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
-    return { success: result.success ?? true, data: result.data };
-  },
-
-  // Notifier l'organisateur d'un nouveau RSVP
-  notifyOrganizer: async (data: {
-    guestId: string;
-    eventId: string;
-    status: string;
-  }): Promise<ApiResponse<{ success: boolean }>> => {
-    const res = await fetch(`${API_BASE_URL}/emails/notify-organizer`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
