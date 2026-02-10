@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail } from "lucide-react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
-import { rsvpApi, eventsApi } from "@/services/api";
+import { rsvpApi, eventsApi, emailsApi } from "@/services/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -112,7 +112,7 @@ const RSVP = () => {
 
       try {
         // Fetch event toujours
-        const eventRes = await eventsApi.getById(eventId).catch(() => ({ success: false, data: null }));
+        const eventRes = await eventsApi.getByIdPublic(eventId).catch(() => ({ success: false, data: null }));
 
         if (!eventRes.success || !eventRes.data) {
           setError("Événement introuvable ou lien expiré");
@@ -185,6 +185,11 @@ const RSVP = () => {
         setGuest(res.data);
         setIsSubmitted(true);
         toast.success("Votre réponse a été enregistrée !");
+
+        // Notifier l'organisateur par email (fire-and-forget)
+        emailsApi.notifyOrganizer(guest.id, event.id, formData.status).catch((err) => {
+          console.warn("Notification organisateur échouée:", err);
+        });
       }
     } catch (err: any) {
       console.error(err);
