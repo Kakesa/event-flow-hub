@@ -334,6 +334,30 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
               </div>
             </div>
 
+            {/* Theme Selection */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                Thème de couleur
+              </Label>
+              <div className="flex gap-3">
+                {emailThemes.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setSelectedTheme(theme.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                      selectedTheme === theme.id
+                        ? 'border-primary ring-2 ring-primary/20 bg-accent'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full ${theme.swatch} shadow-inner`} />
+                    <span className="text-sm font-medium">{theme.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Subject */}
             <div className="space-y-2">
               <Label htmlFor="subject">Objet</Label>
