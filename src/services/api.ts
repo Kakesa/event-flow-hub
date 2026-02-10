@@ -145,6 +145,15 @@ export const eventsApi = {
     const events: Event[] = result.data || [];
     return { success: result.success ?? true, data: events };
   },
+
+  // 🌍 PUBLIC: Get event by ID without auth (for RSVP)
+  getByIdPublic: async (id: string): Promise<ApiResponse<Event>> => {
+    const res = await fetch(`${API_BASE_URL}/public/events/${id}`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
 };
 
 // ==================== INVITÉS ====================
