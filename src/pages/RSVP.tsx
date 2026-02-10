@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail } from "lucide-react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
-import { rsvpApi, eventsApi } from "@/services/api";
+import { rsvpApi, eventsApi, emailsApi } from "@/services/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 

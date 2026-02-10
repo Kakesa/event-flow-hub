@@ -513,6 +513,24 @@ export const emailsApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
+  // Notifier l'organisateur d'une réponse RSVP
+  notifyOrganizer: async (
+    guestId: string,
+    eventId: string,
+    status: "confirmed" | "declined",
+  ): Promise<ApiResponse<EmailResult>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/notify-organizer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guestId, eventId, status }),
+    });
+    const result = await handleResponse<{
+      success: boolean;
+      data: EmailResult;
+    }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
   // Envoyer un rappel
   sendReminder: async (
     guestIds: string[],
