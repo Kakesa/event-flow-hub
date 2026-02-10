@@ -181,8 +181,8 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
   const [selectedTemplate, setSelectedTemplate] = useState<string>('invitation');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState<string>('gold');
   const [showPreview, setShowPreview] = useState(false);
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const template = defaultTemplates.find(t => t.id === selectedTemplate);
