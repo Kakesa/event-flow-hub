@@ -145,6 +145,17 @@ export const eventsApi = {
     const events: Event[] = result.data || [];
     return { success: result.success ?? true, data: events };
   },
+
+  // 🌍 PUBLIC: Get event by ID (no auth)
+  getByIdPublic: async (id: string): Promise<ApiResponse<Event>> => {
+    const res = await fetch(`${API_BASE_URL}/public/events/${id}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
 };
 
 // ==================== INVITÉS ====================
@@ -536,6 +547,23 @@ export const emailsApi = {
   > => {
     const res = await fetch(`${API_BASE_URL}/emails/test`, {
       headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  // Notifier l'organisateur d'un nouveau RSVP
+  notifyOrganizer: async (data: {
+    guestId: string;
+    eventId: string;
+    status: string;
+  }): Promise<ApiResponse<{ success: boolean }>> => {
+    const res = await fetch(`${API_BASE_URL}/emails/notify-organizer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
