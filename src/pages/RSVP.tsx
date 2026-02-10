@@ -185,6 +185,11 @@ const RSVP = () => {
         setGuest(res.data);
         setIsSubmitted(true);
         toast.success("Votre réponse a été enregistrée !");
+
+        // Notifier l'organisateur par email (fire-and-forget)
+        emailsApi.notifyOrganizer(guest.id, event.id, formData.status).catch((err) => {
+          console.warn("Notification organisateur échouée:", err);
+        });
       }
     } catch (err: any) {
       console.error(err);
