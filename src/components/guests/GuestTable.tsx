@@ -107,6 +107,7 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
   };
 
   return (
+    <>
     <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
       {/* Actions groupées */}
       {selectedGuests.length > 0 && (
