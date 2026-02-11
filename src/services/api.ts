@@ -263,14 +263,21 @@ export const rsvpApi = {
 
     const result = await handleResponse<{
       success: boolean;
-      data: Guest & { _id: string };
+      data: {
+        event: any;
+        guest: Guest & { _id?: string };
+      };
     }>(res);
+
+    // The backend matches the format: data: { event: {...}, guest: { id: ..., name: ... } }
+    // We already have 'id' in result.data.guest, but we ensure it's prioritized.
+    const guestData = result.data.guest;
 
     return {
       success: result.success ?? true,
       data: {
-        ...result.data,
-        id: result.data._id,
+        ...guestData,
+        id: guestData.id || guestData._id || "",
       },
     };
   },

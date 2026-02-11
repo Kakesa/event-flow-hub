@@ -178,6 +178,9 @@ const RSVP = () => {
 
       if (guest) {
         // Update existing guest
+        if (!guest.id) {
+          console.error("DEBUG: guest.id is undefined", guest);
+        }
         currentGuestId = guest.id;
         currentGuestName = guest.name;
         const res = await rsvpApi.submit(guest.id, {
