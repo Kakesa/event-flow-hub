@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, MoreHorizontal, Trash2, Shield } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Shield, Loader2 } from "lucide-react";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   DropdownMenu,
@@ -69,6 +80,8 @@ const Users = () => {
   const [openAdd, setOpenAdd] = useState(false);
   const [openPerms, setOpenPerms] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -156,20 +169,13 @@ const Users = () => {
   };
 
   /* ================= DELETE ================= */
-  const handleDelete = async (id: string) => {
-    if (id === currentUser?._id) {
-      toast({
-        title: "Action interdite",
-        description: "Vous ne pouvez pas vous supprimer",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      await usersApi.delete(id);
+      await usersApi.delete(deleteTarget._id);
       toast({ title: "Utilisateur supprimé" });
-      setUsers((prev) => prev.filter((u) => u._id !== id));
+      setUsers((prev) => prev.filter((u) => u._id !== deleteTarget._id));
       setTotal((prev) => prev - 1);
     } catch {
       toast({
@@ -177,7 +183,22 @@ const Users = () => {
         description: "Suppression impossible",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
+  };
+
+  const handleDelete = (user: User) => {
+    if (user._id === currentUser?._id) {
+      toast({
+        title: "Action interdite",
+        description: "Vous ne pouvez pas vous supprimer",
+        variant: "destructive",
+      });
+      return;
+    }
+    setDeleteTarget(user);
   };
 
   /* ================= PERMISSIONS ================= */
@@ -343,7 +364,7 @@ const Users = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={() => handleDelete(u._id)}
+                              onClick={() => handleDelete(u)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Supprimer
@@ -457,6 +478,27 @@ const Users = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet utilisateur ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{deleteTarget?.name}</strong> ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Suppression...</> : 'Supprimer'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };

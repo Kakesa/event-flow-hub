@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -18,6 +18,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   MoreHorizontal, 
   Mail, 
@@ -77,6 +87,8 @@ const getInitials = (name: string) => {
 
 const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestTableProps) => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const deleteTargetGuest = guests.find(g => g.id === deleteTargetId);
 
   const toggleAll = () => {
     if (selectedGuests.length === guests.length) {
@@ -95,6 +107,7 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
   };
 
   return (
+    <>
     <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
       {/* Actions groupées */}
       {selectedGuests.length > 0 && (
@@ -254,7 +267,7 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => onDelete?.(guest.id)}
+                        onClick={() => setDeleteTargetId(guest.id)}
                         className="text-destructive focus:text-destructive focus:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -281,6 +294,33 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
         </div>
       )}
     </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet invité ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer <strong>{deleteTargetGuest?.name || 'cet invité'}</strong> ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteTargetId) {
+                  onDelete?.(deleteTargetId);
+                  setDeleteTargetId(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
