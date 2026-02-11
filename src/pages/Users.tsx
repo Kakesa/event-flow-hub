@@ -169,20 +169,13 @@ const Users = () => {
   };
 
   /* ================= DELETE ================= */
-  const handleDelete = async (id: string) => {
-    if (id === currentUser?._id) {
-      toast({
-        title: "Action interdite",
-        description: "Vous ne pouvez pas vous supprimer",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      await usersApi.delete(id);
+      await usersApi.delete(deleteTarget._id);
       toast({ title: "Utilisateur supprimé" });
-      setUsers((prev) => prev.filter((u) => u._id !== id));
+      setUsers((prev) => prev.filter((u) => u._id !== deleteTarget._id));
       setTotal((prev) => prev - 1);
     } catch {
       toast({
@@ -190,7 +183,22 @@ const Users = () => {
         description: "Suppression impossible",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
+  };
+
+  const handleDelete = (user: User) => {
+    if (user._id === currentUser?._id) {
+      toast({
+        title: "Action interdite",
+        description: "Vous ne pouvez pas vous supprimer",
+        variant: "destructive",
+      });
+      return;
+    }
+    setDeleteTarget(user);
   };
 
   /* ================= PERMISSIONS ================= */
