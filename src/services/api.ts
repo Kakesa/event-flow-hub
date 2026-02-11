@@ -156,6 +156,17 @@ export const eventsApi = {
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
+
+  // 🌍 PUBLIC: Get event by slug (no auth)
+  getBySlugPublic: async (slug: string): Promise<ApiResponse<Event>> => {
+    const res = await fetch(`${API_BASE_URL}/events/public/${slug}`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
 };
 
 // ==================== INVITÉS ====================
@@ -537,7 +548,13 @@ export const emailsApi = {
     const res = await fetch(`${API_BASE_URL}/emails/invitation/bulk`, {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify({ guestIds, eventId, customMessage, subject, htmlContent }),
+      body: JSON.stringify({
+        guestIds,
+        eventId,
+        customMessage,
+        subject,
+        htmlContent,
+      }),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
@@ -981,5 +998,27 @@ export const auditApi = {
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
+  },
+};
+
+export const paymentsApi = {
+  initiate: async (data: {
+    amount: number;
+    plan: string;
+    currency?: string;
+  }): Promise<ApiResponse<{ paymentId: string; paymentUrl: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/payments/initiate`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  verify: async (id: string): Promise<ApiResponse<any>> => {
+    const res = await fetch(`${API_BASE_URL}/payments/verify/${id}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
   },
 };

@@ -37,6 +37,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/rsvp/:eventId/:guestId" element={<RSVP />} />
             <Route path="/rsvp/:eventId" element={<RSVP />} />
+            <Route path="/invite/:slug" element={<RSVP />} />
             
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />

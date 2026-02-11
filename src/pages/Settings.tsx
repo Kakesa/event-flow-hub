@@ -11,6 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { paymentsApi } from '@/services/api';
+import { PaymentDialog } from '@/components/settings/PaymentDialog';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -37,6 +39,12 @@ const Settings = () => {
     confirmations: true,
     messages: true,
   });
+  const [loadingPayment, setLoadingPayment] = useState(false);
+  const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; plan: string; amount: number }>({
+    isOpen: false,
+    plan: '',
+    amount: 0,
+  });
   const { toast } = useToast();
 
   const handleSaveProfile = () => {
@@ -45,6 +53,28 @@ const Settings = () => {
 
   const handleSaveNotifications = () => {
     toast({ title: 'Succès', description: 'Préférences de notifications mises à jour' });
+  };
+
+  const handleUpgrade = (plan: 'premium' | 'enterprise', amount: number) => {
+    setPaymentModal({
+      isOpen: true,
+      plan,
+      amount,
+    });
+  };
+
+  const handlePaymentSuccess = async () => {
+    // Dans une vraie app, on attendrait le webhook. 
+    // Ici, on simule la mise à jour immédiate pour le plaisir de l'UI.
+    toast({
+      title: 'Succès',
+      description: `Votre plan passera en ${paymentModal.plan} sous peu.`,
+    });
+    
+    // On peut tenter un refresh du profil
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
   };
 
   return (
@@ -262,7 +292,24 @@ const Settings = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline">Changer de plan</Button>
+                  {user?.subscriptionType !== 'premium' && (
+                    <Button 
+                      onClick={() => handleUpgrade('premium', 19)} 
+                      disabled={loadingPayment}
+                      className="bg-primary text-primary-foreground"
+                    >
+                      Passer au Premium (19€)
+                    </Button>
+                  )}
+                  {user?.subscriptionType !== 'enterprise' && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleUpgrade('enterprise', 49)} 
+                      disabled={loadingPayment}
+                    >
+                      Plan Enterprise (49€)
+                    </Button>
+                  )}
                   <Button variant="outline" className="text-destructive hover:text-destructive">
                     Annuler l'abonnement
                   </Button>
@@ -316,6 +363,14 @@ const Settings = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <PaymentDialog 
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal({ ...paymentModal, isOpen: false })}
+        plan={paymentModal.plan}
+        amount={paymentModal.amount}
+        onSuccess={handlePaymentSuccess}
+      />
     </DashboardLayout>
   );
 };

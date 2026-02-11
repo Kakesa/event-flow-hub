@@ -83,7 +83,7 @@ const RSVPError = ({ message }: { message: string }) => (
 );
 
 const RSVP = () => {
-  const { eventId, guestId } = useParams<{ eventId: string; guestId: string }>();
+  const { eventId, guestId, slug } = useParams<{ eventId: string; guestId: string; slug: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -103,7 +103,7 @@ const RSVP = () => {
 
   // Récupérer l'événement et le guest
   useEffect(() => {
-    if (!eventId) {
+    if (!eventId && !slug) {
       setError("Lien d'invitation invalide");
       setIsLoading(false);
       return;
@@ -115,7 +115,12 @@ const RSVP = () => {
 
       try {
         // Fetch event toujours
-        const eventRes = await eventsApi.getByIdPublic(eventId).catch(() => ({ success: false, data: null }));
+        let eventRes;
+        if (eventId) {
+          eventRes = await eventsApi.getByIdPublic(eventId).catch(() => ({ success: false, data: null }));
+        } else if (slug) {
+          eventRes = await eventsApi.getBySlugPublic(slug).catch(() => ({ success: false, data: null }));
+        }
 
         if (!eventRes.success || !eventRes.data) {
           setError("Événement introuvable ou lien expiré");
@@ -123,11 +128,12 @@ const RSVP = () => {
           return;
         }
 
-        setEvent(eventRes.data);
+        setEvent(eventRes!.data);
 
         // Fetch guest seulement si guestId est présent
-        if (guestId) {
-          const guestRes = await rsvpApi.getStatus(eventId, guestId).catch(() => ({ success: false, data: null }));
+        if (guestId && (eventId || eventRes!.data?.id)) {
+          const targetEventId = eventId || eventRes!.data?.id || eventRes!.data?._id;
+          const guestRes = await rsvpApi.getStatus(targetEventId, guestId).catch(() => ({ success: false, data: null }));
           
           if (guestRes.success && guestRes.data) {
             setGuest(guestRes.data);
