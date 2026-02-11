@@ -16,8 +16,9 @@ import {
   Image, Check, Sparkles, Heart, PartyPopper, GraduationCap,
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
-import { guestsApi, eventsApi, emailsApi } from '@/services/api';
+import { guestsApi, eventsApi, emailsApi, invitationsApi } from '@/services/api';
 import type { Guest, Event } from '@/types/models';
+import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 
 interface Template {
   id: string;
@@ -52,6 +53,8 @@ const InvitationTemplates = () => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
   const [isSending, setIsSending] = useState(false);
+  const [showWhatsAppSender, setShowWhatsAppSender] = useState(false);
+  const [whatsappGuests, setWhatsappGuests] = useState<Guest[]>([]);
 
   const [customization, setCustomization] = useState({
     title: 'Vous êtes cordialement invité(e)',
@@ -137,11 +140,13 @@ const InvitationTemplates = () => {
       const guestsToSend = guests.filter(g => selectedGuests.includes(g.id));
 
       if (sendMethod === 'whatsapp' || sendMethod === 'both') {
-        guestsToSend.forEach(guest => {
-          if (guest.phone) {
-            openWhatsApp(guest.phone);
-          }
-        });
+        setWhatsappGuests(guestsToSend);
+        setShowWhatsAppSender(true);
+        if (sendMethod === 'whatsapp') {
+          setSendDialogOpen(false);
+          setIsSending(false);
+          return;
+        }
       }
 
       if (sendMethod === 'email' || sendMethod === 'both') {
@@ -634,6 +639,21 @@ const InvitationTemplates = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* WhatsApp Sender Modal */}
+      <WhatsAppSender
+        open={showWhatsAppSender}
+        onClose={() => {
+          setShowWhatsAppSender(false);
+          setIsSending(false);
+        }}
+        guests={whatsappGuests}
+        event={event}
+        customMessage={customization.message}
+        onSuccess={() => {
+          setSelectedGuests([]);
+        }}
+      />
     </DashboardLayout>
   );
 };

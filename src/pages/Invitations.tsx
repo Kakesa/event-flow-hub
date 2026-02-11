@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import EmailComposer from '@/components/invitations/EmailComposer';
 import EmailHistory from '@/components/invitations/EmailHistory';
+import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
@@ -41,6 +42,8 @@ const Invitations = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [showWhatsAppSender, setShowWhatsAppSender] = useState(false);
+  const [whatsappGuests, setWhatsappGuests] = useState<Guest[]>([]);
 
   // 🔹 Charger les événements
   useEffect(() => {
@@ -145,15 +148,16 @@ const Invitations = () => {
     setSending(true);
     try {
       if (selectedMethod === 'whatsapp') {
-        handleWhatsAppSend(selectedGuestObjects);
-        await invitationsApi.sendBulk(selectedGuests, 'whatsapp');
+        setWhatsappGuests(selectedGuestObjects);
+        setShowWhatsAppSender(true);
+        return; // handleSendInvitations s'arrête ici, le reste est géré par WhatsAppSender
       } else if (selectedMethod === 'sms') {
         await invitationsApi.sendBulk(selectedGuests, 'sms');
       }
 
       toast({
         title: 'Succès',
-        description: `${selectedGuests.length} invitation(s) envoyée(s) par ${selectedMethod === 'whatsapp' ? 'WhatsApp' : 'SMS'}`,
+        description: `${selectedGuests.length} invitation(s) envoyée(s) par SMS`,
       });
       
       setSelectedGuests([]);
@@ -330,6 +334,22 @@ const Invitations = () => {
           event={events.find(e => e.id === selectedEvent) || null}
           onSuccess={() => {
             setSelectedGuests([]);
+            refreshGuests();
+          }}
+        />
+
+        {/* WhatsApp Sender Modal */}
+        <WhatsAppSender
+          open={showWhatsAppSender}
+          onClose={() => {
+            setShowWhatsAppSender(false);
+            setSending(false);
+          }}
+          guests={whatsappGuests}
+          event={events.find(e => e.id === selectedEvent) || null}
+          onSuccess={() => {
+            setSelectedGuests([]);
+            refreshGuests();
           }}
         />
       </div>
