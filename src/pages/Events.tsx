@@ -23,9 +23,10 @@ const Events = () => {
 
   // 🔹 Fonction pour corriger les chemins locaux
   const getEventImage = (image?: string) => {
-    if (!image) return '/placeholder.png'; // Image par défaut si vide
+    if (!image) return 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'; // Image par défaut
     if (image.startsWith('http')) return image; // URL externe
-    return `/src/uploads/${image}`; // Image locale
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    return `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
   };
 
   // 🔹 Récupération des événements
@@ -34,7 +35,7 @@ const Events = () => {
       setLoadingEvents(true);
       try {
         const res = await eventsApi.getAll();
-        if (res.success) setEvents(res.data.map(ev => ({ ...ev, coverImage: getEventImage(ev.coverImage) })));
+        if (res.success) setEvents(res.data);
       } catch (err) {
         console.error('Erreur lors du chargement des événements:', err);
         setEvents([]);
@@ -140,7 +141,7 @@ const Events = () => {
             {filteredEvents.map(event => (
               <EventCard
                 key={event._id}
-                event={{ ...event, coverImage: getEventImage(event.coverImage) }}
+                event={event}
                 guestCount={getGuestCount(event._id)}
                 onDelete={handleDeleteEvent}
                 canEdit={canUpdate('events')}

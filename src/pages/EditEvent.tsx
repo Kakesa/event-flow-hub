@@ -181,7 +181,15 @@ const EditEvent = () => {
                   <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   {coverPreview ? (
                     <div className="relative h-48 rounded-lg overflow-hidden">
-                      <img src={coverPreview} alt="Preview" className="w-full h-full object-cover" />
+                      <img 
+                        src={coverPreview.startsWith('data:') 
+                          ? coverPreview 
+                          : (coverPreview.startsWith('http') 
+                              ? coverPreview 
+                              : `${import.meta.env.VITE_API_BASE_URL}${coverPreview.startsWith('/') ? '' : '/'}${coverPreview}`)} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover" 
+                      />
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                         <p className="text-white font-medium">Changer l'image</p>
                       </div>

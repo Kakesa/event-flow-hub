@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Bell, Palette, Shield, CreditCard, Save } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Settings = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState({
-    name: 'Marie Dupont',
-    email: 'marie@example.com',
-    phone: '+33 6 12 34 56 78',
+    name: '',
+    email: '',
+    phone: '',
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
+
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
@@ -77,7 +90,9 @@ const Settings = () => {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
                   <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">MD</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {profile.name ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
+                    </span>
                   </div>
                   <Button variant="outline">Changer la photo</Button>
                 </div>
@@ -213,14 +228,22 @@ const Settings = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">Plan Premium</h4>
+                        <h4 className="font-semibold capitalize">
+                          Plan {user?.subscriptionType || 'Gratuit'}
+                        </h4>
                         <Badge className="bg-primary text-primary-foreground">Actif</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">Accès illimité à toutes les fonctionnalités</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user?.subscriptionType === 'premium' || user?.subscriptionType === 'enterprise' 
+                          ? 'Accès illimité à toutes les fonctionnalités'
+                          : 'Accès limité aux fonctionnalités de base'}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold">19€</p>
+                    <p className="text-2xl font-bold">
+                      {user?.subscriptionType === 'premium' ? '19€' : user?.subscriptionType === 'enterprise' ? '49€' : '0€'}
+                    </p>
                     <p className="text-sm text-muted-foreground">/mois</p>
                   </div>
                 </div>
