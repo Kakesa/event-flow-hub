@@ -118,7 +118,7 @@ const InvitationTemplates = () => {
   };
 
   const copyInvitationLink = () => {
-    const rsvpLink = `${window.location.origin}/rsvp/${eventId}`;
+    const rsvpLink = `${window.location.origin}/rsvp/${eventIdFromUrl}`;
     navigator.clipboard.writeText(rsvpLink);
     toast.success('Lien copié dans le presse-papiers!');
   };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, MoreHorizontal, Trash2, Shield } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Shield, Loader2 } from "lucide-react";
 
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
