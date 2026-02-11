@@ -522,13 +522,15 @@ export const emailsApi = {
     guestIds: string[],
     eventId: string,
     customMessage?: string,
+    subject?: string,
+    htmlContent?: string,
   ): Promise<
     ApiResponse<{ sent: number; failed: number; results: EmailResult[] }>
   > => {
     const res = await fetch(`${API_BASE_URL}/emails/invitation/bulk`, {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify({ guestIds, eventId, customMessage }),
+      body: JSON.stringify({ guestIds, eventId, customMessage, subject, htmlContent }),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };

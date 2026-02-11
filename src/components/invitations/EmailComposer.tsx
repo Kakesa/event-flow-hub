@@ -107,6 +107,24 @@ const emailThemes: EmailColorTheme[] = [
     divider: 'linear-gradient(90deg, transparent, #34d399, transparent)',
     footerText: '#4b6b5e',
   },
+  {
+    id: 'rose',
+    name: 'Rose / Bordeaux',
+    swatch: 'bg-rose-700',
+    bg: '#1a0f14',
+    bgGradient: 'linear-gradient(180deg, #1a0f14 0%, #2a1620 100%)',
+    headerGradient: 'linear-gradient(180deg, #1a0f14 0%, #2a1620 100%)',
+    accent: '#e11d48',
+    accentLight: '#fb7185',
+    accentDark: '#9f1239',
+    btnGradient: 'linear-gradient(135deg, #9f1239, #e11d48, #fb7185)',
+    btnShadow: '0 4px 20px rgba(225, 29, 72, 0.4)',
+    bodyBg: 'linear-gradient(180deg, #fdf2f4 0%, #ffffff 30%, #ffffff 70%, #fdf2f4 100%)',
+    bodyBorder: '#e8c8d0',
+    bodyText: '#3d1a28',
+    divider: 'linear-gradient(90deg, transparent, #e11d48, transparent)',
+    footerText: '#6b4050',
+  },
 ];
 
 interface EmailComposerProps {
@@ -226,7 +244,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
       <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: ${t.bg}; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
         <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
         <div style="background: ${t.headerGradient}; padding: 40px 40px 30px; text-align: center;">
-          <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 100px; height: 100px; border-radius: 50%; margin-bottom: 16px; object-fit: cover;" />
+          <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 56px; height: 56px; border-radius: 50%; margin-bottom: 12px; object-fit: cover;" />
           <h1 style="color: #f5f0e8; margin: 0; font-size: 26px; font-weight: 400; line-height: 1.3; font-family: 'Georgia', serif;">${processedSubject}</h1>
           <div style="width: 60px; height: 1px; background: ${t.divider}; margin: 20px auto 0;"></div>
         </div>
@@ -258,10 +276,13 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
 
     setSending(true);
     try {
+      const htmlContent = getPreviewHtml();
       const result = await emailsApi.sendBulkInvitations(
         selectedGuests.map(g => g.id),
         event.id,
-        body
+        body,
+        subject,
+        htmlContent
       );
 
       if (result.success) {
