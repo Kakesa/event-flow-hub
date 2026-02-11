@@ -80,6 +80,8 @@ const Users = () => {
   const [openAdd, setOpenAdd] = useState(false);
   const [openPerms, setOpenPerms] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
