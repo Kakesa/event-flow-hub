@@ -16,6 +16,8 @@ import {
   Image, Check, Sparkles, Heart, PartyPopper, GraduationCap,
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
+import { guestsApi, eventsApi, emailsApi } from '@/services/api';
+import type { Guest, Event } from '@/types/models';
 
 interface Template {
   id: string;
@@ -35,35 +37,63 @@ const templates: Template[] = [
   { id: 'nature', name: 'Nature Verte', category: 'Eco', preview: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=400', primaryColor: '#4CAF50', icon: Heart },
 ];
 
-// Mock guests for testing
-const mockGuests = [
-  { id: '1', name: 'Jean Dupont', email: 'jean@example.com', phone: '+243812345678' },
-  { id: '2', name: 'Marie Martin', email: 'marie@example.com', phone: '+243823456789' },
-  { id: '3', name: 'Pierre Bernard', email: 'pierre@example.com', phone: '+243834567890' },
-];
+// Initial state removed: using real data from API
 
 const InvitationTemplates = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const eventId = searchParams.get('eventId') || '1';
+  const eventIdFromUrl = searchParams.get('eventId');
 
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(templates[0]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
-  const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'both'>('both');
+  const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
   const [isSending, setIsSending] = useState(false);
 
   const [customization, setCustomization] = useState({
     title: 'Vous êtes cordialement invité(e)',
     eventName: 'Notre Événement Spécial',
-    date: '15 Juin 2024',
-    time: '14h00',
-    location: 'Kinshasa, RDC',
+    date: '',
+    time: '',
+    location: '',
     message: 'Nous serions honorés de votre présence à cet événement exceptionnel.',
-    primaryColor: '#D4AF37',
+    primaryColor: templates[0].primaryColor,
     fontFamily: 'Playfair Display',
   });
+
+  // Charger les données de l'événement et les invités
+  React.useEffect(() => {
+    if (!eventIdFromUrl) return;
+
+    const loadData = async () => {
+      try {
+        const [eventRes, guestsRes] = await Promise.all([
+          eventsApi.getById(eventIdFromUrl),
+          guestsApi.getByEvent(eventIdFromUrl)
+        ]);
+        
+        const eventData = eventRes.data;
+        setEvent(eventData);
+        setGuests(guestsRes.data);
+        
+        // Mettre à jour la personnalisation avec les vraies données de l'événement
+        setCustomization(prev => ({
+          ...prev,
+          eventName: eventData.title,
+          date: new Date(eventData.date).toLocaleDateString('fr-FR'),
+          time: eventData.startTime || '',
+          location: eventData.location,
+        }));
+      } catch (error) {
+        toast.error('Impossible de charger les détails de l\'événement');
+      }
+    };
+
+    loadData();
+  }, [eventIdFromUrl]);
 
   const handleSelectTemplate = (template: Template) => {
     setSelectedTemplate(template);
@@ -71,7 +101,7 @@ const InvitationTemplates = () => {
   };
 
   const generateWhatsAppMessage = () => {
-    const rsvpLink = `${window.location.origin}/rsvp/${eventId}`;
+    const rsvpLink = `${window.location.origin}/rsvp/${eventIdFromUrl}`;
     return encodeURIComponent(
       `✨ ${customization.title}\n\n` +
       `📌 ${customization.eventName}\n` +
@@ -99,30 +129,93 @@ const InvitationTemplates = () => {
       return;
     }
 
+    if (!eventIdFromUrl) return;
+
     setIsSending(true);
 
-    // Simulate sending
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const guestsToSend = guests.filter(g => selectedGuests.includes(g.id));
 
-    const guestsToSend = mockGuests.filter(g => selectedGuests.includes(g.id));
+      if (sendMethod === 'whatsapp' || sendMethod === 'both') {
+        guestsToSend.forEach(guest => {
+          if (guest.phone) {
+            openWhatsApp(guest.phone);
+          }
+        });
+      }
 
-    if (sendMethod === 'whatsapp' || sendMethod === 'both') {
-      guestsToSend.forEach(guest => {
-        if (guest.phone) {
-          openWhatsApp(guest.phone);
-        }
-      });
+      if (sendMethod === 'email' || sendMethod === 'both') {
+        const htmlContent = getEmailHtml();
+        const subject = replaceLocalVariables(customization.title, guestsToSend[0] || null);
+        
+        await emailsApi.sendBulkInvitations(
+          selectedGuests,
+          eventIdFromUrl,
+          customization.message,
+          subject,
+          htmlContent
+        );
+      }
+
+      toast.success(`Invitations envoyées à ${selectedGuests.length} invité(s)!`);
+      setSelectedGuests([]);
+      setSendDialogOpen(false);
+    } catch (error) {
+      toast.error('Erreur lors de l\'envois des invitations');
+      console.error(error);
+    } finally {
+      setIsSending(false);
     }
+  };
 
-    if (sendMethod === 'email' || sendMethod === 'both') {
-      // Pour l'email, vous devrez connecter votre backend
-      toast.info('Pour l\'envoi par email, connectez votre backend avec Resend ou un autre service.');
-    }
+  const replaceLocalVariables = (text: string, guest: Guest | null) => {
+    return text
+      .replace(/{{guestName}}/g, guest?.name || 'Cher invité')
+      .replace(/{{eventName}}/g, customization.eventName)
+      .replace(/{{eventDate}}/g, customization.date)
+      .replace(/{{eventLocation}}/g, customization.location);
+  };
 
-    setIsSending(false);
-    setSendDialogOpen(false);
-    toast.success(`Invitations envoyées à ${selectedGuests.length} invité(s)!`);
-    setSelectedGuests([]);
+  const getEmailHtml = () => {
+    const rsvpLink = '{{rsvpLink}}';
+    const primaryColor = customization.primaryColor;
+
+    return `
+      <div style="font-family: ${customization.fontFamily}, serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #eee;">
+        <div style="background-color: #000; padding: 40px 20px; text-align: center;">
+          <h1 style="color: ${primaryColor}; margin: 0; font-size: 28px; letter-spacing: 2px;">INVITATION</h1>
+        </div>
+        
+        <div style="position: relative; height: 300px;">
+          <img src="${selectedTemplate?.preview}" alt="Event" style="width: 100%; height: 100%; object-fit: cover;" />
+          <div style="position: absolute; inset: 0; background-color: rgba(0,0,0,0.4);"></div>
+          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
+            <p style="font-size: 16px; margin-bottom: 10px; opacity: 0.9;">${customization.title}</p>
+            <h2 style="font-size: 32px; font-weight: bold; margin: 0; color: ${primaryColor};">${customization.eventName}</h2>
+          </div>
+        </div>
+
+        <div style="padding: 40px 30px; background-color: white; text-align: center; color: #333;">
+          <div style="display: inline-block; text-align: left; margin-bottom: 30px; font-size: 16px;">
+            <p style="margin: 10px 0;">📅 <strong>Date :</strong> ${customization.date}</p>
+            <p style="margin: 10px 0;">🕐 <strong>Heure :</strong> ${customization.time}</p>
+            <p style="margin: 10px 0;">📍 <strong>Lieu :</strong> ${customization.location}</p>
+          </div>
+
+          <p style="line-height: 1.6; margin-bottom: 40px; color: #666;">
+            ${customization.message}
+          </p>
+
+          <a href="${rsvpLink}" style="display: inline-block; background-color: ${primaryColor}; color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            Confirmer ma présence
+          </a>
+        </div>
+
+        <div style="background-color: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee;">
+          <p>HK Events - Gestion d'événements d'exception</p>
+        </div>
+      </div>
+    `;
   };
 
   const toggleGuestSelection = (guestId: string) => {
@@ -205,7 +298,7 @@ const InvitationTemplates = () => {
                   <div className="space-y-2">
                     <Label>Sélectionner les invités ({selectedGuests.length})</Label>
                     <div className="border rounded-lg divide-y max-h-60 overflow-y-auto">
-                      {mockGuests.map(guest => (
+                      {guests.map(guest => (
                         <label
                           key={guest.id}
                           className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
@@ -226,7 +319,7 @@ const InvitationTemplates = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedGuests(mockGuests.map(g => g.id))}
+                      onClick={() => setSelectedGuests(guests.map(g => g.id))}
                     >
                       Tout sélectionner
                     </Button>

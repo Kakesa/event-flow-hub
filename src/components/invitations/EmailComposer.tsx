@@ -234,10 +234,14 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
       .replace(/{{rsvpLink}}/g, rsvpLink);
   };
 
-  const getPreviewHtml = () => {
+  const getPreviewHtml = (forEmail = false) => {
     const previewGuest = selectedGuests[0] || { name: 'Jean Dupont', email: 'jean@example.com' } as Guest;
-    const processedSubject = replaceVariables(subject, previewGuest);
-    const processedBody = replaceVariables(body, previewGuest);
+    
+    // Decide whether to replace variables or leave placeholders
+    const processedSubject = forEmail ? subject : replaceVariables(subject, previewGuest);
+    const processedBody = forEmail ? body : replaceVariables(body, previewGuest);
+    const rsvpLink = forEmail ? '{{rsvpLink}}' : replaceVariables('{{rsvpLink}}', previewGuest);
+    
     const t = emailThemes.find(th => th.id === selectedTheme) || emailThemes[0];
 
     return `
@@ -256,7 +260,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
           </div>
         </div>
         <div style="text-align: center; padding: 30px 40px 10px;">
-          <a href="#" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: ${t.btnShadow};">
+          <a href="${rsvpLink}" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: ${t.btnShadow};">
             Confirmer ma présence
           </a>
         </div>
@@ -276,7 +280,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
 
     setSending(true);
     try {
-      const htmlContent = getPreviewHtml();
+      const htmlContent = getPreviewHtml(true);
       const result = await emailsApi.sendBulkInvitations(
         selectedGuests.map(g => g.id),
         event.id,
