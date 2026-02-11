@@ -213,7 +213,7 @@ const RSVP = () => {
            currentGuestId = res.data.id;
            currentGuestName = res.data.name;
          } else {
-            throw new Error(res.error || "Erreur lors de l'inscription");
+            throw new Error(res.message || "Erreur lors de l'inscription");
          }
       }
 
