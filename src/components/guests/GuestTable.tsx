@@ -87,6 +87,8 @@ const getInitials = (name: string) => {
 
 const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestTableProps) => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const deleteTargetGuest = guests.find(g => g.id === deleteTargetId);
 
   const toggleAll = () => {
     if (selectedGuests.length === guests.length) {
