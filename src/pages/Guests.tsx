@@ -49,6 +49,8 @@ const Guests = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [newGuest, setNewGuest] = useState({
+    name: '',
+    email: '',
     phone: '',
     eventId: '',
     table: '',

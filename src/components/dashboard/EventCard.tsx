@@ -59,7 +59,7 @@ const EventCard = ({ event, guestCount = 0, onDelete, onOpen, canEdit = true, ca
   return (
     <>
       <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg animate-slide-up">
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative h-48 overflow-hidden bg-muted">
           <img
             src={event.coverImage 
               ? (event.coverImage.startsWith('http') 
@@ -68,7 +68,8 @@ const EventCard = ({ event, guestCount = 0, onDelete, onOpen, canEdit = true, ca
               : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
             }
             alt={event.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
             }}
