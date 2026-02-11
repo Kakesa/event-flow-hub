@@ -125,7 +125,8 @@ const CreateEvent: React.FC = () => {
 
       if (res.success) {
         toast.success('Événement créé avec succès');
-        navigate(`/events/${res.data._id || res.data.id}`);
+        // Rediriger vers la liste des événements et rafraîchir pour voir le nouvel event
+        window.location.href = '/events';
       } else {
         toast.error('Erreur lors de la création de l\'événement');
       }
