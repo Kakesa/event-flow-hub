@@ -166,7 +166,7 @@ const RSVP = () => {
     };
 
     fetchData();
-  }, [eventId, guestId]);
+  }, [eventId, guestId, slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -401,7 +401,7 @@ const RSVP = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10">
       {/* Hero Section */}
-      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden">
+      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-black/90">
         <img
           src={event.coverImage 
             ? (event.coverImage.startsWith('http') 
@@ -410,12 +410,12 @@ const RSVP = () => {
             : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
           }
           alt={event.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
           <div className="max-w-2xl mx-auto text-center">
             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">

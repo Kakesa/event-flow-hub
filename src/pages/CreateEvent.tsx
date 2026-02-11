@@ -249,7 +249,7 @@ const CreateEvent: React.FC = () => {
                   <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="cover" />
                   <label htmlFor="cover" className="cursor-pointer">
                     {coverPreview ? (
-                      <img src={coverPreview} alt="preview" className="mx-auto h-40 object-cover rounded" />
+                      <img src={coverPreview} alt="preview" className="mx-auto h-40 object-contain rounded bg-muted/30" />
                     ) : (
                       <>
                         <Upload className="mx-auto mb-2" />

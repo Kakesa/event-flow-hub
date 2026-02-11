@@ -180,7 +180,7 @@ const EditEvent = () => {
                 <div className={`relative border-2 border-dashed rounded-xl transition-all cursor-pointer hover:border-primary/50 ${coverPreview ? 'border-primary' : 'border-border'}`}>
                   <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   {coverPreview ? (
-                    <div className="relative h-48 rounded-lg overflow-hidden">
+                    <div className="relative h-48 rounded-lg overflow-hidden bg-gray-900/10">
                       <img 
                         src={coverPreview.startsWith('data:') 
                           ? coverPreview 
@@ -188,7 +188,7 @@ const EditEvent = () => {
                               ? coverPreview 
                               : `${import.meta.env.VITE_API_BASE_URL}${coverPreview.startsWith('/') ? '' : '/'}${coverPreview}`)} 
                         alt="Preview" 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-contain" 
                       />
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                         <p className="text-white font-medium">Changer l'image</p>
