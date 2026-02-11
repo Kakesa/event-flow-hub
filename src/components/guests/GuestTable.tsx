@@ -30,7 +30,8 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Send
+  Send,
+  LayoutPanelLeft
 } from 'lucide-react';
 import type { Guest } from '@/types/models';
 import { cn } from '@/lib/utils';
@@ -137,6 +138,7 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
             <TableHead className="font-semibold">Invité</TableHead>
             <TableHead className="hidden md:table-cell font-semibold">Contact</TableHead>
             <TableHead className="font-semibold">Statut</TableHead>
+            <TableHead className="font-semibold">Table</TableHead>
             <TableHead className="hidden lg:table-cell font-semibold">Préférences</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
@@ -205,6 +207,16 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
                     <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
                     {statusConfig[guest.status].label}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {guest.table ? (
+                    <div className="flex items-center gap-2">
+                       <LayoutPanelLeft className="h-4 w-4 text-primary/60" />
+                       <span className="font-medium">{guest.table}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground/40 italic text-sm">Non assignée</span>
+                  )}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
                   {guest.drinkPreference ? (

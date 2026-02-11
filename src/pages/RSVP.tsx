@@ -10,7 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail } from "lucide-react";
+import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail, QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
 import { rsvpApi, eventsApi, emailsApi } from "@/services/api";
@@ -346,6 +347,34 @@ const RSVP = () => {
                     </div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* QR Code pour l'entrée */}
+          {formData.status === "confirmed" && guest?.qrCode && (
+            <Card className="border-border/50 shadow-lg overflow-hidden">
+              <CardHeader className="bg-primary/5 pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-primary" />
+                  Votre Pass d'Entrée
+                </CardTitle>
+                <CardDescription>
+                  Présentez ce code QR à l'entrée de l'événement
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center justify-center pt-8 pb-8 bg-white">
+                <div className="p-4 bg-white rounded-xl shadow-inner border border-border/20">
+                  <QRCodeSVG 
+                    value={guest.qrCode} 
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+                <p className="mt-4 text-xs font-mono text-muted-foreground uppercase tracking-widest px-3 py-1 bg-muted rounded-full">
+                  {guest.qrCode.slice(0, 8)}...{guest.qrCode.slice(-8)}
+                </p>
               </CardContent>
             </Card>
           )}

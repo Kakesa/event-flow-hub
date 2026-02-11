@@ -24,6 +24,7 @@ interface ParsedGuest {
   name: string;
   email?: string;
   phone?: string;
+  table?: string;
   status: 'pending';
   isValid: boolean;
   errors: string[];
@@ -52,6 +53,7 @@ const GuestImportModal = ({
     const nameIndex = headers.findIndex(h => ['nom', 'name', 'nom complet', 'fullname'].includes(h));
     const emailIndex = headers.findIndex(h => ['email', 'e-mail', 'mail', 'courriel'].includes(h));
     const phoneIndex = headers.findIndex(h => ['telephone', 'téléphone', 'phone', 'tel', 'mobile'].includes(h));
+    const tableIndex = headers.findIndex(h => ['table', 'no table', 'numéro de table', 'place'].includes(h));
 
     if (nameIndex === -1) {
       setErrors(['Colonne "Nom" non trouvée. Assurez-vous que votre fichier contient une colonne "Nom" ou "Name".']);
@@ -63,6 +65,7 @@ const GuestImportModal = ({
       const name = values[nameIndex] || '';
       const email = emailIndex !== -1 ? values[emailIndex] : undefined;
       const phone = phoneIndex !== -1 ? values[phoneIndex] : undefined;
+      const table = tableIndex !== -1 ? values[tableIndex] : undefined;
 
       const guestErrors: string[] = [];
       if (!name) guestErrors.push('Nom requis');
@@ -73,6 +76,7 @@ const GuestImportModal = ({
         name,
         email: email || undefined,
         phone: phone || undefined,
+        table: table || undefined,
         status: 'pending' as const,
         isValid: guestErrors.length === 0 && !!name,
         errors: guestErrors,
@@ -117,6 +121,7 @@ const GuestImportModal = ({
           name: validGuests[i].name,
           email: validGuests[i].email,
           phone: validGuests[i].phone,
+          table: validGuests[i].table,
           status: 'pending',
         });
         if (res.success) {
@@ -181,9 +186,9 @@ const GuestImportModal = ({
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Format attendu :</strong> CSV avec colonnes Nom, Email (optionnel), Téléphone (optionnel).
+                <strong>Format attendu :</strong> CSV avec colonnes Nom, Email (optionnel), Téléphone (optionnel), Table (optionnel).
                 <br />
-                <span className="text-xs">Exemple: Nom;Email;Téléphone</span>
+                <span className="text-xs">Exemple: Nom;Email;Téléphone;Table</span>
               </AlertDescription>
             </Alert>
 
@@ -219,6 +224,7 @@ const GuestImportModal = ({
                     <th className="p-2 text-left">Nom</th>
                     <th className="p-2 text-left">Email</th>
                     <th className="p-2 text-left">Téléphone</th>
+                    <th className="p-2 text-left">Table</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -234,6 +240,7 @@ const GuestImportModal = ({
                       <td className="p-2">{guest.name}</td>
                       <td className="p-2">{guest.email || '-'}</td>
                       <td className="p-2">{guest.phone || '-'}</td>
+                      <td className="p-2">{guest.table || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

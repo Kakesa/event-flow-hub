@@ -85,6 +85,7 @@ export interface Guest {
 
   drinkPreference?: string;
   qrCode?: string;
+  table?: string;
 
   createdAt?: string;
   updatedAt?: string;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { QrCode, CheckCircle2, XCircle, User, Wine, Keyboard } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, User, Wine, Keyboard, LayoutPanelLeft } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CameraScanner from '@/components/scanner/CameraScanner';
 import { Button } from '@/components/ui/button';
@@ -162,15 +162,18 @@ const Scanner = () => {
               {/* Infos invité */}
               {result.isValid && (
                 <div className="space-y-4 p-4 rounded-lg bg-muted/50">
-                  {['name', 'drinkPreference', 'dietaryRestrictions'].map((key) => (
+                  {['name', 'table', 'drinkPreference', 'dietaryRestrictions'].map((key) => (
                     result.guest[key as keyof Guest] && (
                       <div key={key} className="flex items-center gap-3">
                         {key === 'name' && <User className="h-5 w-5 text-primary" />}
+                        {key === 'table' && <LayoutPanelLeft className="h-5 w-5 text-primary" />}
                         {key === 'drinkPreference' && <Wine className="h-5 w-5 text-primary" />}
                         <div>
                           <p className="text-sm text-muted-foreground">
                             {key === 'name'
                               ? 'Nom'
+                              : key === 'table'
+                              ? 'Table assignée'
                               : key === 'drinkPreference'
                               ? 'Boisson préférée'
                               : 'Restrictions alimentaires'}

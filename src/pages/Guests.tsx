@@ -49,10 +49,9 @@ const Guests = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const [newGuest, setNewGuest] = useState({
-    name: '',
-    email: '',
     phone: '',
     eventId: '',
+    table: '',
   });
 
   const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
@@ -138,7 +137,7 @@ const Guests = () => {
 
       toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
       setIsAddDialogOpen(false);
-      setNewGuest({ name: '', email: '', phone: '', eventId: '' });
+      setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
 
       setEventFilter(newGuest.eventId);
       const res = await guestsApi.getByEvent(newGuest.eventId);
@@ -254,6 +253,11 @@ const Guests = () => {
                   placeholder="Téléphone"
                   value={newGuest.phone}
                   onChange={e => setNewGuest({ ...newGuest, phone: e.target.value })}
+                />
+                <Input
+                  placeholder="Numéro de table (Optionnel)"
+                  value={newGuest.table}
+                  onChange={e => setNewGuest({ ...newGuest, table: e.target.value })}
                 />
               </div>
 
