@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Smartphone, CheckCircle2, Loader2 } from "lucide-react";
+import { Smartphone, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { paymentsApi } from "@/services/api";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -34,13 +35,27 @@ export function PaymentDialog({ isOpen, onClose, plan, amount, onSuccess }: Paym
   const [operator, setOperator] = useState(operators[0].id);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [paymentId, setPaymentId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 'select') {
-      setStep('details');
-      setPhoneError("");
+      setIsProcessing(true);
+      try {
+        const res = await paymentsApi.initiate({ amount, plan });
+        if (res.success) {
+          setPaymentId(res.data.paymentId);
+          setStep('details');
+          setPhoneError("");
+        } else {
+          toast({ title: "Erreur", description: "Impossible d'initialiser le paiement", variant: "destructive" });
+        }
+      } catch (err) {
+        toast({ title: "Erreur", description: "Erreur de connexion", variant: "destructive" });
+      } finally {
+        setIsProcessing(false);
+      }
     }
     else if (step === 'details') {
       const selectedOp = operators.find(o => o.id === operator);
@@ -58,20 +73,35 @@ export function PaymentDialog({ isOpen, onClose, plan, amount, onSuccess }: Paym
   };
 
   const handlePayment = async () => {
+    if (!paymentId) return;
     setIsProcessing(true);
-    // Simulation d'appel API externe
-    await new Promise(resolve => setTimeout(resolve, 3000));
     
-    setIsProcessing(false);
-    setStep('success');
-    
-    // Simuler le succès vers le parent (AuthContext / Backend)
-    setTimeout(() => {
-        onSuccess();
-        onClose();
-        // Reset for next time
-        setStep('select');
-    }, 3000);
+    try {
+      // Simulation d'appel API externe
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Valider réellement en DB via notre endpoint de simulation
+      const res = await paymentsApi.simulateSuccess(paymentId);
+      
+      if (res.success) {
+        setIsProcessing(false);
+        setStep('success');
+        
+        setTimeout(() => {
+            onSuccess();
+            onClose();
+            setStep('select');
+            setPaymentId(null);
+            setPhoneNumber("");
+        }, 3000);
+      } else {
+        toast({ title: "Erreur", description: "La validation a échoué", variant: "destructive" });
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      toast({ title: "Erreur", description: "Une erreur est survenue", variant: "destructive" });
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -171,11 +201,11 @@ export function PaymentDialog({ isOpen, onClose, plan, amount, onSuccess }: Paym
           <DialogFooter className="flex-col sm:flex-row gap-2">
             {step !== 'confirm' ? (
                <>
-                 <Button variant="ghost" onClick={step === 'select' ? onClose : () => setStep('select')}>
+                 <Button variant="ghost" onClick={step === 'select' ? onClose : () => setStep('select')} disabled={isProcessing}>
                    {step === 'select' ? 'Annuler' : 'Retour'}
                  </Button>
-                 <Button onClick={handleNext} className="flex-1">
-                   Continuer
+                 <Button onClick={handleNext} className="flex-1" disabled={isProcessing}>
+                   {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Continuer'}
                  </Button>
                </>
             ) : (

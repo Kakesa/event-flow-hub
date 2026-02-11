@@ -28,11 +28,12 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
-import { usersApi, analyticsApi, eventsApi } from '@/services/api';
+import { usersApi, analyticsApi, eventsApi, paymentsApi } from '@/services/api';
 import type { User } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface PlatformStats {
   totalUsers: number;
@@ -50,16 +51,17 @@ interface PlatformStats {
   };
 }
 
-interface Subscription {
+interface Transaction {
   id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  plan: 'free' | 'basic' | 'premium' | 'enterprise';
-  status: 'active' | 'cancelled' | 'expired' | 'trial';
-  startDate: string;
-  endDate: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   amount: number;
+  plan: string;
+  status: 'pending' | 'successful' | 'failed' | 'canceled';
+  createdAt: string;
 }
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
@@ -77,7 +79,7 @@ const AdminDashboard = () => {
     subscriptions: { free: 0, basic: 0, premium: 0, enterprise: 0 }
   });
   const [users, setUsers] = useState<User[]>([]);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
 
@@ -108,7 +110,7 @@ const AdminDashboard = () => {
         setUsers(usersRes.data || []);
         
         // Charger les stats globales
-        const analyticsRes = await analyticsApi.getOverview();
+        const analyticsRes = await analyticsApi.getOverview() as any;
         
         // Calculer les stats
         const usersList = usersRes.data || [];
@@ -126,23 +128,13 @@ const AdminDashboard = () => {
           totalGuests: analyticsRes.data?.totalGuests || 0,
           totalConfirmed: analyticsRes.data?.totalConfirmed || 0,
           upcomingEvents: analyticsRes.data?.upcomingEvents || 0,
-          revenue: (subscriptionCounts.basic * 29 + subscriptionCounts.premium * 79 + subscriptionCounts.enterprise * 199),
+          revenue: analyticsRes.data?.monthlyRevenue || 0,
           subscriptions: subscriptionCounts,
         });
 
-        // Simuler les abonnements
-        const mockSubscriptions: Subscription[] = usersList.slice(0, 10).map((user, idx) => ({
-          id: `sub-${idx}`,
-          userId: user._id || user.id || '',
-          userName: user.name,
-          userEmail: user.email,
-          plan: (user.subscriptionType || 'free') as 'free' | 'basic' | 'premium' | 'enterprise',
-          status: user.isActive !== false ? 'active' as const : 'expired' as const,
-          startDate: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-          amount: user.subscriptionType === 'basic' ? 29 : user.subscriptionType === 'premium' ? 79 : user.subscriptionType === 'enterprise' ? 199 : 0,
-        }));
-        setSubscriptions(mockSubscriptions);
+        // Charger les transactions réelles
+        const paymentsRes = await paymentsApi.getAll();
+        setTransactions(paymentsRes.data || []);
 
       } catch (error) {
         console.error('Erreur lors du chargement des données admin:', error);
@@ -266,7 +258,7 @@ const AdminDashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.revenue.toLocaleString()}€</div>
+              <div className="text-2xl font-bold">{(stats.revenue || 0).toLocaleString()}€</div>
               <p className="text-xs text-muted-foreground">
                 +12% vs mois dernier
               </p>
@@ -293,7 +285,7 @@ const AdminDashboard = () => {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-            <TabsTrigger value="subscriptions">Abonnements</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
           </TabsList>
 
@@ -416,57 +408,61 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="subscriptions" className="space-y-4">
+          <TabsContent value="transactions" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Gestion des Abonnements</CardTitle>
-                <CardDescription>Voir et gérer les abonnements des utilisateurs</CardDescription>
+                <CardTitle>Historique des Transactions</CardTitle>
+                <CardDescription>Liste de tous les paiements effectués sur la plateforme</CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Date</TableHead>
                       <TableHead>Utilisateur</TableHead>
                       <TableHead>Plan</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Date début</TableHead>
-                      <TableHead>Date fin</TableHead>
                       <TableHead>Montant</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>ID Transaction</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {subscriptions.map((sub) => (
-                      <TableRow key={sub.id}>
+                    {transactions.map((tx: any) => (
+                      <TableRow key={tx.id || tx._id}>
+                        <TableCell className="text-sm font-medium">
+                          {tx.createdAt ? format(new Date(tx.createdAt), 'dd MMM yyyy HH:mm', { locale: fr }) : 'N/A'}
+                        </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{sub.userName}</p>
-                            <p className="text-sm text-muted-foreground">{sub.userEmail}</p>
+                            <p className="font-medium">{tx.userId?.name || 'N/A'}</p>
+                            <p className="text-xs text-muted-foreground">{tx.userId?.email || 'N/A'}</p>
                           </div>
                         </TableCell>
-                        <TableCell>{getPlanBadge(sub.plan)}</TableCell>
-                        <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                        <TableCell>{format(new Date(sub.startDate), 'dd MMM yyyy', { locale: fr })}</TableCell>
-                        <TableCell>{format(new Date(sub.endDate), 'dd MMM yyyy', { locale: fr })}</TableCell>
-                        <TableCell>{sub.amount > 0 ? `${sub.amount}€/mois` : 'Gratuit'}</TableCell>
+                        <TableCell>{getPlanBadge(tx.plan)}</TableCell>
+                        <TableCell className="font-bold">{tx.amount}€</TableCell>
                         <TableCell>
-                          <Select 
-                            value={sub.plan} 
-                            onValueChange={(value) => handleUpdateSubscription(sub.userId, value)}
+                          <Badge 
+                            variant={tx.status === 'successful' ? 'default' : tx.status === 'pending' ? 'outline' : 'destructive'}
+                            className={cn(
+                              tx.status === 'successful' && "bg-green-100 text-green-800 hover:bg-green-100",
+                              tx.status === 'pending' && "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
+                            )}
                           >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="free">Free</SelectItem>
-                              <SelectItem value="basic">Basic</SelectItem>
-                              <SelectItem value="premium">Premium</SelectItem>
-                              <SelectItem value="enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            {tx.status === 'successful' ? 'Réussi' : tx.status === 'pending' ? 'En attente' : 'Échoué'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono text-muted-foreground uppercase">
+                           {(tx.id || tx._id || "").slice(-8)}
                         </TableCell>
                       </TableRow>
                     ))}
+                    {transactions.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                          Aucune transaction trouvée
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>

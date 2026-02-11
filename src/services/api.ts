@@ -1021,4 +1021,19 @@ export const paymentsApi = {
     });
     return handleResponse(res);
   },
+
+  getAll: async (): Promise<ApiResponse<any[]>> => {
+    const res = await fetch(`${API_BASE_URL}/payments/all`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  simulateSuccess: async (id: string): Promise<ApiResponse<any>> => {
+    const res = await fetch(`${API_BASE_URL}/payments/simulate-success/${id}`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
 };
