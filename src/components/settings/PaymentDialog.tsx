@@ -15,6 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Smartphone, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { paymentsApi } from "@/services/api";
+import mpesaLogo from "@/assets/mpesa-logo.png";
+import orangeMoneyLogo from "@/assets/orange-money-logo.png";
+import airtelMoneyLogo from "@/assets/airtel-money.png";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -25,9 +28,9 @@ interface PaymentDialogProps {
 }
 
 const operators = [
-  { id: 'mpesa', name: 'M-Pesa', pattern: /^(081|082|083)[0-9]{7}$/, placeholder: '081XXXXXXX', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/M-Pesa_logo.svg/512px-M-Pesa_logo.svg.png' },
+  { id: 'mpesa', name: 'M-Pesa', pattern: /^(081|082|083)[0-9]{7}$/, placeholder: '081XXXXXXX', logo: mpesaLogo },
   { id: 'orange', name: 'Orange Money', pattern: /^(084|085|089)[0-9]{7}$/, placeholder: '084XXXXXXX', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Orange_logo.svg/512px-Orange_logo.svg.png' },
-  { id: 'airtel', name: 'Airtel Money', pattern: /^(097|098|099)[0-9]{7}$/, placeholder: '097XXXXXXX', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Airtel_logo.svg/512px-Airtel_logo.svg.png' },
+  { id: 'airtel', name: 'Airtel Money', pattern: /^(097|098|099)[0-9]{7}$/, placeholder: '097XXXXXXX', logo: airtelMoneyLogo },
 ];
 
 export function PaymentDialog({ isOpen, onClose, plan, amount, onSuccess }: PaymentDialogProps) {
