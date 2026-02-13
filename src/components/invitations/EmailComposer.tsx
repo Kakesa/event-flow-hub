@@ -244,30 +244,55 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
     
     const t = emailThemes.find(th => th.id === selectedTheme) || emailThemes[0];
 
+    const eventImageUrl = event?.coverImage
+      ? (event.coverImage.startsWith('http') ? event.coverImage : `${window.location.origin}${event.coverImage}`)
+      : '';
+
     return `
       <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: ${t.bg}; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
         <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
-        <div style="background: ${t.headerGradient}; padding: 40px 40px 30px; text-align: center;">
-          <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 56px; height: 56px; border-radius: 50%; margin-bottom: 12px; object-fit: cover;" />
-          <h1 style="color: #f5f0e8; margin: 0; font-size: 26px; font-weight: 400; line-height: 1.3; font-family: 'Georgia', serif;">${processedSubject}</h1>
-          <div style="width: 60px; height: 1px; background: ${t.divider}; margin: 20px auto 0;"></div>
+        
+        <!-- Header with hearts -->
+        <div style="background: ${t.headerGradient}; padding: 36px 40px 20px; text-align: center;">
+          <div style="font-size: 28px; margin-bottom: 8px; letter-spacing: 8px;">♥ ♥ ♥</div>
+          <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 48px; height: 48px; border-radius: 50%; margin-bottom: 10px; object-fit: cover;" />
+          <h1 style="color: #f5f0e8; margin: 0; font-size: 24px; font-weight: 400; line-height: 1.4; font-family: 'Georgia', serif;">${processedSubject}</h1>
+          <div style="margin: 16px auto 0; font-size: 20px; color: ${t.accent};">✦ ♡ ✦</div>
         </div>
-        <div style="padding: 0 40px;">
-          <div style="background: ${t.bodyBg}; border-radius: 12px; padding: 36px 32px; border: 1px solid ${t.bodyBorder};">
+
+        <!-- Event Image with elegant frame -->
+        ${eventImageUrl ? `
+        <div style="padding: 20px 36px 0; text-align: center;">
+          <div style="border: 3px solid ${t.accent}; border-radius: 12px; padding: 6px; display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,0.2); background: ${t.bodyBg};">
+            <img src="${eventImageUrl}" alt="Événement" style="width: 100%; max-width: 500px; height: 220px; object-fit: cover; border-radius: 8px; display: block;" />
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Body -->
+        <div style="padding: 20px 40px 0;">
+          <div style="background: ${t.bodyBg}; border-radius: 12px; padding: 32px 28px; border: 1px solid ${t.bodyBorder}; position: relative;">
+            <div style="text-align: center; font-size: 18px; color: ${t.accent}; margin-bottom: 16px;">❦</div>
             <div style="white-space: pre-wrap; line-height: 1.8; color: ${t.bodyText}; font-size: 15px;">
               ${processedBody.replace(/\n/g, '<br />')}
             </div>
+            <div style="text-align: center; font-size: 18px; color: ${t.accent}; margin-top: 16px;">❦</div>
           </div>
         </div>
-        <div style="text-align: center; padding: 30px 40px 10px;">
+
+        <!-- CTA Button -->
+        <div style="text-align: center; padding: 28px 40px 8px;">
           <a href="${rsvpLink}" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: ${t.btnShadow};">
-            Confirmer ma présence
+            💌 Confirmer ma présence
           </a>
         </div>
-        <div style="padding: 24px 40px 32px; text-align: center;">
-          <div style="width: 40px; height: 1px; background: ${t.divider}; margin: 0 auto 16px;"></div>
+
+        <!-- Footer -->
+        <div style="padding: 20px 40px 28px; text-align: center;">
+          <div style="font-size: 16px; color: ${t.accent}; margin-bottom: 12px; letter-spacing: 6px;">♥ ♥ ♥</div>
+          <div style="width: 40px; height: 1px; background: ${t.divider}; margin: 0 auto 12px;"></div>
           <p style="color: ${t.footerText}; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
-            Envoyé avec élégance via <span style="color: ${t.accent};">HK Event</span>
+            Envoyé avec amour via <span style="color: ${t.accent};">HK Event</span>
           </p>
         </div>
         <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
