@@ -84,7 +84,7 @@ const RSVPError = ({ message }: { message: string }) => (
 
 // Floating hearts component
 const FloatingHearts = () => {
-  const hearts = Array.from({ length: 15 }, (_, i) => ({
+  const hearts = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
     delay: `${Math.random() * 6}s`,
@@ -93,7 +93,7 @@ const FloatingHearts = () => {
     opacity: 0.15 + Math.random() * 0.25,
   }));
 
-  const petals = Array.from({ length: 12 }, (_, i) => ({
+  const petals = Array.from({ length: 6 }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
     delay: `${Math.random() * 8}s`,
