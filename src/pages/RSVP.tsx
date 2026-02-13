@@ -82,6 +82,39 @@ const RSVPError = ({ message }: { message: string }) => (
   </div>
 );
 
+// Floating hearts component
+const FloatingHearts = () => {
+  const hearts = Array.from({ length: 15 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 6}s`,
+    duration: `${6 + Math.random() * 6}s`,
+    size: `${14 + Math.random() * 18}px`,
+    opacity: 0.15 + Math.random() * 0.25,
+  }));
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {hearts.map((heart) => (
+        <span
+          key={heart.id}
+          className="absolute text-primary animate-float-heart"
+          style={{
+            left: heart.left,
+            bottom: '-40px',
+            fontSize: heart.size,
+            opacity: heart.opacity,
+            animationDelay: heart.delay,
+            animationDuration: heart.duration,
+          }}
+        >
+          ♥
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const RSVP = () => {
   const { eventId, guestId, slug } = useParams<{ eventId: string; guestId: string; slug: string }>();
   const [isLoading, setIsLoading] = useState(true);
@@ -265,7 +298,8 @@ const RSVP = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 flex items-center justify-center p-4 relative">
+        <FloatingHearts />
         <div className="w-full max-w-md space-y-4">
           <Card className="text-center border-border/50 shadow-2xl">
             <CardContent className="pt-12 pb-8">
@@ -399,7 +433,8 @@ const RSVP = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 relative">
+      <FloatingHearts />
       {/* Hero Section with romantic framed image */}
       <div className="relative overflow-hidden bg-gradient-to-b from-black/95 via-black/90 to-background">
         {/* Decorative hearts background */}
