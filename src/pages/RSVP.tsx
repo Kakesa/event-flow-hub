@@ -400,36 +400,56 @@ const RSVP = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10">
-      {/* Hero Section */}
-      <div className="relative h-64 sm:h-80 lg:h-96 overflow-hidden bg-black/90">
-        <img
-          src={event.coverImage 
-            ? (event.coverImage.startsWith('http') 
-                ? event.coverImage 
-                : `${API_BASE_URL}${event.coverImage}`)
-            : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
-          }
-          alt={event.title}
-          className="w-full h-full object-contain"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
-              <img src="/src/assets/black.png" alt="logo" className="h-10 w-10 object-contain" />
-            </div>
-            <h1 className="font-display text-2xl sm:text-4xl font-bold text-white drop-shadow-lg mb-2">
-              {event.title}
-            </h1>
+      {/* Hero Section with romantic framed image */}
+      <div className="relative overflow-hidden bg-gradient-to-b from-black/95 via-black/90 to-background">
+        {/* Decorative hearts background */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-5 text-white text-[200px] pointer-events-none select-none">
+          ♥
+        </div>
+        
+        <div className="max-w-2xl mx-auto px-4 pt-8 pb-12 sm:pt-12 sm:pb-16 text-center">
+          {/* Logo */}
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
+            <img src="/src/assets/black.png" alt="logo" className="h-9 w-9 object-contain" />
           </div>
+
+          {/* Ornament */}
+          <div className="text-primary text-lg tracking-[0.5em] mb-4">✦ ♡ ✦</div>
+
+          {/* Title */}
+          <h1 className="font-display text-2xl sm:text-4xl font-bold text-white drop-shadow-lg mb-6">
+            {event.title}
+          </h1>
+
+          {/* Framed Event Photo */}
+          <div className="inline-block p-2 sm:p-3 rounded-xl border-2 border-primary/40 bg-white/5 backdrop-blur-sm shadow-2xl">
+            <div className="relative rounded-lg overflow-hidden">
+              <img
+                src={event.coverImage 
+                  ? (event.coverImage.startsWith('http') 
+                      ? event.coverImage 
+                      : `${API_BASE_URL}${event.coverImage}`)
+                  : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
+                }
+                alt={event.title}
+                className="w-full h-48 sm:h-64 lg:h-72 object-cover rounded-lg"
+                style={{ maxWidth: '520px' }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
+                }}
+              />
+              {/* Subtle overlay at bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent rounded-b-lg" />
+            </div>
+          </div>
+
+          {/* Bottom hearts ornament */}
+          <div className="text-white/40 text-sm tracking-[0.4em] mt-5">♥ ♥ ♥</div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-8 -mt-8 relative z-10">
+      <div className="max-w-2xl mx-auto px-4 py-8 relative z-10">
         {/* Event Details Card */}
         <Card className="mb-6 border-border/50 shadow-lg">
             <CardContent className="pt-6">
