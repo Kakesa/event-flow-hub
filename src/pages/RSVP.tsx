@@ -93,11 +93,20 @@ const FloatingHearts = () => {
     opacity: 0.15 + Math.random() * 0.25,
   }));
 
+  const petals = Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 8}s`,
+    duration: `${8 + Math.random() * 7}s`,
+    size: `${16 + Math.random() * 14}px`,
+    opacity: 0.2 + Math.random() * 0.3,
+  }));
+
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {hearts.map((heart) => (
         <span
-          key={heart.id}
+          key={`h-${heart.id}`}
           className="absolute text-primary animate-float-heart"
           style={{
             left: heart.left,
@@ -109,6 +118,22 @@ const FloatingHearts = () => {
           }}
         >
           ♥
+        </span>
+      ))}
+      {petals.map((petal) => (
+        <span
+          key={`p-${petal.id}`}
+          className="absolute animate-fall-petal"
+          style={{
+            left: petal.left,
+            top: '-30px',
+            fontSize: petal.size,
+            opacity: petal.opacity,
+            animationDelay: petal.delay,
+            animationDuration: petal.duration,
+          }}
+        >
+          🌸
         </span>
       ))}
     </div>
