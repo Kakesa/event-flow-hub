@@ -16,7 +16,7 @@ import {
   Image, Check, Sparkles, Heart, PartyPopper, GraduationCap,
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
-import { guestsApi, eventsApi, emailsApi, invitationsApi } from '@/services/api';
+import { guestsApi, eventsApi, emailsApi, invitationsApi, BASE_URL } from '@/services/api';
 import type { Guest, Event } from '@/types/models';
 import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 
@@ -30,6 +30,9 @@ interface Template {
 }
 
 const templates: Template[] = [
+  { id: 'wedding_dark', name: 'Mariage Royal (Sombre)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800', primaryColor: '#0F2C33', icon: Heart },
+  { id: 'wedding_sage', name: 'Mariage Nature (Sauge)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800', primaryColor: '#4A5B4F', icon: Heart },
+  { id: 'wedding_luxury', name: 'Mariage Luxe (Or)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800', primaryColor: '#D4AF37', icon: Sparkles },
   { id: 'elegant', name: 'Élégant Doré', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400', primaryColor: '#D4AF37', icon: Sparkles },
   { id: 'romantic', name: 'Romantique Rose', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400', primaryColor: '#E91E63', icon: Heart },
   { id: 'festive', name: 'Festif Coloré', category: 'Anniversaire', preview: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400', primaryColor: '#FF5722', icon: PartyPopper },
@@ -105,13 +108,19 @@ const InvitationTemplates = () => {
 
   const generateWhatsAppMessage = () => {
     const rsvpLink = `${window.location.origin}/rsvp/${eventIdFromUrl}`;
+    const isWedding = selectedTemplate?.id.startsWith('wedding_');
+    const header = isWedding ? '💍 *INVITATION MARIAGE* 💍' : `✨ *${customization.title.toUpperCase()}* ✨`;
+
     return encodeURIComponent(
-      `✨ ${customization.title}\n\n` +
-      `📌 ${customization.eventName}\n` +
-      `📅 ${customization.date} à ${customization.time}\n` +
-      `📍 ${customization.location}\n\n` +
+      `${header}\n\n` +
+      `📌 *${customization.eventName}*\n\n` +
+      `📅 *Date:* ${customization.date}\n` +
+      `🕐 *Heure:* ${customization.time}\n` +
+      `📍 *Lieu:* ${customization.location}\n\n` +
       `${customization.message}\n\n` +
-      `Confirmez votre présence: ${rsvpLink}`
+      `🙏 *Nous serions honorés de votre présence.*\n\n` +
+      `👉 *Confirmez votre réponse ici:* ${rsvpLink}\n\n` +
+      `_HK Events - L'excellence au service de vos souvenirs_`
     );
   };
 
@@ -184,41 +193,88 @@ const InvitationTemplates = () => {
   const getEmailHtml = () => {
     const rsvpLink = '{{rsvpLink}}';
     const primaryColor = customization.primaryColor;
+    const isWeddingTemplate = selectedTemplate?.id.startsWith('wedding_');
+    const backgroundColor = isWeddingTemplate ? primaryColor : '#f9f9f9';
+    const textColor = isWeddingTemplate ? '#ffffff' : '#333333';
+    const accentColor = isWeddingTemplate ? '#ffffff' : primaryColor;
+
+    // Priorité à l'image de l'événement si elle existe
+    const eventImageUrl = event?.coverImage
+      ? (event.coverImage.startsWith('http') ? event.coverImage : `${BASE_URL}${event.coverImage}`)
+      : selectedTemplate?.preview || 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800';
+
+    const tornEdgeSvg = `
+      <svg viewBox="0 0 100 10" preserveAspectRatio="none" style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 50px; z-index: 10; fill: ${backgroundColor};">
+        <path d="M0 10 L5 8 L10 9 L15 7 L20 9 L25 8 L30 10 L35 7 L40 9 L45 8 L50 10 L55 7 L60 9 L65 8 L70 10 L75 7 L80 9 L85 8 L90 10 L95 7 L100 10 Z" />
+      </svg>
+    `;
 
     return `
-      <div style="font-family: ${customization.fontFamily}, serif; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #eee;">
-        <div style="background-color: #000; padding: 40px 20px; text-align: center;">
-          <h1 style="color: ${primaryColor}; margin: 0; font-size: 28px; letter-spacing: 2px;">INVITATION</h1>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+      </style>
+      <div style="font-family: 'Playfair Display', serif; max-width: 600px; margin: 0 auto; background-color: ${backgroundColor}; border-radius: 0; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.4); border: none; position: relative;">
+        <!-- Header Image with Overlay & Torn Edge -->
+        <div style="position: relative; height: 500px; overflow: hidden; background-color: #222;">
+          <img src="${eventImageUrl}" alt="Event" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+          <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.4) 100%);"></div>
+          
+          <!-- Floral Decorations -->
+          <div style="position: absolute; bottom: 20px; left: 20px; width: 100px; height: 100px; z-index: 15; opacity: 0.9; transform: rotate(-15deg);">
+            <svg viewBox="0 0 100 100" style="fill: white;">
+              <path d="M50 0 C45 20 20 25 20 45 C20 65 45 70 50 90 C55 70 80 65 80 45 C80 25 55 20 50 0 Z" opacity="0.4" />
+              <path d="M50 20 C48 30 35 32 35 45 C35 58 48 60 50 75 C52 60 65 58 65 45 C65 32 52 30 50 20 Z" />
+            </svg>
+          </div>
+          <div style="position: absolute; bottom: 40px; right: 20px; width: 80px; height: 80px; z-index: 15; opacity: 0.7; transform: rotate(15deg) scaleX(-1);">
+            <svg viewBox="0 0 100 100" style="fill: ${accentColor};">
+              <path d="M50 0 C45 20 20 25 20 45 C20 65 45 70 50 90 C55 70 80 65 80 45 C80 25 55 20 50 0 Z" opacity="0.4" />
+              <path d="M50 20 C48 30 35 32 35 45 C35 58 48 60 50 75 C52 60 65 58 65 45 C65 32 52 30 50 20 Z" />
+            </svg>
+          </div>
+
+          ${tornEdgeSvg}
         </div>
         
-        <div style="position: relative; height: 300px;">
-          <img src="${selectedTemplate?.preview}" alt="Event" style="width: 100%; height: 100%; object-fit: cover;" />
-          <div style="position: absolute; inset: 0; background-color: rgba(0,0,0,0.4);"></div>
-          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 20px;">
-            <p style="font-size: 16px; margin-bottom: 10px; opacity: 0.9;">${customization.title}</p>
-            <h2 style="font-size: 32px; font-weight: bold; margin: 0; color: ${primaryColor};">${customization.eventName}</h2>
-          </div>
-        </div>
-
-        <div style="padding: 40px 30px; background-color: white; text-align: center; color: #333;">
-          <div style="display: inline-block; text-align: left; margin-bottom: 30px; font-size: 16px;">
-            <p style="margin: 10px 0;">📅 <strong>Date :</strong> ${customization.date}</p>
-            <p style="margin: 10px 0;">🕐 <strong>Heure :</strong> ${customization.time}</p>
-            <p style="margin: 10px 0;">📍 <strong>Lieu :</strong> ${customization.location}</p>
-          </div>
-
-          <p style="line-height: 1.6; margin-bottom: 40px; color: #666;">
-            ${customization.message}
+        <!-- Content Section -->
+        <div style="padding: 60px 40px; text-align: center; color: ${textColor}; position: relative;">
+          <!-- Ornamental Decorations -->
+          <div style="font-size: 32px; margin-bottom: 25px; color: ${accentColor}; letter-spacing: 5px;">━━━━  ❀  ━━━━</div>
+          
+          <p style="text-transform: uppercase; letter-spacing: 5px; font-size: 13px; margin-bottom: 20px; opacity: 0.8; font-weight: 700;">
+            ${customization.title}
+          </p>
+          
+          <h1 style="font-size: 56px; font-family: 'Great Vibes', cursive, serif; margin: 0 0 35px 0; font-weight: normal; color: ${accentColor}; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            ${customization.eventName}
+          </h1>
+          
+          <div style="width: 80px; height: 1px; background-color: ${accentColor}; margin: 0 auto 35px auto; opacity: 0.4;"></div>
+          
+          <p style="font-size: 20px; line-height: 1.8; margin-bottom: 45px; font-style: italic; opacity: 0.9; max-width: 450px; margin-left: auto; margin-right: auto;">
+            "${customization.message}"
           </p>
 
-          <a href="${rsvpLink}" style="display: inline-block; background-color: ${primaryColor}; color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            Confirmer ma présence
+          <div style="background-color: rgba(255,255,255,0.03); padding: 40px 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 45px; display: inline-block; width: 100%; box-sizing: border-box; backdrop-filter: blur(5px);">
+            <div style="font-size: 28px; font-weight: bold; margin-bottom: 12px; letter-spacing: 3px; font-family: 'Playfair Display', serif;">
+              ${customization.date.toUpperCase()}
+            </div>
+            <div style="font-size: 14px; opacity: 0.7; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: inline-block;">
+              📍 ${customization.location}
+            </div>
+          </div>
+
+          <a href="${rsvpLink}" style="display: inline-block; background-color: ${isWeddingTemplate ? '#ffffff' : primaryColor}; color: ${isWeddingTemplate ? primaryColor : '#ffffff'}; padding: 22px 50px; border-radius: 0; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; font-size: 13px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); transition: all 0.3s ease;">
+            Répondre à l'invitation
           </a>
+          
+          <div style="margin-top: 60px; font-size: 10px; opacity: 0.4; letter-spacing: 3px; text-transform: uppercase;">
+             ✧ HK Events Excellence ✧
+          </div>
         </div>
 
-        <div style="background-color: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee;">
-          <p>HK Events - Gestion d'événements d'exception</p>
-        </div>
+        <!-- Bottom Border Accent -->
+        <div style="height: 10px; background: linear-gradient(90deg, transparent, ${accentColor}, transparent); opacity: 0.3;"></div>
       </div>
     `;
   };

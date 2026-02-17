@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { emailsApi } from '@/services/api';
+import { emailsApi, BASE_URL } from '@/services/api';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 
@@ -237,7 +237,6 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
   const getPreviewHtml = (forEmail = false) => {
     const previewGuest = selectedGuests[0] || { name: 'Jean Dupont', email: 'jean@example.com' } as Guest;
     
-    // Decide whether to replace variables or leave placeholders
     const processedSubject = forEmail ? subject : replaceVariables(subject, previewGuest);
     const processedBody = forEmail ? body : replaceVariables(body, previewGuest);
     const rsvpLink = forEmail ? '{{rsvpLink}}' : replaceVariables('{{rsvpLink}}', previewGuest);
@@ -245,58 +244,76 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
     const t = emailThemes.find(th => th.id === selectedTheme) || emailThemes[0];
 
     const eventImageUrl = event?.coverImage
-      ? (event.coverImage.startsWith('http') ? event.coverImage : `${window.location.origin}${event.coverImage}`)
-      : '';
+      ? (event.coverImage.startsWith('http') ? event.coverImage : `${BASE_URL}${event.coverImage}`)
+      : 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800';
+
+    const tornEdgeSvg = `
+      <svg viewBox="0 0 100 10" preserveAspectRatio="none" style="position: absolute; bottom: -1px; left: 0; width: 100%; height: 50px; z-index: 10; fill: ${t.bg};">
+        <path d="M0 10 L5 8 L10 9 L15 7 L20 9 L25 8 L30 10 L35 7 L40 9 L45 8 L50 10 L55 7 L60 9 L65 8 L70 10 L75 7 L80 9 L85 8 L90 10 L95 7 L100 10 Z" />
+      </svg>
+    `;
 
     return `
-      <div style="font-family: 'Georgia', 'Times New Roman', serif; max-width: 600px; margin: 0 auto; background: ${t.bg}; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
+      <div style="font-family: 'Playfair Display', serif; max-width: 600px; margin: 0 auto; background-color: ${t.bg}; border-radius: 0; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.4); border: none; position: relative;">
+        <!-- Header Image with Overlay & Torn Edge -->
+        <div style="position: relative; height: 500px; overflow: hidden; background-color: #222;">
+          <img src="${eventImageUrl}" alt="Event" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+          <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.4) 100%);"></div>
+          
+          <div style="position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; z-index: 20;">
+             <img src="${window.location.origin}/images/logo-white.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${t.accent};" />
+          </div>
+
+          <!-- Floral Decorations -->
+          <div style="position: absolute; bottom: 20px; left: 20px; width: 100px; height: 100px; z-index: 15; opacity: 0.9; transform: rotate(-15deg);">
+            <svg viewBox="0 0 100 100" style="fill: white;">
+              <path d="M50 0 C45 20 20 25 20 45 C20 65 45 70 50 90 C55 70 80 65 80 45 C80 25 55 20 50 0 Z" opacity="0.4" />
+              <path d="M50 20 C48 30 35 32 35 45 C35 58 48 60 50 75 C52 60 65 58 65 45 C65 32 52 30 50 20 Z" />
+            </svg>
+          </div>
+          <div style="position: absolute; bottom: 40px; right: 20px; width: 80px; height: 80px; z-index: 15; opacity: 0.7; transform: rotate(15deg) scaleX(-1);">
+            <svg viewBox="0 0 100 100" style="fill: ${t.accent};">
+              <path d="M50 0 C45 20 20 25 20 45 C20 65 45 70 50 90 C55 70 80 65 80 45 C80 25 55 20 50 0 Z" opacity="0.4" />
+              <path d="M50 20 C48 30 35 32 35 45 C35 58 48 60 50 75 C52 60 65 58 65 45 C65 32 52 30 50 20 Z" />
+            </svg>
+          </div>
+
+          ${tornEdgeSvg}
+        </div>
         
-        <!-- Header with hearts -->
-        <div style="background: ${t.headerGradient}; padding: 36px 40px 20px; text-align: center;">
-          <div style="font-size: 28px; margin-bottom: 8px; letter-spacing: 8px;">♥ ♥ ♥</div>
-          <img src="${window.location.origin}/images/logo-white.png" alt="HK Events Agency" style="width: 48px; height: 48px; border-radius: 50%; margin-bottom: 10px; object-fit: cover;" />
-          <h1 style="color: #f5f0e8; margin: 0; font-size: 24px; font-weight: 400; line-height: 1.4; font-family: 'Georgia', serif;">${processedSubject}</h1>
-          <div style="margin: 16px auto 0; font-size: 20px; color: ${t.accent};">✦ ♡ ✦</div>
-        </div>
-
-        <!-- Event Image with elegant frame -->
-        ${eventImageUrl ? `
-        <div style="padding: 20px 36px 0; text-align: center;">
-          <div style="border: 3px solid ${t.accent}; border-radius: 12px; padding: 6px; display: inline-block; box-shadow: 0 8px 30px rgba(0,0,0,0.2); background: ${t.bodyBg};">
-            <img src="${eventImageUrl}" alt="Événement" style="width: 100%; max-width: 500px; height: 220px; object-fit: cover; border-radius: 8px; display: block;" />
-          </div>
-        </div>
-        ` : ''}
-
-        <!-- Body -->
-        <div style="padding: 20px 40px 0;">
-          <div style="background: ${t.bodyBg}; border-radius: 12px; padding: 32px 28px; border: 1px solid ${t.bodyBorder}; position: relative;">
-            <div style="text-align: center; font-size: 18px; color: ${t.accent}; margin-bottom: 16px;">❦</div>
-            <div style="white-space: pre-wrap; line-height: 1.8; color: ${t.bodyText}; font-size: 15px;">
-              ${processedBody.replace(/\n/g, '<br />')}
-            </div>
-            <div style="text-align: center; font-size: 18px; color: ${t.accent}; margin-top: 16px;">❦</div>
-          </div>
-        </div>
-
-        <!-- CTA Button -->
-        <div style="text-align: center; padding: 28px 40px 8px;">
-          <a href="${rsvpLink}" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration: none; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; box-shadow: ${t.btnShadow};">
-            💌 Confirmer ma présence
-          </a>
-        </div>
-
-        <!-- Footer -->
-        <div style="padding: 20px 40px 28px; text-align: center;">
-          <div style="font-size: 16px; color: ${t.accent}; margin-bottom: 12px; letter-spacing: 6px;">♥ ♥ ♥</div>
-          <div style="width: 40px; height: 1px; background: ${t.divider}; margin: 0 auto 12px;"></div>
-          <p style="color: ${t.footerText}; font-size: 11px; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; letter-spacing: 1px;">
-            Envoyé avec amour via <span style="color: ${t.accent};">HK Event</span>
+        <!-- Content Section -->
+        <div style="padding: 60px 40px; text-align: center; color: ${t.id === 'gold' || t.id === 'rose' || t.id === 'blue' || t.id === 'green' ? '#ffffff' : '#333333'}; position: relative; background: ${t.bgGradient};">
+          <!-- Ornamental Decorations -->
+          <div style="font-size: 32px; margin-bottom: 25px; color: ${t.accent}; letter-spacing: 5px;">━━━━  ❀  ━━━━</div>
+          
+          <p style="text-transform: uppercase; letter-spacing: 5px; font-size: 13px; margin-bottom: 20px; opacity: 0.8; font-weight: 700; color: ${t.accentLight};">
+            ${processedSubject}
           </p>
+          
+          <h1 style="font-size: 56px; font-family: 'Great Vibes', cursive, serif; margin: 0 0 35px 0; font-weight: normal; color: ${t.accent}; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            ${(event?.title || 'Votre Événement D\'exception').toUpperCase()}
+          </h1>
+          
+          <div style="width: 80px; height: 1px; background-color: ${t.accent}; margin: 0 auto 35px auto; opacity: 0.4;"></div>
+          
+          <div style="background-color: rgba(255,255,255,0.03); padding: 35px 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 45px; font-size: 18px; line-height: 1.8; font-style: italic; backdrop-filter: blur(5px);">
+            ${processedBody.replace(/\n/g, '<br />')}
+          </div>
+
+          <a href="${rsvpLink}" style="display: inline-block; background: ${t.btnGradient}; color: #ffffff; padding: 22px 50px; border-radius: 0; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; font-size: 13px; box-shadow: ${t.btnShadow};">
+            Confirmer ma présence
+          </a>
+          
+          <div style="margin-top: 60px; font-size: 11px; opacity: 0.5; letter-spacing: 3px; color: ${t.accentLight};">
+            ${(event?.location || 'Lieu de l\'événement').toUpperCase()}
+          </div>
         </div>
-        <div style="height: 4px; background: linear-gradient(90deg, ${t.accentDark}, ${t.accent}, ${t.accentLight}, ${t.accent}, ${t.accentDark});"></div>
+
+        <div style="background-color: rgba(0,0,0,0.2); padding: 25px; text-align: center; font-size: 10px; color: #ffffff; opacity: 0.5; border-top: 1px solid rgba(255,255,255,0.05); letter-spacing: 2px;">
+          <p>HK Events - L'excellence au service de vos souvenirs.</p>
+        </div>
       </div>
+      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     `;
   };
 

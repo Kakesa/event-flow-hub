@@ -68,13 +68,17 @@ const WhatsAppSender = ({
       );
     }
 
+    const header = `✨ *${event.title.toUpperCase()}* ✨`;
+
     return encodeURIComponent(
-      `✨ Bonjour ${guest.name}!\n\n` +
-      `Vous êtes cordialement invité(e) à : ${event.title}\n` +
-      `📅 Date: ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
-      `📍 Lieu: ${event.location}\n\n` +
-      `Veuillez confirmer votre présence ici : ${rsvpLink}\n\n` +
-      `Nous avons hâte de vous voir! 🥂`
+      `${header}\n\n` +
+      `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
+      `📍 *Lieu:* ${event.location}\n\n` +
+      `Bonjour *${guest.name}*,\n\n` +
+      `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
+      `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
+      `Nous avons hâte de vous voir! 🥂\n\n` +
+      `_HK Events_`
     );
   };
 

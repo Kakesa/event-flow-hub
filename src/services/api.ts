@@ -11,8 +11,10 @@ import type {
 } from "@/types/models";
 
 // ==================== CONFIG ====================
-const API_BASE_URL =
+export const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+export const BASE_URL = API_BASE_URL.replace("/api", "");
 
 const getHeaders = (isJson: boolean = true) => ({
   ...(isJson ? { "Content-Type": "application/json" } : {}),
