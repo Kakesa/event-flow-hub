@@ -211,22 +211,22 @@ const InvitationTemplates = () => {
 
     return `
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@300;400;600&display=swap');
       </style>
-      <div style="font-family: 'Playfair Display', serif; max-width: 600px; margin: 0 auto; background-color: ${backgroundColor}; border-radius: 0; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.4); border: none; position: relative;">
+      <div style="font-family: 'Playfair Display', serif; max-width: 600px; margin: 0 auto; background-color: ${backgroundColor}; border-radius: 0; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.45); border: none; position: relative;">
         <!-- Header Image with Overlay & Torn Edge -->
-        <div style="position: relative; height: 500px; overflow: hidden; background-color: #222;">
-          <img src="${eventImageUrl}" alt="Event" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
-          <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.4) 100%);"></div>
+        <div style="position: relative; height: 450px; overflow: hidden; background-color: #222;">
+          <img src="${eventImageUrl}" alt="Event" style="width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block;" />
+          <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.5) 100%);"></div>
           
           <!-- Floral Decorations -->
-          <div style="position: absolute; bottom: 20px; left: 20px; width: 100px; height: 100px; z-index: 15; opacity: 0.9; transform: rotate(-15deg);">
+          <div style="position: absolute; bottom: 30px; left: 25px; width: 120px; height: 120px; z-index: 15; opacity: 0.9; transform: rotate(-10deg);">
             <svg viewBox="0 0 100 100" style="fill: white;">
               <path d="M50 0 C45 20 20 25 20 45 C20 65 45 70 50 90 C55 70 80 65 80 45 C80 25 55 20 50 0 Z" opacity="0.4" />
               <path d="M50 20 C48 30 35 32 35 45 C35 58 48 60 50 75 C52 60 65 58 65 45 C65 32 52 30 50 20 Z" />
             </svg>
           </div>
-          <div style="position: absolute; bottom: 40px; right: 20px; width: 80px; height: 80px; z-index: 15; opacity: 0.7; transform: rotate(15deg) scaleX(-1);">
+          <div style="position: absolute; bottom: 50px; right: 25px; width: 100px; height: 100px; z-index: 15; opacity: 0.7; transform: rotate(20deg) scaleX(-1);">
             <svg viewBox="0 0 100 100" style="fill: ${accentColor};">
               <path d="M50 0 C45 20 20 25 20 45 C20 65 45 70 50 90 C55 70 80 65 80 45 C80 25 55 20 50 0 Z" opacity="0.4" />
               <path d="M50 20 C48 30 35 32 35 45 C35 58 48 60 50 75 C52 60 65 58 65 45 C65 32 52 30 50 20 Z" />
@@ -237,44 +237,44 @@ const InvitationTemplates = () => {
         </div>
         
         <!-- Content Section -->
-        <div style="padding: 60px 40px; text-align: center; color: ${textColor}; position: relative;">
+        <div style="padding: 70px 50px; text-align: center; color: ${textColor}; position: relative;">
           <!-- Ornamental Decorations -->
-          <div style="font-size: 32px; margin-bottom: 25px; color: ${accentColor}; letter-spacing: 5px;">━━━━  ❀  ━━━━</div>
+          <div style="font-size: 36px; margin-bottom: 30px; color: ${accentColor}; letter-spacing: 8px; opacity: 0.8;">━━━━  ❀  ━━━━</div>
           
-          <p style="text-transform: uppercase; letter-spacing: 5px; font-size: 13px; margin-bottom: 20px; opacity: 0.8; font-weight: 700;">
+          <p style="font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 6px; font-size: 14px; margin-bottom: 25px; opacity: 0.9; font-weight: 700;">
             ${customization.title}
           </p>
           
-          <h1 style="font-size: 56px; font-family: 'Great Vibes', cursive, serif; margin: 0 0 35px 0; font-weight: normal; color: ${accentColor}; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            ${customization.eventName}
+          <h1 style="font-size: 48px; font-family: 'Playfair Display', serif; margin: 0 0 35px 0; font-weight: 700; color: ${accentColor}; line-height: 1.2; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+            ${customization.eventName.toUpperCase()}
           </h1>
           
-          <div style="width: 80px; height: 1px; background-color: ${accentColor}; margin: 0 auto 35px auto; opacity: 0.4;"></div>
+          <div style="width: 100px; height: 1px; background-color: ${accentColor}; margin: 0 auto 40px auto; opacity: 0.5;"></div>
           
-          <p style="font-size: 20px; line-height: 1.8; margin-bottom: 45px; font-style: italic; opacity: 0.9; max-width: 450px; margin-left: auto; margin-right: auto;">
+          <p style="font-family: 'Montserrat', sans-serif; font-size: 19px; line-height: 2; margin-bottom: 50px; font-weight: 300; opacity: 0.95; max-width: 480px; margin-left: auto; margin-right: auto;">
             "${customization.message}"
           </p>
 
-          <div style="background-color: rgba(255,255,255,0.03); padding: 40px 20px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 45px; display: inline-block; width: 100%; box-sizing: border-box; backdrop-filter: blur(5px);">
-            <div style="font-size: 28px; font-weight: bold; margin-bottom: 12px; letter-spacing: 3px; font-family: 'Playfair Display', serif;">
+          <div style="background-color: rgba(255,255,255,0.05); padding: 45px 30px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 50px; display: inline-block; width: 100%; box-sizing: border-box; backdrop-filter: blur(10px); border-radius: 4px;">
+            <div style="font-family: 'Cinzel', serif; font-size: 32px; font-weight: 700; margin-bottom: 15px; letter-spacing: 4px; color: ${accentColor};">
               ${customization.date.toUpperCase()}
             </div>
-            <div style="font-size: 14px; opacity: 0.7; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: inline-block;">
+            <div style="font-family: 'Montserrat', sans-serif; font-size: 15px; opacity: 0.8; letter-spacing: 3px; text-transform: uppercase; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 15px; display: inline-block; font-weight: 600;">
               📍 ${customization.location}
             </div>
           </div>
 
-          <a href="${rsvpLink}" style="display: inline-block; background-color: ${isWeddingTemplate ? '#ffffff' : primaryColor}; color: ${isWeddingTemplate ? primaryColor : '#ffffff'}; padding: 22px 50px; border-radius: 0; text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; font-size: 13px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); transition: all 0.3s ease;">
-            Répondre à l'invitation
+          <a href="${rsvpLink}" style="display: inline-block; background-color: ${isWeddingTemplate ? '#ffffff' : primaryColor}; color: ${isWeddingTemplate ? primaryColor : '#ffffff'}; padding: 24px 60px; border-radius: 4px; text-decoration: none; font-weight: 700; text-transform: uppercase; letter-spacing: 4px; font-size: 14px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); transition: all 0.4s ease; border: ${isWeddingTemplate ? 'none' : '1px solid rgba(255,255,255,0.2)'};">
+            Confirmer ma présence
           </a>
           
-          <div style="margin-top: 60px; font-size: 10px; opacity: 0.4; letter-spacing: 3px; text-transform: uppercase;">
-             ✧ HK Events Excellence ✧
+          <div style="margin-top: 70px; font-family: 'Cinzel', serif; font-size: 11px; opacity: 0.5; letter-spacing: 5px; text-transform: uppercase; font-weight: 700;">
+             ✧ HK Events d'Exception ✧
           </div>
         </div>
 
         <!-- Bottom Border Accent -->
-        <div style="height: 10px; background: linear-gradient(90deg, transparent, ${accentColor}, transparent); opacity: 0.3;"></div>
+        <div style="height: 12px; background: linear-gradient(90deg, transparent, ${accentColor}, transparent); opacity: 0.4;"></div>
       </div>
     `;
   };
