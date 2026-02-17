@@ -14,18 +14,9 @@ import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle
 import { QRCodeSVG } from "qrcode.react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
-import { rsvpApi, eventsApi, emailsApi } from "@/services/api";
+import { rsvpApi, eventsApi, emailsApi, BASE_URL } from "@/services/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const drinkOptions = [
-  { value: "champagne", label: "Champagne" },
-  { value: "wine", label: "Vin rouge/blanc" },
-  { value: "cocktail", label: "Cocktails" },
-  { value: "beer", label: "Bière" },
-  { value: "soft", label: "Boissons sans alcool" },
-  { value: "none", label: "Pas de préférence" },
-];
+// Initial state removed: using real data from API
 
 // Skeleton de chargement
 const RSVPSkeleton = () => (
@@ -369,9 +360,9 @@ const RSVP = () => {
                 </div>
                 {formData.drinkPreference && (
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Boisson</span>
+                    <span className="text-muted-foreground">Boissons choisies</span>
                     <span className="font-medium">
-                      {drinkOptions.find(d => d.value === formData.drinkPreference)?.label || formData.drinkPreference}
+                      {formData.drinkPreference}
                     </span>
                   </div>
                 )}
@@ -488,7 +479,7 @@ const RSVP = () => {
                 src={event.coverImage 
                   ? (event.coverImage.startsWith('http') 
                       ? event.coverImage 
-                      : `${API_BASE_URL}${event.coverImage}`)
+                      : `${BASE_URL}${event.coverImage}`)
                   : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
                 }
                 alt={event.title}
@@ -638,25 +629,89 @@ const RSVP = () => {
 
                 {formData.status === "confirmed" && (
                   <>
-                    {/* Drink Preference */}
-                    <div className="space-y-2">
-                      <Label htmlFor="drink">Préférence de boisson</Label>
-                      <Select
-                        value={formData.drinkPreference}
-                        onValueChange={(value) => setFormData({ ...formData, drinkPreference: value })}
-                      >
-                        <SelectTrigger>
-                          <Wine className="w-4 h-4 mr-2 text-muted-foreground" />
-                          <SelectValue placeholder="Sélectionnez votre préférence" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {drinkOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    {/* Drink Preference Section */}
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <Label className="text-lg font-display font-semibold flex items-center gap-2">
+                          <Wine className="w-5 h-5 text-primary" />
+                          Vos préférences
+                        </Label>
+                        <p className="text-sm text-muted-foreground">Que désirez vous boire 🍻 ?</p>
+                        <p className="text-xs text-muted-foreground italic">
+                          Aidez les mariés dans la planification de leur événement en leur suggérant vos goûts de boissons (Deux goûts au max)
+                        </p>
+                      </div>
+
+                      {/* Alcoholic Drinks */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-center border-b pb-1 border-border/50">Boissons alcoolisées</h4>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {[
+                            "Castel", "Beaufort", "Primus", "Tembo", "Turbo King", 
+                            "Mutzig", "Heineken", "Nkoyi", "Likofi"
+                          ].map((drink) => {
+                            const isSelected = formData.drinkPreference.split(', ').includes(drink);
+                            return (
+                              <button
+                                key={drink}
+                                type="button"
+                                onClick={() => {
+                                  const current = formData.drinkPreference ? formData.drinkPreference.split(', ') : [];
+                                  if (isSelected) {
+                                    setFormData({ ...formData, drinkPreference: current.filter(d => d !== drink).join(', ') });
+                                  } else if (current.length < 2) {
+                                    setFormData({ ...formData, drinkPreference: [...current, drink].join(', ') });
+                                  } else {
+                                    toast.error("Vous ne pouvez sélectionner que deux boissons au maximum");
+                                  }
+                                }}
+                                className={`px-4 py-2 rounded-2xl border transition-all text-sm font-medium ${
+                                  isSelected 
+                                    ? "bg-black text-white border-black scale-105 shadow-md" 
+                                    : "bg-background text-foreground border-border hover:border-primary/50"
+                                }`}
+                              >
+                                {drink}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Non-Alcoholic Drinks */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-center border-b pb-1 border-border/50">Boissons non alcoolisées</h4>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {[
+                            "Coca", "Fanta", "Vitalo", "Maltina", "Sprite", "Energy Malt", "Eau"
+                          ].map((drink) => {
+                            const isSelected = formData.drinkPreference.split(', ').includes(drink);
+                            return (
+                              <button
+                                key={drink}
+                                type="button"
+                                onClick={() => {
+                                  const current = formData.drinkPreference ? formData.drinkPreference.split(', ') : [];
+                                  if (isSelected) {
+                                    setFormData({ ...formData, drinkPreference: current.filter(d => d !== drink).join(', ') });
+                                  } else if (current.length < 2) {
+                                    setFormData({ ...formData, drinkPreference: [...current, drink].join(', ') });
+                                  } else {
+                                    toast.error("Vous ne pouvez sélectionner que deux boissons au maximum");
+                                  }
+                                }}
+                                className={`px-4 py-2 rounded-2xl border transition-all text-sm font-medium ${
+                                  isSelected 
+                                    ? "bg-black text-white border-black scale-105 shadow-md" 
+                                    : "bg-background text-foreground border-border hover:border-primary/50"
+                                }`}
+                              >
+                                {drink}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Dietary Restrictions */}
