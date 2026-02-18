@@ -451,56 +451,59 @@ const RSVP = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10 relative">
       <FloatingHearts />
-      {/* Hero Section with romantic framed image */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-black/95 via-black/90 to-background">
-        {/* Decorative hearts background */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-5 text-white text-[200px] pointer-events-none select-none">
-          ♥
+      {/* Full Width Hero Section */}
+      <div className="relative h-[500px] w-full overflow-hidden bg-black">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src={event.coverImage 
+              ? (event.coverImage.startsWith('http') 
+                  ? event.coverImage 
+                  : `${BASE_URL}${event.coverImage}`)
+              : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
+            }
+            alt={event.title}
+            className="w-full h-full object-cover object-center"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
+            }}
+          />
+          {/* Multi-layered Overlay */}
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
         </div>
-        
-        <div className="max-w-2xl mx-auto px-4 pt-8 pb-12 sm:pt-12 sm:pb-16 text-center">
-          {/* Logo */}
-          <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4 overflow-hidden mx-auto bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
-            <img src="/src/assets/black.png" alt="logo" className="h-9 w-9 object-contain" />
+
+        {/* Hero Content */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4 pt-12">
+          {/* Premium Ornaments */}
+          <div className="flex items-center gap-4 mb-4">
+            <div className="h-[1px] w-12 bg-primary/60" />
+            <div className="text-primary text-xl tracking-[0.6em]">✦ ♡ ✦</div>
+            <div className="h-[1px] w-12 bg-primary/60" />
           </div>
 
-          {/* Ornament */}
-          <div className="text-primary text-lg tracking-[0.5em] mb-4">✦ ♡ ✦</div>
-
-          {/* Title */}
-          <h1 className="font-display text-2xl sm:text-4xl font-bold text-white drop-shadow-lg mb-6">
-            {event.title}
+          {/* Title with Luxury Font Style */}
+          <h1 className="font-display text-4xl sm:text-6xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)] mb-4 tracking-tight max-w-4xl px-4">
+            {event.title.toUpperCase()}
           </h1>
 
-          {/* Framed Event Photo */}
-          <div className="inline-block p-2 sm:p-3 rounded-xl border-2 border-primary/40 bg-white/5 backdrop-blur-sm shadow-2xl">
-            <div className="relative rounded-lg overflow-hidden">
-              <img
-                src={event.coverImage 
-                  ? (event.coverImage.startsWith('http') 
-                      ? event.coverImage 
-                      : `${BASE_URL}${event.coverImage}`)
-                  : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
-                }
-                alt={event.title}
-                className="w-full h-48 sm:h-64 lg:h-72 object-cover rounded-lg"
-                style={{ maxWidth: '520px' }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
-                }}
-              />
-              {/* Subtle overlay at bottom */}
-              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent rounded-b-lg" />
-            </div>
+          <div className="text-white/60 text-sm tracking-[0.5em] mb-8 font-light flex items-center gap-2">
+            <span>♥</span>
+            <span>INTEMPOREL</span>
+            <span>♥</span>
           </div>
+        </div>
 
-          {/* Bottom hearts ornament */}
-          <div className="text-white/40 text-sm tracking-[0.4em] mt-5">♥ ♥ ♥</div>
+        {/* Torn Edge for consistency with Email Invitations */}
+        <div className="absolute bottom-0 left-0 w-full h-16 z-20 pointer-events-none text-background fill-current">
+          <svg viewBox="0 0 100 10" preserveAspectRatio="none" className="w-full h-full">
+            <path d="M0 10 L5 8 L10 9 L15 7 L20 9 L25 8 L30 10 L35 7 L40 9 L45 8 L50 10 L55 7 L60 9 L65 8 L70 10 L75 7 L80 9 L85 8 L90 10 L95 7 L100 10 Z" />
+          </svg>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 py-8 relative z-10">
+      <div className="max-w-2xl mx-auto px-4 py-12 relative z-30 -mt-10">
         {/* Event Details Card */}
         <Card className="mb-6 border-border/50 shadow-lg">
             <CardContent className="pt-6">
@@ -747,9 +750,15 @@ const RSVP = () => {
           </Card>
 
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Propulsé par HK Event
-        </p>
+        {/* Footer with Logo */}
+        <div className="flex flex-col items-center gap-4 mt-8 pb-10">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden bg-white/50 backdrop-blur-sm border border-border shadow-sm">
+            <img src="/src/assets/black.png" alt="logo" className="h-8 w-8 object-contain" />
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Propulsé par HK Event
+          </p>
+        </div>
       </div>
     </div>
   );

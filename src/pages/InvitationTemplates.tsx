@@ -269,6 +269,9 @@ const InvitationTemplates = () => {
           </a>
           
           <div style="margin-top: 70px; font-family: 'Cinzel', serif; font-size: 11px; opacity: 0.5; letter-spacing: 5px; text-transform: uppercase; font-weight: 700;">
+             <div style="margin-bottom: 15px;">
+               <img src="${window.location.origin}/images/logo-white.png" alt="Logo" style="width: 40px; height: 40px; border-radius: 50%; opacity: 0.8; display: inline-block;" />
+             </div>
              ✧ HK Events d'Exception ✧
           </div>
         </div>

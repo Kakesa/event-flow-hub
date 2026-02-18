@@ -260,10 +260,6 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
           <img src="${eventImageUrl}" alt="Event" style="width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block;" />
           <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.5) 100%);"></div>
           
-          <div style="position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; z-index: 20;">
-             <img src="${window.location.origin}/images/logo-white.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${t.accent};" />
-          </div>
-
           <!-- Floral Decorations -->
           <div style="position: absolute; bottom: 30px; left: 25px; width: 120px; height: 120px; z-index: 15; opacity: 0.9; transform: rotate(-10deg);">
             <svg viewBox="0 0 100 100" style="fill: white;">
@@ -310,6 +306,9 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
         </div>
 
         <div style="background-color: rgba(0,0,0,0.2); padding: 30px; text-align: center; font-family: 'Montserrat', sans-serif; font-size: 10px; color: #ffffff; opacity: 0.5; border-top: 1px solid rgba(255,255,255,0.05); letter-spacing: 3px;">
+          <div style="margin-bottom: 15px;">
+            <img src="${window.location.origin}/images/logo-white.png" alt="Logo" style="width: 40px; height: 40px; border-radius: 50%; opacity: 0.8;" />
+          </div>
           <p>HK Events - L'excellence au service de vos souvenirs.</p>
         </div>
       </div>
