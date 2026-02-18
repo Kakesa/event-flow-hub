@@ -111,24 +111,43 @@ const Invitations = () => {
     }
   };
 
-  // 🔹 Envoyer via WhatsApp
-  const handleWhatsAppSend = (guestsToSend: Guest[]) => {
+  // 🔹 Envoyer via WhatsApp (Action directe ou Unitaire)
+  const handleWhatsAppSend = async (guestsToSend: Guest[]) => {
     const event = events.find(e => e.id === selectedEvent);
     if (!event) return;
 
-    guestsToSend.forEach(guest => {
+    for (const guest of guestsToSend) {
       if (guest.phone) {
         const rsvpLink = `${window.location.origin}/rsvp/${selectedEvent}/${guest.id}`;
+        
+        // Message premium style
         const message = encodeURIComponent(
-          `Bonjour ${guest.name},\n\n` +
-          `Vous êtes invité(e) à ${event.title}\n` +
-          `📅 ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
-          `📍 ${event.location}\n\n` +
-          `Confirmez votre présence : ${rsvpLink}`
+          `✨ *${event.title.toUpperCase()}* ✨\n\n` +
+          `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
+          `📍 *Lieu:* ${event.location}\n\n` +
+          `Bonjour *${guest.name}*,\n\n` +
+          `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
+          `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
+          `Nous avons hâte de vous voir! 🥂\n\n` +
+          `_HK Events_`
         );
+
         window.open(`https://wa.me/${guest.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+        
+        // Notifier le backend
+        try {
+          await invitationsApi.send(guest.id, 'whatsapp');
+        } catch (error) {
+          console.error(`Erreur notification backend pour ${guest.name}:`, error);
+        }
       }
-    });
+    }
+    
+    if (guestsToSend.length === 1) {
+       toast({ title: 'WhatsApp ouvert', description: `La discussion avec ${guestsToSend[0].name} a été ouverte.` });
+       setSelectedGuests([]);
+       refreshGuests();
+    }
   };
 
   const handleSendInvitations = async () => {
@@ -148,9 +167,14 @@ const Invitations = () => {
     setSending(true);
     try {
       if (selectedMethod === 'whatsapp') {
-        setWhatsappGuests(selectedGuestObjects);
-        setShowWhatsAppSender(true);
-        return; // handleSendInvitations s'arrête ici, le reste est géré par WhatsAppSender
+        if (selectedGuestObjects.length === 1) {
+          await handleWhatsAppSend(selectedGuestObjects);
+        } else {
+          setWhatsappGuests(selectedGuestObjects);
+          setShowWhatsAppSender(true);
+        }
+        setSending(false);
+        return; 
       } else if (selectedMethod === 'sms') {
         await invitationsApi.sendBulk(selectedGuests, 'sms');
       }
@@ -253,20 +277,46 @@ const Invitations = () => {
                         uninvitedGuests.map(guest => (
                           <div
                             key={guest.id}
-                            onClick={() => toggleGuest(guest.id)}
                             className={cn(
-                              'flex items-center gap-4 p-4 rounded-lg border cursor-pointer',
+                              'flex items-center gap-4 p-4 rounded-lg border transition-all hover:border-primary/50',
                               selectedGuests.includes(guest.id)
-                                ? 'border-primary bg-primary/5'
+                                ? 'border-primary bg-primary/5 shadow-sm'
                                 : 'border-border'
                             )}
                           >
-                            <Checkbox checked={selectedGuests.includes(guest.id)} />
-                            <div className="flex-1">
+                            <Checkbox 
+                              checked={selectedGuests.includes(guest.id)} 
+                              onCheckedChange={() => toggleGuest(guest.id)}
+                            />
+                            <div className="flex-1 cursor-pointer" onClick={() => toggleGuest(guest.id)}>
                               <p className="font-medium">{guest.name}</p>
-                              <p className="text-sm text-muted-foreground">{guest.email}</p>
+                              <div className="flex items-center gap-3">
+                                <p className="text-sm text-muted-foreground">{guest.email}</p>
+                                {guest.phone && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Smartphone className="h-3 w-3" />
+                                    {guest.phone}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                            <Badge variant="outline">À inviter</Badge>
+                            <div className="flex items-center gap-2">
+                              {guest.phone && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  title="Envoyer WhatsApp directement"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleWhatsAppSend([guest]);
+                                  }}
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Badge variant="outline">À inviter</Badge>
+                            </div>
                           </div>
                         ))
                       )}

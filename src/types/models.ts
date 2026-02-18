@@ -65,6 +65,8 @@ export interface Event {
 
   coverImage?: string;
   theme?: string;
+  primaryColor?: string;
+  accentColor?: string;
 
   organizer?: Organizer;
 

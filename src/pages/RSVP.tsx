@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail, QrCode } from "lucide-react";
+import { Calendar, MapPin, Clock, Wine, Check, X, HelpCircle, Heart, AlertCircle, Mail, QrCode, Beer, GlassWater } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
 import type { Event, Guest, ApiResponse } from "@/types/models";
@@ -546,15 +546,16 @@ const RSVP = () => {
           </CardContent>
         </Card>
 
-        {/* RSVP Form OR Login Notice */}
-          <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="font-display text-xl">Confirmer votre présence</CardTitle>
-              <CardDescription>Merci de remplir ce formulaire pour indiquer votre réponse</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Public Guest Fields */}
+
+        {/* RSVP Form Card */}
+        <Card 
+          className="mb-6 shadow-2xl overflow-hidden border-t-4"
+          style={{ borderTopColor: event.primaryColor || '#D4AF37' }}
+        >
+          <CardContent className="pt-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Public Guest Fields */}
+              {!guest && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Votre Nom *</Label>
@@ -578,176 +579,192 @@ const RSVP = () => {
                     />
                   </div>
                 </div>
+              )}
 
-                {/* Response Selection */}
-                <div className="space-y-3">
-                  <Label>Votre réponse *</Label>
-                  <RadioGroup
-                    value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value as "confirmed" | "declined" | "pending" })
-                    }
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+              <div className="space-y-4 text-center">
+                <h3 className="text-2xl font-display font-medium text-foreground">Serez-vous des nôtres ?</h3>
+                <RadioGroup
+                  value={formData.status}
+                  onValueChange={(v: any) => setFormData({ ...formData, status: v })}
+                  className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                >
+                  <Label
+                    htmlFor="confirmed"
+                    className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                      formData.status === "confirmed"
+                        ? "border-green-500 bg-green-500/5 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                        : "border-border hover:border-green-500/30"
+                    }`}
                   >
-                    <Label
-                      htmlFor="confirmed"
-                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.status === "confirmed"
-                          ? "border-green-500 bg-green-500/10"
-                          : "border-border hover:border-green-500/50"
-                      }`}
-                    >
-                      <RadioGroupItem value="confirmed" id="confirmed" className="sr-only" />
-                      <Check className={`w-5 h-5 ${formData.status === "confirmed" ? "text-green-500" : "text-muted-foreground"}`} />
-                      <span className="font-medium">Je serai présent</span>
-                    </Label>
+                    <RadioGroupItem value="confirmed" id="confirmed" className="sr-only" />
+                    <div className={`p-2 rounded-full ${formData.status === "confirmed" ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-sm">Présent</span>
+                  </Label>
 
-                    <Label
-                      htmlFor="declined"
-                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.status === "declined"
-                          ? "border-red-500 bg-red-500/10"
-                          : "border-border hover:border-red-500/50"
-                      }`}
-                    >
-                      <RadioGroupItem value="declined" id="declined" className="sr-only" />
-                      <X className={`w-5 h-5 ${formData.status === "declined" ? "text-red-500" : "text-muted-foreground"}`} />
-                      <span className="font-medium">Je décline</span>
-                    </Label>
+                  <Label
+                    htmlFor="declined"
+                    className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                      formData.status === "declined"
+                        ? "border-red-500 bg-red-500/5 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+                        : "border-border hover:border-red-500/30"
+                    }`}
+                  >
+                    <RadioGroupItem value="declined" id="declined" className="sr-only" />
+                    <div className={`p-2 rounded-full ${formData.status === "declined" ? "bg-red-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                      <X className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-sm">Déclin</span>
+                  </Label>
 
-                    <Label
-                      htmlFor="pending"
-                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.status === "pending"
-                          ? "border-amber-500 bg-amber-500/10"
-                          : "border-border hover:border-amber-500/50"
-                      }`}
-                    >
-                      <RadioGroupItem value="pending" id="pending" className="sr-only" />
-                      <HelpCircle className={`w-5 h-5 ${formData.status === "pending" ? "text-amber-500" : "text-muted-foreground"}`} />
-                      <span className="font-medium">Incertain</span>
-                    </Label>
-                  </RadioGroup>
-                </div>
+                  <Label
+                    htmlFor="pending"
+                    className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                      formData.status === "pending"
+                        ? "border-amber-500 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                        : "border-border hover:border-amber-500/30"
+                    }`}
+                  >
+                    <RadioGroupItem value="pending" id="pending" className="sr-only" />
+                    <div className={`p-2 rounded-full ${formData.status === "pending" ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                      <HelpCircle className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-sm">Incertain</span>
+                  </Label>
+                </RadioGroup>
+              </div>
 
-                {formData.status === "confirmed" && (
-                  <>
-                    {/* Drink Preference Section */}
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <Label className="text-lg font-display font-semibold flex items-center gap-2">
-                          <Wine className="w-5 h-5 text-primary" />
-                          Vos préférences
-                        </Label>
-                        <p className="text-sm text-muted-foreground">Que désirez vous boire 🍻 ?</p>
-                        <p className="text-xs text-muted-foreground italic">
-                          Aidez les mariés dans la planification de leur événement en leur suggérant vos goûts de boissons (Deux goûts au max)
-                        </p>
-                      </div>
-
-                      {/* Alcoholic Drinks */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-center border-b pb-1 border-border/50">Boissons alcoolisées</h4>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {[
-                            "Castel", "Beaufort", "Primus", "Tembo", "Turbo King", 
-                            "Mutzig", "Heineken", "Nkoyi", "Likofi"
-                          ].map((drink) => {
-                            const isSelected = formData.drinkPreference.split(', ').includes(drink);
-                            return (
-                              <button
-                                key={drink}
-                                type="button"
-                                onClick={() => {
-                                  const current = formData.drinkPreference ? formData.drinkPreference.split(', ') : [];
-                                  if (isSelected) {
-                                    setFormData({ ...formData, drinkPreference: current.filter(d => d !== drink).join(', ') });
-                                  } else if (current.length < 2) {
-                                    setFormData({ ...formData, drinkPreference: [...current, drink].join(', ') });
-                                  } else {
-                                    toast.error("Vous ne pouvez sélectionner que deux boissons au maximum");
-                                  }
-                                }}
-                                className={`px-4 py-2 rounded-2xl border transition-all text-sm font-medium ${
-                                  isSelected 
-                                    ? "bg-black text-white border-black scale-105 shadow-md" 
-                                    : "bg-background text-foreground border-border hover:border-primary/50"
-                                }`}
-                              >
-                                {drink}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Non-Alcoholic Drinks */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-center border-b pb-1 border-border/50">Boissons non alcoolisées</h4>
-                        <div className="flex flex-wrap justify-center gap-2">
-                          {[
-                            "Coca", "Fanta", "Vitalo", "Maltina", "Sprite", "Energy Malt", "Eau"
-                          ].map((drink) => {
-                            const isSelected = formData.drinkPreference.split(', ').includes(drink);
-                            return (
-                              <button
-                                key={drink}
-                                type="button"
-                                onClick={() => {
-                                  const current = formData.drinkPreference ? formData.drinkPreference.split(', ') : [];
-                                  if (isSelected) {
-                                    setFormData({ ...formData, drinkPreference: current.filter(d => d !== drink).join(', ') });
-                                  } else if (current.length < 2) {
-                                    setFormData({ ...formData, drinkPreference: [...current, drink].join(', ') });
-                                  } else {
-                                    toast.error("Vous ne pouvez sélectionner que deux boissons au maximum");
-                                  }
-                                }}
-                                className={`px-4 py-2 rounded-2xl border transition-all text-sm font-medium ${
-                                  isSelected 
-                                    ? "bg-black text-white border-black scale-105 shadow-md" 
-                                    : "bg-background text-foreground border-border hover:border-primary/50"
-                                }`}
-                              >
-                                {drink}
-                              </button>
-                            );
-                          })}
-                        </div>
+              {formData.status === "confirmed" && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                  {/* Drink Preference Section */}
+                  <div className="space-y-6 pt-4">
+                    <div className="text-center space-y-2">
+                      <Label className="text-xl font-display font-bold flex items-center justify-center gap-3">
+                        <Wine className="w-6 h-6" style={{ color: event.primaryColor || '#D4AF37' }} />
+                        VOS PRÉFÉRENCES
+                      </Label>
+                      <p className="text-sm text-muted-foreground">Que désirez vous boire pour célébrer ? 🥂</p>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/20 text-[10px] font-bold text-primary uppercase tracking-widest">
+                        Maximum 2 choix
                       </div>
                     </div>
 
-                    {/* Dietary Restrictions */}
-                    <div className="space-y-2">
-                      <Label htmlFor="dietary">Restrictions alimentaires</Label>
-                      <Input
-                        id="dietary"
-                        placeholder="Ex: végétarien, allergies..."
-                        value={formData.dietaryRestrictions}
-                        onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
-                      />
+                    {/* Alcoholic Drinks */}
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-background border border-border/50 shadow-inner">
+                      <div className="flex items-center gap-2 justify-center mb-6">
+                        <Beer className="w-4 h-4 text-muted-foreground" />
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Selection Alcoolisée</h4>
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {[
+                          "Castel", "Beaufort", "Primus", "Tembo", "Turbo King", 
+                          "Mutzig", "Heineken", "Nkoyi", "Likofi"
+                        ].map((drink) => {
+                          const isSelected = formData.drinkPreference.split(', ').includes(drink);
+                          return (
+                            <button
+                              key={drink}
+                              type="button"
+                              onClick={() => {
+                                const current = formData.drinkPreference ? formData.drinkPreference.split(', ') : [];
+                                if (isSelected) {
+                                  setFormData({ ...formData, drinkPreference: current.filter(d => d !== drink).join(', ') });
+                                } else if (current.length < 2) {
+                                  setFormData({ ...formData, drinkPreference: [...current, drink].join(', ') });
+                                } else {
+                                  toast.error("Vous ne pouvez sélectionner que deux boissons au maximum");
+                                }
+                              }}
+                              className={`px-5 py-2.5 rounded-full transition-all duration-300 text-xs font-bold uppercase tracking-wider border-2 ${
+                                isSelected 
+                                  ? "scale-105 shadow-lg border-transparent text-white" 
+                                  : "bg-transparent text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                              }`}
+                              style={isSelected ? { backgroundColor: event.primaryColor || '#000' } : {}}
+                            >
+                              {drink}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </>
-                )}
 
-                {/* Message */}
-                <div className="space-y-2">
-                  <Label htmlFor="message">Un petit mot (optionnel)</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Laissez un message pour les organisateurs..."
-                    rows={3}
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  />
+                    {/* Non-Alcoholic Drinks */}
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-background border border-border/50 shadow-inner">
+                      <div className="flex items-center gap-2 justify-center mb-6">
+                        <GlassWater className="w-4 h-4 text-muted-foreground" />
+                        <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Douceurs Fraîches</h4>
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {[
+                          "Coca", "Fanta", "Vitalo", "Maltina", "Sprite", "Energy Malt", "Eau"
+                        ].map((drink) => {
+                          const isSelected = formData.drinkPreference.split(', ').includes(drink);
+                          return (
+                            <button
+                              key={drink}
+                              type="button"
+                              onClick={() => {
+                                const current = formData.drinkPreference ? formData.drinkPreference.split(', ') : [];
+                                if (isSelected) {
+                                  setFormData({ ...formData, drinkPreference: current.filter(d => d !== drink).join(', ') });
+                                } else if (current.length < 2) {
+                                  setFormData({ ...formData, drinkPreference: [...current, drink].join(', ') });
+                                } else {
+                                  toast.error("Vous ne pouvez sélectionner que deux boissons au maximum");
+                                }
+                              }}
+                              className={`px-5 py-2.5 rounded-full transition-all duration-300 text-xs font-bold uppercase tracking-wider border-2 ${
+                                isSelected 
+                                  ? "scale-105 shadow-lg border-transparent text-white" 
+                                  : "bg-transparent text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                              }`}
+                              style={isSelected ? { backgroundColor: event.primaryColor || '#000' } : {}}
+                            >
+                              {drink}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dietary Restrictions */}
+                  <div className="space-y-4 pt-4 border-t border-border/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="dietary" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Restrictions alimentaires</Label>
+                    </div>
+                    <Input
+                      id="dietary"
+                      placeholder="Ex: végétarien, allergies..."
+                      className="bg-muted/30 border-border/50 focus:border-primary/50"
+                      value={formData.dietaryRestrictions}
+                      onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
+                    />
+                  </div>
                 </div>
+              )}
 
-                <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-                  {isSubmitting ? "Envoi en cours..." : "Envoyer ma réponse"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              {/* Message */}
+              <div className="space-y-2">
+                <Label htmlFor="message">Un petit mot (optionnel)</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Laissez un message pour les organisateurs..."
+                  rows={3}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? "Envoi en cours..." : "Envoyer ma réponse"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
 
         {/* Footer with Logo */}

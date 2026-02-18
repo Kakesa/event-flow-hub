@@ -101,9 +101,21 @@ const InvitationTemplates = () => {
     loadData();
   }, [eventIdFromUrl]);
 
-  const handleSelectTemplate = (template: Template) => {
+  const handleSelectTemplate = async (template: Template) => {
     setSelectedTemplate(template);
     setCustomization(prev => ({ ...prev, primaryColor: template.primaryColor }));
+    
+    // Persister la couleur dans l'événement si possible
+    if (eventIdFromUrl) {
+      try {
+        const formData = new FormData();
+        formData.append('primaryColor', template.primaryColor);
+        await eventsApi.update(eventIdFromUrl, formData);
+        toast.info(`Couleur ${template.name} appliquée à l'événement`);
+      } catch (error) {
+        console.error("Erreur sync couleur:", error);
+      }
+    }
   };
 
   const generateWhatsAppMessage = () => {
