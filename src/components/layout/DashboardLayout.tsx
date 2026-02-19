@@ -92,24 +92,29 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <Separator className="bg-sidebar-border" />
 
           {/* Quick Action */}
-          <div className="px-4 py-4">
-            <Button 
-              onClick={() => {
-                navigate('/events/create');
-                setSidebarOpen(false);
-              }}
-              className="w-full justify-start gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nouvel événement
-            </Button>
-          </div>
+          {user?.role !== 'user' && (
+            <div className="px-4 py-4">
+              <Button 
+                onClick={() => {
+                  navigate('/events/create');
+                  setSidebarOpen(false);
+                }}
+                className="w-full justify-start gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nouvel événement
+              </Button>
+            </div>
+          )}
 
           {/* Navigation */}
           <ScrollArea className="flex-1 px-4">
             <nav className="space-y-1">
               {navigation
                 .filter((item) => {
+                  if (user?.role === 'user') {
+                    return item.name === 'Scanner QR';
+                  }
                   // Masquer Super Admin si l'utilisateur n'est pas superadmin
                   if ('superAdminOnly' in item && item.superAdminOnly) {
                     return user?.role === 'superadmin';
@@ -146,14 +151,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           {/* Footer */}
           <div className="p-4 space-y-2">
-            <Link
-              to="/settings"
-              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <Settings className="h-5 w-5" />
-              Paramètres
-            </Link>
+            {user?.role !== 'user' && (
+              <Link
+                to="/settings"
+                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Settings className="h-5 w-5" />
+                Paramètres
+              </Link>
+            )}
             <button 
               onClick={handleLogout}
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 hover:bg-destructive/10 hover:text-destructive transition-colors"

@@ -58,6 +58,8 @@ const Guests = () => {
 
   const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [duplicateMessage, setDuplicateMessage] = useState('');
 
   const { toast } = useToast();
   const { canDelete } = usePermissions();
@@ -125,32 +127,57 @@ const Guests = () => {
      ACTIONS
   ========================= */
   const handleAddGuest = async () => {
-    if (!newGuest.name || !newGuest.email || !newGuest.eventId) {
+    if (!newGuest.name || !newGuest.eventId) {
       toast({
         title: 'Erreur',
-        description: 'Veuillez remplir tous les champs obligatoires',
+        description: 'Veuillez remplir les champs obligatoires (Nom et Événement)',
         variant: 'destructive',
       });
       return;
     }
 
-    try {
-      await guestsApi.create(newGuest.eventId, newGuest);
+    const checkDuplicates = () => {
+      return guests.find(g => 
+        g.name.toLowerCase() === newGuest.name.toLowerCase() ||
+        (newGuest.email && g.email?.toLowerCase() === newGuest.email.toLowerCase()) ||
+        (newGuest.phone && g.phone === newGuest.phone)
+      );
+    };
 
-      toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
-      setIsAddDialogOpen(false);
-      setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
+    const proceedWithCreation = async () => {
+      try {
+        await guestsApi.create(newGuest.eventId, newGuest);
 
-      setEventFilter(newGuest.eventId);
-      const res = await guestsApi.getByEvent(newGuest.eventId);
-      setGuests(res.data);
-    } catch {
-      toast({
-        title: 'Erreur',
-        description: "Impossible d'ajouter l'invité",
-        variant: 'destructive',
-      });
+        toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
+        setIsAddDialogOpen(false);
+        setIsDuplicateDialogOpen(false);
+        setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
+
+        setEventFilter(newGuest.eventId);
+        const res = await guestsApi.getByEvent(newGuest.eventId);
+        setGuests(res.data);
+      } catch {
+        toast({
+          title: 'Erreur',
+          description: "Impossible d'ajouter l'invité",
+          variant: 'destructive',
+        });
+      }
+    };
+
+    const duplicate = checkDuplicates();
+    if (duplicate) {
+      const fields = [];
+      if (duplicate.name.toLowerCase() === newGuest.name.toLowerCase()) fields.push('nom');
+      if (newGuest.email && duplicate.email?.toLowerCase() === newGuest.email.toLowerCase()) fields.push('email');
+      if (newGuest.phone && duplicate.phone === newGuest.phone) fields.push('téléphone');
+      
+      setDuplicateMessage(`Un invité avec le même ${fields.join(', ')} a déjà été invité. Voulez-vous quand même l'ajouter ?`);
+      setIsDuplicateDialogOpen(true);
+      return;
     }
+
+    await proceedWithCreation();
   };
 
   const handleDelete = async (guestId: string) => {
@@ -297,6 +324,36 @@ const Guests = () => {
         eventId={eventFilter}
         onImportComplete={g => setGuests(prev => [...g, ...prev])}
       />
+
+      <Dialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Doublon détecté</DialogTitle>
+            <DialogDescription>
+              {duplicateMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDuplicateDialogOpen(false)}>Annuler</Button>
+            <Button onClick={async () => {
+              // On définit une petite fonction anonyme pour appeler manageGuestCreation directement
+              // mais handleAddGuest est asynchrone, on peut juste l'extraire.
+              // Refactoré handleAddGuest pour extraire proceedWithCreation
+              try {
+                await guestsApi.create(newGuest.eventId, newGuest);
+                toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
+                setIsAddDialogOpen(false);
+                setIsDuplicateDialogOpen(false);
+                setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
+                const res = await guestsApi.getByEvent(newGuest.eventId);
+                setGuests(res.data);
+              } catch {
+                toast({ title: 'Erreur', description: "Impossible d'ajouter l'invité", variant: 'destructive' });
+              }
+            }}>Ajouter quand même</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

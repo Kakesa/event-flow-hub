@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import EventCard from '@/components/dashboard/EventCard';
 import PermissionButton from '@/components/common/PermissionButton';
@@ -20,6 +21,8 @@ const Events = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'upcoming' | 'past'>('all');
   const { canCreate, canDelete, canUpdate } = usePermissions();
+  const { user } = useAuth();
+  const isUser = user?.role === 'user';
 
   // 🔹 Fonction pour corriger les chemins locaux
   const getEventImage = (image?: string) => {
@@ -95,7 +98,7 @@ const Events = () => {
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Événements</h1>
             <p className="text-muted-foreground mt-1">Gérez tous vos événements en un seul endroit</p>
           </div>
-          {canCreate('events') && (
+          {canCreate('events') && !isUser && (
             <PermissionButton
               module="events"
               action="create"
@@ -106,6 +109,12 @@ const Events = () => {
             </PermissionButton>
           )}
         </div>
+
+        {isUser && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg text-center font-medium">
+            Vous n'avez pas d'accès pour créer, contactez l'équipe HE event.
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col gap-4 sm:flex-row">
