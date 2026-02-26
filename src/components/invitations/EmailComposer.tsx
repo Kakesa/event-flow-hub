@@ -29,6 +29,7 @@ interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
+  type: string;
   body: string;
   preview: string;
 }
@@ -137,12 +138,13 @@ interface EmailComposerProps {
 
 const defaultTemplates: EmailTemplate[] = [
   {
-    id: 'invitation',
-    name: 'Invitation Classique',
-    subject: 'Vous êtes invité(e) à {{eventName}}',
-    body: `Bonjour {{guestName}},
+  id: 'invitation',
+  name: 'Invitation Classique',
+  subject: 'Vous êtes invité(e) {{eventTypeWithArticle}}',
+  type: '{{eventType}}',
+  body: `Bonjour {{guestName}},
 
-Nous avons le plaisir de vous inviter à {{eventName}} qui se tiendra le {{eventDate}} à {{eventLocation}}.
+Nous avons le plaisir de vous inviter {{eventTypeWithArticle}} qui se tiendra le {{eventDate}} à {{eventLocation}}.
 
 Nous serions ravis de vous compter parmi nous pour cette occasion spéciale.
 
@@ -151,12 +153,13 @@ Merci de confirmer votre présence en cliquant sur le lien ci-dessous :
 
 Cordialement,
 {{organizerName}}`,
-    preview: 'Template d\'invitation élégant et professionnel',
-  },
+  preview: 'Template d\'invitation élégant et professionnel',
+},
   {
     id: 'reminder',
     name: 'Rappel',
     subject: 'Rappel : {{eventName}} approche !',
+    type:'{{eventType}}',
     body: `Bonjour {{guestName}},
 
 N'oubliez pas ! {{eventName}} aura lieu le {{eventDate}} à {{eventLocation}}.
@@ -172,6 +175,7 @@ Si vous n'avez pas encore confirmé votre présence, merci de le faire via :
     id: 'confirmation',
     name: 'Confirmation',
     subject: 'Confirmation de votre participation à {{eventName}}',
+    type: '{{eventType}}',
     body: `Bonjour {{guestName}},
 
 Nous confirmons votre participation à {{eventName}}.
@@ -189,6 +193,7 @@ Cordialement,
     id: 'custom',
     name: 'Personnalisé',
     subject: '',
+    type: '',
     body: '',
     preview: 'Créez votre propre message',
   },
@@ -211,28 +216,67 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
     }
   }, [selectedTemplate]);
 
-  const replaceVariables = (text: string, guest?: Guest) => {
-    if (!event) return text;
-    
-    const eventDate = new Date(event.date).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+ // 🔹 Gestion intelligente de l'article français
+  const getEventTypeWithArticle = (eventType?: string) => {
+    //console.log("TYPE EVENT:", event?.type);
+    if (!eventType || eventType.trim() === '') {
+      return "à notre événement";
+    }
 
-    const rsvpLink = `${window.location.origin}/rsvp/${event.id}${guest ? `/${guest.id}` : ''}`;
+    const type = eventType.trim();
 
-    return text
-      .replace(/{{eventName}}/g, event.title)
-      .replace(/{{eventDate}}/g, eventDate)
-      .replace(/{{eventLocation}}/g, event.location)
-      .replace(/{{guestName}}/g, guest?.name || '[Nom de l\'invité]')
-      .replace(/{{organizerName}}/g, event.organizer?.name || 'L\'équipe organisatrice')
-      .replace(/{{rsvpLink}}/g, rsvpLink);
+    switch (type) {
+      case 'Mariage':
+        return 'à notre mariage';
+
+      case 'Anniversaire':
+        return 'à mon anniversaire';
+
+      case 'Baby Shower':
+        return 'à notre baby shower';
+
+      case 'Remise de diplôme':
+        return 'à ma remise de diplôme';
+
+      case 'Événement corporate':
+        return 'à notre événement corporate';
+
+      case 'Fête':
+        return 'à notre fête';
+
+      case 'Autre':
+        return 'à notre événement';
+
+      default:
+        return `à notre ${type.toLowerCase()}`;
+    }
   };
+  const replaceVariables = (text: string, guest?: Guest) => {
+  if (!event) return text;
+
+  const eventDate = new Date(event.date).toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const rsvpLink = `${window.location.origin}/rsvp/${event.id}${guest ? `/${guest.id}` : ''}`;
+
+  // ✅ CECI MANQUAIT CHEZ TOI
+  const eventTypeWithArticle = getEventTypeWithArticle(event?.type);
+
+  return text
+    .replace(/{{eventName}}/g, event.title || '')
+    .replace(/{{eventDate}}/g, eventDate)
+    .replace(/{{eventLocation}}/g, event.location || '')
+    .replace(/{{guestName}}/g, guest?.name || "[Nom de l'invité]")
+    .replace(/{{organizerName}}/g, event.organizer?.name || "L'équipe organisatrice")
+    .replace(/{{rsvpLink}}/g, rsvpLink)
+    .replace(/{{eventTypeWithArticle}}/g, eventTypeWithArticle);
+};
 
   const getPreviewHtml = (forEmail = false) => {
     const previewGuest = selectedGuests[0] || { name: 'Jean Dupont', email: 'jean@example.com' } as Guest;
@@ -434,7 +478,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
                 placeholder="Objet de l'email..."
               />
               <p className="text-xs text-muted-foreground">
-                Variables disponibles : {'{{eventName}}, {{eventDate}}, {{guestName}}, {{organizerName}}'}
+                Variables disponibles : {'{{eventName}}, {{eventDate}}, {{guestName}}, {{organizerName}}, {{eventTypeWithArticle}}'}
               </p>
             </div>
 
