@@ -561,7 +561,7 @@ const RSVP = () => {
                     <Label htmlFor="name">Votre Nom *</Label>
                     <Input
                       id="name"
-                      placeholder="Jean Dupont"
+                      placeholder="claudine kadima"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
@@ -572,7 +572,7 @@ const RSVP = () => {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="jean@example.com"
+                      placeholder="claudine@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required

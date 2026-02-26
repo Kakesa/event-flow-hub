@@ -112,7 +112,7 @@ const Events = () => {
 
         {isUser && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg text-center font-medium">
-            Vous n'avez pas d'accès pour créer, contactez l'équipe HE event.
+            Vous n'avez pas d'accès pour créer, contactez l'équipe HK event.
           </div>
         )}
 
