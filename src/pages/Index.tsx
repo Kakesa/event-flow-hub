@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity } from 'lucide-react';
+import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity, MessageSquare, Heart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-import { eventsApi, analyticsApi, guestsApi } from '@/services/api';
-import type { Event, Guest } from '@/types/models';
+import { eventsApi, analyticsApi, guestsApi, guestbookApi } from '@/services/api';
+import type { Event, Guest, GuestbookMessage } from '@/types/models';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -45,6 +45,7 @@ const Index = () => {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [guestbookMessages, setGuestbookMessages] = useState<GuestbookMessage[]>([]);
   const [overview, setOverview] = useState({
     totalEvents: 0,
     totalGuests: 0,
@@ -130,6 +131,25 @@ const Index = () => {
         }));
       setNotifications(recentConfirmations);
 
+      // Récupérer les messages du livre d'or
+      try {
+        const allMessages: GuestbookMessage[] = [];
+        for (const event of eventsRes.data.slice(0, 5)) {
+          try {
+            const gbRes = await guestbookApi.getByEvent(event._id || event.id);
+            if (gbRes.data) {
+              allMessages.push(...gbRes.data);
+            }
+          } catch {
+            // Ignorer les erreurs individuelles
+          }
+        }
+        // Trier par date décroissante et garder les 5 derniers
+        allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setGuestbookMessages(allMessages.slice(0, 5));
+      } catch {
+        console.error('Erreur livre d\'or');
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
@@ -449,6 +469,61 @@ const Index = () => {
           <div className="space-y-4">
             <h2 className="font-display text-xl font-semibold">Activité</h2>
             <RecentActivity />
+
+            {/* Derniers messages du livre d'or */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-xl font-semibold flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Livre d'or
+                </h2>
+                <Button variant="ghost" asChild>
+                  <Link to="/guestbook" className="flex items-center gap-1 text-sm">
+                    Voir tout
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+
+              {guestbookMessages.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Aucun message pour le moment</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {guestbookMessages.map((msg, index) => (
+                    <Card
+                      key={msg.id}
+                      className="animate-slide-up"
+                      style={{ animationDelay: `${index * 80}ms` }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                            {msg.name?.charAt(0) || 'A'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{msg.name || 'Anonyme'}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(msg.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              "{msg.message}"
+                            </p>
+                            <Heart className="h-3 w-3 text-primary fill-current mt-1" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
