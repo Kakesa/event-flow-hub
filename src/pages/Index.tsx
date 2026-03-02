@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-import { eventsApi, analyticsApi, guestsApi } from '@/services/api';
-import type { Event, Guest } from '@/types/models';
+import { eventsApi, analyticsApi, guestsApi, guestbookApi } from '@/services/api';
+import type { Event, Guest, GuestbookMessage } from '@/types/models';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
