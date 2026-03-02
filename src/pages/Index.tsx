@@ -45,6 +45,7 @@ const Index = () => {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [guestbookMessages, setGuestbookMessages] = useState<GuestbookMessage[]>([]);
   const [overview, setOverview] = useState({
     totalEvents: 0,
     totalGuests: 0,
