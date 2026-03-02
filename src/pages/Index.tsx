@@ -131,6 +131,25 @@ const Index = () => {
         }));
       setNotifications(recentConfirmations);
 
+      // Récupérer les messages du livre d'or
+      try {
+        const allMessages: GuestbookMessage[] = [];
+        for (const event of eventsRes.data.slice(0, 5)) {
+          try {
+            const gbRes = await guestbookApi.getByEvent(event._id || event.id);
+            if (gbRes.data) {
+              allMessages.push(...gbRes.data);
+            }
+          } catch {
+            // Ignorer les erreurs individuelles
+          }
+        }
+        // Trier par date décroissante et garder les 5 derniers
+        allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setGuestbookMessages(allMessages.slice(0, 5));
+      } catch {
+        console.error('Erreur livre d\'or');
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
