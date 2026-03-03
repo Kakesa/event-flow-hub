@@ -9,6 +9,7 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 import { eventsApi, analyticsApi, guestsApi, guestbookApi } from '@/services/api';
 import type { Event, Guest, GuestbookMessage } from '@/types/models';
