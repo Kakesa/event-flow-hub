@@ -204,6 +204,21 @@ const Index = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const handleReply = async (msg: GuestbookMessage) => {
+    if (!replyText.trim()) return;
+    try {
+      await guestbookApi.reply(msg.eventId, msg.id, replyText.trim());
+      setGuestbookMessages(prev =>
+        prev.map(m => m.id === msg.id ? { ...m, reply: replyText.trim(), repliedAt: new Date().toISOString() } : m)
+      );
+      setReplyingTo(null);
+      setReplyText('');
+      toast({ title: 'Réponse envoyée', description: 'Votre réponse a été enregistrée.' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible d\'envoyer la réponse.', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
