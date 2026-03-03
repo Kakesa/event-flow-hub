@@ -715,6 +715,20 @@ export const guestbookApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
+  reply: async (
+    eventId: string,
+    messageId: string,
+    reply: string,
+  ): Promise<ApiResponse<GuestbookMessage>> => {
+    const res = await fetch(`${API_BASE_URL}/events/${eventId}/guestbook/${messageId}/reply`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ reply }),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
   download: async (eventId: string): Promise<Blob> =>
     fetch(`${API_BASE_URL}/events/${eventId}/guestbook/download`, {
       headers: getHeaders(),

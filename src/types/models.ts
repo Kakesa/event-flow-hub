@@ -117,6 +117,8 @@ export interface GuestbookMessage {
   name?: string; // ✅ aligné avec le backend
 
   message: string;
+  reply?: string;
+  repliedAt?: string;
   createdAt: string;
 }
 
