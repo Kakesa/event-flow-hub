@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity, MessageSquare, Heart } from 'lucide-react';
+import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity, MessageSquare, Heart, Reply, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -9,6 +9,7 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 import { eventsApi, analyticsApi, guestsApi, guestbookApi } from '@/services/api';
 import type { Event, Guest, GuestbookMessage } from '@/types/models';
@@ -42,6 +43,9 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -199,6 +203,21 @@ const Index = () => {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleReply = async (msg: GuestbookMessage) => {
+    if (!replyText.trim()) return;
+    try {
+      await guestbookApi.reply(msg.eventId, msg.id, replyText.trim());
+      setGuestbookMessages(prev =>
+        prev.map(m => m.id === msg.id ? { ...m, reply: replyText.trim(), repliedAt: new Date().toISOString() } : m)
+      );
+      setReplyingTo(null);
+      setReplyText('');
+      toast({ title: 'Réponse envoyée', description: 'Votre réponse a été enregistrée.' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible d\'envoyer la réponse.', variant: 'destructive' });
+    }
+  };
 
   if (loading) {
     return (
@@ -515,7 +534,43 @@ const Index = () => {
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                               "{msg.message}"
                             </p>
-                            <Heart className="h-3 w-3 text-primary fill-current mt-1" />
+
+                            {/* Réponse existante */}
+                            {msg.reply && (
+                              <div className="mt-2 pl-3 border-l-2 border-primary/30 bg-primary/5 rounded-r-md p-2">
+                                <p className="text-xs font-medium text-primary">Votre réponse :</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">"{msg.reply}"</p>
+                              </div>
+                            )}
+
+                            {/* Zone de réponse */}
+                            {replyingTo === msg.id ? (
+                              <div className="mt-2 flex gap-2">
+                                <Input
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  placeholder="Votre réponse..."
+                                  className="h-8 text-xs"
+                                  onKeyDown={(e) => e.key === 'Enter' && handleReply(msg)}
+                                />
+                                <Button size="sm" className="h-8 px-2" onClick={() => handleReply(msg)}>
+                                  <Send className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 mt-1">
+                                <Heart className="h-3 w-3 text-primary fill-current" />
+                                {!msg.reply && (
+                                  <button
+                                    onClick={() => { setReplyingTo(msg.id); setReplyText(''); }}
+                                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                                  >
+                                    <Reply className="h-3 w-3" />
+                                    Répondre
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </CardContent>

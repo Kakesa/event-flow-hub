@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Download, MessageSquare, Heart } from 'lucide-react';
+import { Download, MessageSquare, Heart, Reply, Send } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,8 @@ const Guestbook = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,6 +70,21 @@ const Guestbook = () => {
       toast({ title: 'Succès', description: 'Livre d\'or téléchargé' });
     } catch (error) {
       toast({ title: 'Erreur', description: 'Impossible de télécharger', variant: 'destructive' });
+    }
+  };
+
+  const handleReply = async (msg: GuestbookMessage) => {
+    if (!replyText.trim()) return;
+    try {
+      await guestbookApi.reply(msg.eventId, msg.id, replyText.trim());
+      setMessages(prev =>
+        prev.map(m => m.id === msg.id ? { ...m, reply: replyText.trim(), repliedAt: new Date().toISOString() } : m)
+      );
+      setReplyingTo(null);
+      setReplyText('');
+      toast({ title: 'Réponse envoyée', description: 'Votre réponse a été enregistrée.' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible d\'envoyer la réponse.', variant: 'destructive' });
     }
   };
 
@@ -158,9 +176,50 @@ const Guestbook = () => {
                       <p className="mt-2 text-muted-foreground leading-relaxed">
                         "{message.message}"
                       </p>
-                      <div className="mt-3 flex items-center gap-1 text-primary">
-                        <Heart className="h-4 w-4 fill-current" />
-                      </div>
+
+                      {/* Réponse existante */}
+                      {message.reply && (
+                        <div className="mt-3 pl-3 border-l-2 border-primary/30 bg-primary/5 rounded-r-md p-3">
+                          <p className="text-sm font-medium text-primary">Votre réponse :</p>
+                          <p className="text-sm text-muted-foreground mt-1">"{message.reply}"</p>
+                          {message.repliedAt && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(parseISO(message.repliedAt), 'd MMM yyyy', { locale: fr })}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Zone de réponse */}
+                      {replyingTo === message.id ? (
+                        <div className="mt-3 flex gap-2">
+                          <Input
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Votre réponse..."
+                            className="text-sm"
+                            onKeyDown={(e) => e.key === 'Enter' && handleReply(message)}
+                          />
+                          <Button size="sm" onClick={() => handleReply(message)}>
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-3 flex items-center gap-3">
+                          <div className="flex items-center gap-1 text-primary">
+                            <Heart className="h-4 w-4 fill-current" />
+                          </div>
+                          {!message.reply && (
+                            <button
+                              onClick={() => { setReplyingTo(message.id); setReplyText(''); }}
+                              className="text-sm text-primary hover:underline flex items-center gap-1"
+                            >
+                              <Reply className="h-4 w-4" />
+                              Répondre
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
