@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity, MessageSquare, Heart } from 'lucide-react';
+import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity, MessageSquare, Heart, Reply, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
