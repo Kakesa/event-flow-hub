@@ -73,6 +73,21 @@ const Guestbook = () => {
     }
   };
 
+  const handleReply = async (msg: GuestbookMessage) => {
+    if (!replyText.trim()) return;
+    try {
+      await guestbookApi.reply(msg.eventId, msg.id, replyText.trim());
+      setMessages(prev =>
+        prev.map(m => m.id === msg.id ? { ...m, reply: replyText.trim(), repliedAt: new Date().toISOString() } : m)
+      );
+      setReplyingTo(null);
+      setReplyText('');
+      toast({ title: 'Réponse envoyée', description: 'Votre réponse a été enregistrée.' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible d\'envoyer la réponse.', variant: 'destructive' });
+    }
+  };
+
   const selectedEventData = events.find(e => e.id === selectedEvent);
 
   return (
