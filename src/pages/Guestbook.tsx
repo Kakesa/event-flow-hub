@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Download, MessageSquare, Heart, Reply, Send } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Download, MessageSquare, Heart, Send, Bell, BellOff } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -16,15 +18,21 @@ import type { GuestbookMessage, Event } from '@/types/models';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Guestbook = () => {
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [newMessageCount, setNewMessageCount] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef<number>(0);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -43,20 +51,48 @@ const Guestbook = () => {
     fetchEvents();
   }, []);
 
-  useEffect(() => {
-    if (selectedEvent) {
-      fetchMessages();
-    }
-  }, [selectedEvent]);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async (showNotification = false) => {
+    if (!selectedEvent) return;
     try {
       const res = await guestbookApi.getByEvent(selectedEvent);
-      setMessages(res.data);
+      const newMessages = res.data || [];
+
+      if (showNotification && notificationsEnabled && previousMessageCountRef.current > 0) {
+        const diff = newMessages.length - previousMessageCountRef.current;
+        if (diff > 0) {
+          setNewMessageCount(prev => prev + diff);
+          const latestNew = newMessages[newMessages.length - 1];
+          toast({
+            title: '💬 Nouveau message !',
+            description: `${latestNew?.name || 'Un invité'} a laissé un message dans le livre d'or.`,
+          });
+        }
+      }
+
+      previousMessageCountRef.current = newMessages.length;
+      setMessages(newMessages);
     } catch (error) {
       console.error('Erreur:', error);
     }
-  };
+  }, [selectedEvent, notificationsEnabled, toast]);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchMessages(false);
+    }
+  }, [selectedEvent]);
+
+  // Polling toutes les 10 secondes
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const interval = setInterval(() => fetchMessages(true), 10000);
+    return () => clearInterval(interval);
+  }, [selectedEvent, fetchMessages]);
+
+  // Auto-scroll vers le bas
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleDownload = async () => {
     try {
@@ -68,7 +104,7 @@ const Guestbook = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       toast({ title: 'Succès', description: 'Livre d\'or téléchargé' });
-    } catch (error) {
+    } catch {
       toast({ title: 'Erreur', description: 'Impossible de télécharger', variant: 'destructive' });
     }
   };
@@ -82,7 +118,7 @@ const Guestbook = () => {
       );
       setReplyingTo(null);
       setReplyText('');
-      toast({ title: 'Réponse envoyée', description: 'Votre réponse a été enregistrée.' });
+      toast({ title: 'Réponse envoyée' });
     } catch {
       toast({ title: 'Erreur', description: 'Impossible d\'envoyer la réponse.', variant: 'destructive' });
     }
@@ -92,17 +128,34 @@ const Guestbook = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">Livre d'or</h1>
-            <p className="text-muted-foreground mt-1">
-              Les messages de vos invités
-            </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="font-display text-3xl font-bold tracking-tight flex items-center gap-2">
+                Messages
+                {newMessageCount > 0 && (
+                  <Badge variant="destructive" className="text-xs animate-pulse">
+                    {newMessageCount} nouveau{newMessageCount > 1 ? 'x' : ''}
+                  </Badge>
+                )}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Conversations avec vos invités en temps réel
+              </p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+          <div className="flex gap-2 items-center">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+              title={notificationsEnabled ? 'Désactiver les notifications' : 'Activer les notifications'}
+            >
+              {notificationsEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+            </Button>
+            <Select value={selectedEvent} onValueChange={(val) => { setSelectedEvent(val); setNewMessageCount(0); }}>
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Sélectionner un événement" />
               </SelectTrigger>
@@ -114,126 +167,121 @@ const Guestbook = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={handleDownload} disabled={messages.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
-              Télécharger
+            <Button variant="outline" onClick={handleDownload} disabled={messages.length === 0}>
+              <Download className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Event info */}
+        {/* Event info bar */}
         {selectedEventData && (
-          <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-xl overflow-hidden">
-                  <img
-                    src={selectedEventData.coverImage || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=200'}
-                    alt={selectedEventData.title}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h2 className="font-display text-xl font-semibold">{selectedEventData.title}</h2>
-                  <p className="text-muted-foreground">
-                    {format(parseISO(selectedEventData.date), 'd MMMM yyyy', { locale: fr })}
-                  </p>
-                </div>
-                <div className="ml-auto text-right">
-                  <p className="text-2xl font-bold text-primary">{messages.length}</p>
-                  <p className="text-sm text-muted-foreground">messages</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-primary/5 border border-primary/10 mb-4">
+            <div className="h-8 w-8 rounded-lg overflow-hidden shrink-0">
+              <img
+                src={selectedEventData.coverImage || 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=200'}
+                alt={selectedEventData.title}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{selectedEventData.title}</p>
+              <p className="text-xs text-muted-foreground">
+                {format(parseISO(selectedEventData.date), 'd MMMM yyyy', { locale: fr })}
+              </p>
+            </div>
+            <Badge variant="secondary">{messages.length} message{messages.length !== 1 ? 's' : ''}</Badge>
+          </div>
         )}
 
-        {/* Messages */}
+        {/* Chat area */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex-1 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : messages.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {messages.map((message, index) => (
-              <Card
-                key={message.id}
-                className="overflow-hidden animate-slide-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
-                      {message.name?.charAt(0) || 'A'}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{message.name || 'Anonyme'}</h4>
-                        <span className="text-xs text-muted-foreground">
-                          {format(parseISO(message.createdAt), 'd MMM yyyy', { locale: fr })}
-                        </span>
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4 pb-2">
+                {messages.map((message) => (
+                  <div key={message.id} className="space-y-2">
+                    {/* Message de l'invité (gauche) */}
+                    <div className="flex items-start gap-3 max-w-[85%]">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-semibold">
+                        {message.name?.charAt(0) || 'A'}
                       </div>
-                      <p className="mt-2 text-muted-foreground leading-relaxed">
-                        "{message.message}"
-                      </p>
-
-                      {/* Réponse existante */}
-                      {message.reply && (
-                        <div className="mt-3 pl-3 border-l-2 border-primary/30 bg-primary/5 rounded-r-md p-3">
-                          <p className="text-sm font-medium text-primary">Votre réponse :</p>
-                          <p className="text-sm text-muted-foreground mt-1">"{message.reply}"</p>
-                          {message.repliedAt && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {format(parseISO(message.repliedAt), 'd MMM yyyy', { locale: fr })}
-                            </p>
-                          )}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium">{message.name || 'Anonyme'}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {format(parseISO(message.createdAt), 'd MMM yyyy · HH:mm', { locale: fr })}
+                          </span>
                         </div>
-                      )}
-
-                      {/* Zone de réponse */}
-                      {replyingTo === message.id ? (
-                        <div className="mt-3 flex gap-2">
-                          <Input
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            placeholder="Votre réponse..."
-                            className="text-sm"
-                            onKeyDown={(e) => e.key === 'Enter' && handleReply(message)}
-                          />
-                          <Button size="sm" onClick={() => handleReply(message)}>
-                            <Send className="h-4 w-4" />
-                          </Button>
+                        <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-2.5">
+                          <p className="text-sm leading-relaxed">{message.message}</p>
                         </div>
-                      ) : (
-                        <div className="mt-3 flex items-center gap-3">
-                          <div className="flex items-center gap-1 text-primary">
-                            <Heart className="h-4 w-4 fill-current" />
+
+                        {/* Bouton répondre */}
+                        {!message.reply && replyingTo !== message.id && (
+                          <button
+                            onClick={() => { setReplyingTo(message.id); setReplyText(''); }}
+                            className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-1 ml-2 transition-colors"
+                          >
+                            Répondre
+                          </button>
+                        )}
+
+                        {/* Input de réponse inline */}
+                        {replyingTo === message.id && (
+                          <div className="flex gap-2 mt-2 ml-2">
+                            <Input
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Écrire une réponse..."
+                              className="h-8 text-sm rounded-full"
+                              onKeyDown={(e) => e.key === 'Enter' && handleReply(message)}
+                              autoFocus
+                            />
+                            <Button size="sm" className="h-8 rounded-full px-3" onClick={() => handleReply(message)}>
+                              <Send className="h-3 w-3" />
+                            </Button>
                           </div>
-                          {!message.reply && (
-                            <button
-                              onClick={() => { setReplyingTo(message.id); setReplyText(''); }}
-                              className="text-sm text-primary hover:underline flex items-center gap-1"
-                            >
-                              <Reply className="h-4 w-4" />
-                              Répondre
-                            </button>
-                          )}
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
+
+                    {/* Réponse de l'organisateur (droite) */}
+                    {message.reply && (
+                      <div className="flex items-start gap-3 max-w-[85%] ml-auto flex-row-reverse">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                          {user?.name?.charAt(0) || 'O'}
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-2 mb-1 justify-end">
+                            <span className="text-xs text-muted-foreground">
+                              {message.repliedAt && format(parseISO(message.repliedAt), 'd MMM · HH:mm', { locale: fr })}
+                            </span>
+                            <span className="text-sm font-medium">Vous</span>
+                          </div>
+                          <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5">
+                            <p className="text-sm leading-relaxed text-left">{message.reply}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </Card>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <MessageSquare className="h-8 w-8 text-muted-foreground" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <div className="rounded-full bg-muted p-6 mb-4">
+              <MessageSquare className="h-10 w-10 text-muted-foreground" />
             </div>
             <h3 className="font-display text-lg font-semibold">Aucun message</h3>
-            <p className="text-muted-foreground mt-1">
-              Les messages de vos invités apparaîtront ici
+            <p className="text-muted-foreground mt-1 max-w-sm">
+              Les messages de vos invités apparaîtront ici en temps réel
             </p>
           </div>
         )}
