@@ -176,9 +176,50 @@ const Guestbook = () => {
                       <p className="mt-2 text-muted-foreground leading-relaxed">
                         "{message.message}"
                       </p>
-                      <div className="mt-3 flex items-center gap-1 text-primary">
-                        <Heart className="h-4 w-4 fill-current" />
-                      </div>
+
+                      {/* Réponse existante */}
+                      {message.reply && (
+                        <div className="mt-3 pl-3 border-l-2 border-primary/30 bg-primary/5 rounded-r-md p-3">
+                          <p className="text-sm font-medium text-primary">Votre réponse :</p>
+                          <p className="text-sm text-muted-foreground mt-1">"{message.reply}"</p>
+                          {message.repliedAt && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(parseISO(message.repliedAt), 'd MMM yyyy', { locale: fr })}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Zone de réponse */}
+                      {replyingTo === message.id ? (
+                        <div className="mt-3 flex gap-2">
+                          <Input
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Votre réponse..."
+                            className="text-sm"
+                            onKeyDown={(e) => e.key === 'Enter' && handleReply(message)}
+                          />
+                          <Button size="sm" onClick={() => handleReply(message)}>
+                            <Send className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-3 flex items-center gap-3">
+                          <div className="flex items-center gap-1 text-primary">
+                            <Heart className="h-4 w-4 fill-current" />
+                          </div>
+                          {!message.reply && (
+                            <button
+                              onClick={() => { setReplyingTo(message.id); setReplyText(''); }}
+                              className="text-sm text-primary hover:underline flex items-center gap-1"
+                            >
+                              <Reply className="h-4 w-4" />
+                              Répondre
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
