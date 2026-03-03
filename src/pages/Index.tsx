@@ -44,6 +44,9 @@ const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [guestbookMessages, setGuestbookMessages] = useState<GuestbookMessage[]>([]);
