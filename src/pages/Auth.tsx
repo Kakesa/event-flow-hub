@@ -47,7 +47,7 @@ const Auth = () => {
       const result = await login(loginData.email.trim(), loginData.password);
       if (result.success) {
         toast.success('Connexion réussie !');
-        navigate('/');
+        navigate('/dashboard');
       } else {
         toast.error(result.error || 'Erreur de connexion');
       }
