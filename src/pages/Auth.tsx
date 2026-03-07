@@ -101,7 +101,7 @@ const Auth = () => {
 
       if (result.success) {
         toast.success("Inscription réussie ! Bienvenue !");
-        navigate('/');
+        navigate('/dashboard');
       } else {
         toast.error(result.error || "Erreur lors de l'inscription");
       }
