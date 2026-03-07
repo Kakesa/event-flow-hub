@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import LandingPage from "./pages/LandingPage";
 import Events from "./pages/Events";
 import Guests from "./pages/Guests";
 import Guestbook from "./pages/Guestbook";
@@ -38,9 +39,10 @@ const App = () => (
             <Route path="/rsvp/:eventId/:guestId" element={<RSVP />} />
             <Route path="/rsvp/:eventId" element={<RSVP />} />
             <Route path="/invite/:slug" element={<RSVP />} />
+            <Route path="/" element={<LandingPage />} />
             
             {/* Protected routes */}
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
             <Route path="/events/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
             <Route path="/events/edit/:eventId" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
