@@ -190,7 +190,26 @@ const LandingPage = () => {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Dark mode toggle */}
+            <motion.button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ rotate: 15 }}
+            >
+              <AnimatePresence mode="wait">
+                {darkMode ? (
+                  <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                    <Sun className="h-5 w-5 text-primary" />
+                  </motion.div>
+                ) : (
+                  <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                    <Moon className="h-5 w-5 text-foreground" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
             <Link to="/auth" className="hidden sm:inline-flex"><Button variant="ghost" size="sm">Se connecter</Button></Link>
             <Link to="/auth" className="hidden sm:inline-flex"><Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Commencer</Button></Link>
             {/* Hamburger */}
