@@ -568,9 +568,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Contact */}
       <section id="contact" className="py-24 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-5xl">
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
             <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
               Contact
@@ -578,29 +577,96 @@ const LandingPage = () => {
             <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Contactez-nous</h2>
             <p className="mt-4 text-muted-foreground">Une question ? Notre équipe est là pour vous aider.</p>
           </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} className="grid md:grid-cols-3 gap-6">
-            {[
-              { icon: Mail, title: 'Email', info: 'contact@hkevent.com' },
-              { icon: Phone, title: 'Téléphone', info: '+243 XXX XXX XXX' },
-              { icon: MapPin, title: 'Adresse', info: 'Kinshasa, RDC' },
-            ].map((item, i) => (
-              <motion.div key={item.title} variants={fadeUp} custom={i} whileHover={{ y: -8, scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }}>
-                <Card className="text-center hover:shadow-lg transition-all duration-300 border-border">
-                  <CardContent className="p-7">
-                    <motion.div
-                      whileHover={{ rotate: 360 }}
-                      transition={{ duration: 0.6 }}
-                      className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4"
-                    >
-                      <item.icon className="h-7 w-7" />
+          <div className="grid md:grid-cols-5 gap-8">
+            {/* Contact info */}
+            <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} className="md:col-span-2 space-y-6">
+              {[
+                { icon: Mail, title: 'Email', info: 'contact@hkevent.com' },
+                { icon: Phone, title: 'Téléphone', info: '+243 XXX XXX XXX' },
+                { icon: MapPin, title: 'Adresse', info: 'Kinshasa, RDC' },
+              ].map((item, i) => (
+                <motion.div key={item.title} variants={fadeLeft} custom={i} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 300 }}>
+                  <Card className="hover:shadow-lg transition-all duration-300 border-border">
+                    <CardContent className="p-5 flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <item.icon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground">{item.info}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Contact form */}
+            <motion.div variants={fadeRight} initial="hidden" whileInView="visible" viewport={{ once: true }} className="md:col-span-3">
+              <Card className="border-border shadow-lg">
+                <CardContent className="p-6 md:p-8">
+                  <form onSubmit={handleContactSubmit} className="space-y-5">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-name" className="text-foreground">Nom complet *</Label>
+                        <Input
+                          id="contact-name"
+                          placeholder="Votre nom"
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
+                          maxLength={100}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-email" className="text-foreground">Email *</Label>
+                        <Input
+                          id="contact-email"
+                          type="email"
+                          placeholder="votre@email.com"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                          maxLength={255}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-subject" className="text-foreground">Sujet</Label>
+                      <Input
+                        id="contact-subject"
+                        placeholder="Sujet de votre message"
+                        value={contactForm.subject}
+                        onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
+                        maxLength={200}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-message" className="text-foreground">Message *</Label>
+                      <Textarea
+                        id="contact-message"
+                        placeholder="Décrivez votre demande..."
+                        rows={5}
+                        value={contactForm.message}
+                        onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
+                        maxLength={1000}
+                        required
+                      />
+                    </div>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12" disabled={sending}>
+                        {sending ? (
+                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full" />
+                        ) : (
+                          <>Envoyer le message <Send className="ml-2 h-4 w-4" /></>
+                        )}
+                      </Button>
                     </motion.div>
-                    <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.info}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
+                  </form>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       </section>
 
