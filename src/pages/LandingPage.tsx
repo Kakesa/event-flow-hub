@@ -20,10 +20,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import teamHerve from '@/assets/team-herve.jpg';
-import teamSarah from '@/assets/team-sarah.jpg';
-import teamDavid from '@/assets/team-david.jpg';
-import teamFatou from '@/assets/team-fatou.jpg';
+import teamEspoir from '@/assets/team-espoir.jpg';
+import teamDan from '@/assets/team-dan.jpg';
 import logoWhite from '@/assets/white.png';
 
 /* ─── Animation variants ─── */
@@ -93,10 +91,9 @@ const testimonials = [
 ];
 
 const team = [
-  { name: 'Hervé K.', role: 'Fondateur & CEO', image: teamHerve },
-  { name: 'Sarah M.', role: 'Directrice Créative', image: teamSarah },
-  { name: 'David L.', role: 'Lead Développeur', image: teamDavid },
-  { name: 'Fatou B.', role: 'Responsable Client', image: teamFatou },
+  { name: 'Espoir Kakesa', role: 'Fondateur & Lead Développeur', image: teamEspoir },
+  { name: 'Dan Kakene.', role: 'Lead Designer & Responsable Marketing', image: teamDan },
+  
 ];
 
 const latestEvents = [
