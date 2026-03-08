@@ -62,7 +62,7 @@ const scaleIn = {
 
 const floatAnimation = {
   y: [-8, 8, -8],
-  transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+  transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' as const },
 };
 
 /* ─── Data ─── */
