@@ -132,6 +132,26 @@ const LandingPage = () => {
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
 
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    document.documentElement.classList.toggle('dark', newMode);
+  };
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
+      toast.error('Veuillez remplir tous les champs obligatoires.');
+      return;
+    }
+    setSending(true);
+    setTimeout(() => {
+      setSending(false);
+      toast.success('Message envoyé avec succès ! Nous vous répondrons bientôt.');
+      setContactForm({ name: '', email: '', subject: '', message: '' });
+    }, 1500);
+  };
+
   return (
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
       {/* Progress bar */}
