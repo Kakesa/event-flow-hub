@@ -1,11 +1,19 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
   Calendar, Users, Star, Mail, Phone, MapPin,
   ArrowRight, Sparkles, ChevronRight,
-  PartyPopper, Mic2, Camera, Utensils
+  PartyPopper, Mic2, Camera, Utensils,
+  Menu, X, HelpCircle
 } from 'lucide-react';
 
 import teamHerve from '@/assets/team-herve.jpg';
@@ -14,29 +22,50 @@ import teamDavid from '@/assets/team-david.jpg';
 import teamFatou from '@/assets/team-fatou.jpg';
 import logoWhite from '@/assets/white.png';
 
+/* ─── Animation variants ─── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
+  hidden: { opacity: 0, y: 50 },
   visible: (i: number = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delay: i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    opacity: 1, y: 0,
+    transition: { duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
+  }),
+};
+
+const fadeLeft = {
+  hidden: { opacity: 0, x: -60 },
+  visible: (i: number = 0) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
+  }),
+};
+
+const fadeRight = {
+  hidden: { opacity: 0, x: 60 },
+  visible: (i: number = 0) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
   }),
 };
 
 const staggerContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
+  visible: { transition: { staggerChildren: 0.12 } },
 };
 
 const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
+  hidden: { opacity: 0, scale: 0.85, y: 20 },
   visible: (i: number = 0) => ({
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.5, delay: i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] as const },
+    opacity: 1, scale: 1, y: 0,
+    transition: { duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as const },
   }),
 };
 
+const floatAnimation = {
+  y: [-8, 8, -8],
+  transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+};
+
+/* ─── Data ─── */
 const stats = [
   { label: 'Événements créés', value: '2,500+', icon: Calendar },
   { label: 'Invités gérés', value: '150K+', icon: Users },
@@ -72,80 +101,250 @@ const latestEvents = [
   { title: 'Conférence Tech Africa', date: '10 Janvier 2025', guests: 500, image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=250&fit=crop' },
 ];
 
+const faqs = [
+  { question: 'Comment créer mon premier événement ?', answer: 'Inscrivez-vous gratuitement, accédez à votre tableau de bord et cliquez sur "Créer un événement". Remplissez les détails (nom, date, lieu) et commencez à inviter vos invités en quelques minutes.' },
+  { question: 'Est-ce que HK Event est gratuit ?', answer: 'Oui, nous proposons un plan gratuit qui vous permet de gérer jusqu\'à 100 invités par événement. Pour des besoins plus importants, découvrez nos plans Premium et Business.' },
+  { question: 'Comment fonctionne le scanner QR Code ?', answer: 'Chaque invité reçoit un QR Code unique avec son invitation. Le jour de l\'événement, utilisez notre scanner intégré pour vérifier rapidement les entrées et suivre la présence en temps réel.' },
+  { question: 'Puis-je personnaliser les invitations ?', answer: 'Absolument ! Choisissez parmi nos modèles élégants ou créez le vôtre. Personnalisez les couleurs, les polices, ajoutez votre logo et envoyez par email ou WhatsApp.' },
+  { question: 'Comment gérer les réponses RSVP ?', answer: 'Les invités peuvent confirmer leur présence directement depuis l\'invitation. Vous suivez toutes les réponses en temps réel depuis votre tableau de bord avec des statistiques détaillées.' },
+  { question: 'HK Event est-il disponible en Afrique ?', answer: 'Oui ! HK Event est conçu spécialement pour le marché africain avec un support des paiements locaux (M-Pesa, Airtel Money) et une interface optimisée pour les connexions mobiles.' },
+];
+
+const navLinks = [
+  { href: '#services', label: 'Services' },
+  { href: '#events', label: 'Événements' },
+  { href: '#testimonials', label: 'Témoignages' },
+  { href: '#team', label: 'Équipe' },
+  { href: '#faq', label: 'FAQ' },
+  { href: '#contact', label: 'Contact' },
+];
+
 const LandingPage = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+
   return (
     <div className="min-h-screen bg-background font-body overflow-x-hidden">
+      {/* Progress bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-primary z-[60] origin-left"
+        style={{ scaleX: scrollYProgress }}
+      />
+
       {/* Navigation */}
       <motion.nav
         initial={{ y: -80 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border"
       >
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 400 }}>
             <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center overflow-hidden">
               <img src={logoWhite} alt="HK Event" className="h-full w-full object-contain" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">HK Event</span>
-          </div>
+          </motion.div>
+
+          {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#services" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Services</a>
-            <a href="#events" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Événements</a>
-            <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Témoignages</a>
-            <a href="#team" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Équipe</a>
-            <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+            {navLinks.map((link) => (
+              <motion.a
+                key={link.href}
+                href={link.href}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors relative"
+                whileHover={{ y: -2 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                {link.label}
+              </motion.a>
+            ))}
           </div>
+
           <div className="flex items-center gap-3">
-            <Link to="/auth"><Button variant="ghost" size="sm">Se connecter</Button></Link>
-            <Link to="/auth"><Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Commencer</Button></Link>
+            <Link to="/auth" className="hidden sm:inline-flex"><Button variant="ghost" size="sm">Se connecter</Button></Link>
+            <Link to="/auth" className="hidden sm:inline-flex"><Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Commencer</Button></Link>
+            {/* Hamburger */}
+            <motion.button
+              className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              whileTap={{ scale: 0.9 }}
+            >
+              <AnimatePresence mode="wait">
+                {mobileMenuOpen ? (
+                  <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                    <X className="h-6 w-6 text-foreground" />
+                  </motion.div>
+                ) : (
+                  <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
+                    <Menu className="h-6 w-6 text-foreground" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="md:hidden overflow-hidden bg-background border-b border-border"
+            >
+              <div className="px-4 py-4 flex flex-col gap-1">
+                {navLinks.map((link, i) => (
+                  <motion.a
+                    key={link.href}
+                    href={link.href}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-3 px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  >
+                    {link.label}
+                  </motion.a>
+                ))}
+                <div className="flex gap-3 mt-3 pt-3 border-t border-border">
+                  <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full">Se connecter</Button>
+                  </Link>
+                  <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full bg-primary text-primary-foreground">Commencer</Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(38_92%_50%/0.08),transparent_60%)]" />
-        <div className="container mx-auto text-center relative z-10">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-6">
-            <Sparkles className="h-4 w-4" />
+      {/* Hero Section with background video */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Background video */}
+        <motion.div className="absolute inset-0 z-0" style={{ scale: heroScale }}>
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+            poster="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&h=1080&fit=crop"
+          >
+            <source
+              src="https://videos.pexels.com/video-files/3401988/3401988-uhd_2560_1440_30fps.mp4"
+              type="video/mp4"
+            />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        </motion.div>
+
+        <motion.div className="container mx-auto px-4 text-center relative z-10 py-32" style={{ opacity: heroOpacity }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/20 backdrop-blur-md text-primary-foreground text-sm font-medium mb-8 border border-primary/30"
+          >
+            <motion.div animate={floatAnimation}>
+              <Sparkles className="h-4 w-4" />
+            </motion.div>
             Plateforme #1 de gestion d'événements
           </motion.div>
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.15 }}
-            className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight max-w-4xl mx-auto">
-            Créez des événements{' '}<span className="text-primary">inoubliables</span>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight max-w-4xl mx-auto"
+          >
+            Créez des événements{' '}
+            <motion.span
+              className="text-primary inline-block"
+              initial={{ opacity: 0, rotateX: 90 }}
+              animate={{ opacity: 1, rotateX: 0 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              inoubliables
+            </motion.span>
           </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}
-            className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+          >
             Gérez vos invités, envoyez des invitations élégantes et suivez tout en temps réel. HK Event simplifie l'organisation de vos événements.
           </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.45 }}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
             <Link to="/auth">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-12 text-base shadow-[var(--shadow-gold)]">
-                Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-13 text-base shadow-[var(--shadow-gold)]">
+                  Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
             </Link>
             <a href="#services">
-              <Button variant="outline" size="lg" className="h-12 text-base px-8">Découvrir nos services</Button>
+              <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
+                <Button variant="outline" size="lg" className="h-13 text-base px-8 backdrop-blur-sm">Découvrir nos services</Button>
+              </motion.div>
             </a>
           </motion.div>
-        </div>
+
+          {/* Scroll indicator */}
+          <motion.div
+            className="absolute bottom-8 left-1/2 -translate-x-1/2"
+            animate={{ y: [0, 12, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/40 flex items-start justify-center p-1.5">
+              <motion.div
+                className="w-1.5 h-1.5 rounded-full bg-primary"
+                animate={{ y: [0, 16, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 px-4 border-y border-border bg-muted/30">
+      <section className="py-20 px-4 border-y border-border bg-muted/30 relative">
         <motion.div
           variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}
           className="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-8"
         >
           {stats.map((stat, i) => (
-            <motion.div key={stat.label} variants={fadeUp} custom={i} className="text-center">
-              <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 text-primary mb-3">
-                <stat.icon className="h-6 w-6" />
-              </div>
-              <p className="font-display text-3xl font-bold text-foreground">{stat.value}</p>
+            <motion.div key={stat.label} variants={fadeUp} custom={i} className="text-center group">
+              <motion.div
+                whileHover={{ scale: 1.15, rotate: 5 }}
+                transition={{ type: 'spring', stiffness: 400 }}
+                className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
+              >
+                <stat.icon className="h-7 w-7" />
+              </motion.div>
+              <motion.p
+                className="font-display text-3xl md:text-4xl font-bold text-foreground"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, delay: i * 0.15 }}
+              >
+                {stat.value}
+              </motion.p>
               <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
             </motion.div>
           ))}
@@ -153,18 +352,22 @@ const LandingPage = () => {
       </section>
 
       {/* Latest Events */}
-      <section id="events" className="py-20 px-4">
+      <section id="events" className="py-24 px-4">
         <div className="container mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Derniers événements</h2>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto">Découvrez quelques-uns des événements récemment organisés avec HK Event.</p>
+          <motion.div variants={fadeLeft} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              Événements récents
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Derniers événements</h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Découvrez quelques-uns des événements récemment organisés avec HK Event.</p>
           </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid md:grid-cols-3 gap-6">
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid md:grid-cols-3 gap-8">
             {latestEvents.map((event, i) => (
-              <motion.div key={event.title} variants={scaleIn} custom={i}>
-                <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border">
-                  <div className="aspect-video overflow-hidden">
-                    <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <motion.div key={event.title} variants={scaleIn} custom={i} whileHover={{ y: -10 }} transition={{ type: 'spring', stiffness: 300 }}>
+                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-500 border-border">
+                  <div className="aspect-video overflow-hidden relative">
+                    <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   <CardContent className="p-5">
                     <h3 className="font-display text-lg font-semibold text-foreground">{event.title}</h3>
@@ -181,20 +384,27 @@ const LandingPage = () => {
       </section>
 
       {/* Services */}
-      <section id="services" className="py-20 px-4 bg-muted/30">
+      <section id="services" className="py-24 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Nos services</h2>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto">Tout ce dont vous avez besoin pour organiser des événements exceptionnels.</p>
+          <motion.div variants={fadeRight} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              Ce que nous offrons
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Nos services</h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Tout ce dont vous avez besoin pour organiser des événements exceptionnels.</p>
           </motion.div>
           <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {services.map((service, i) => (
-              <motion.div key={service.title} variants={fadeUp} custom={i}>
-                <Card className="group hover:shadow-md hover:border-primary/20 transition-all duration-300 h-full">
-                  <CardContent className="p-6">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                      <service.icon className="h-6 w-6" />
-                    </div>
+              <motion.div key={service.title} variants={fadeUp} custom={i} whileHover={{ y: -8, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
+                <Card className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full">
+                  <CardContent className="p-7">
+                    <motion.div
+                      whileHover={{ rotate: [0, -10, 10, 0] }}
+                      transition={{ duration: 0.5 }}
+                      className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
+                    >
+                      <service.icon className="h-7 w-7" />
+                    </motion.div>
                     <h3 className="font-display text-lg font-semibold text-foreground mb-2">{service.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>
                   </CardContent>
@@ -206,25 +416,35 @@ const LandingPage = () => {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-20 px-4">
+      <section id="testimonials" className="py-24 px-4">
         <div className="container mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Ce que disent nos clients</h2>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto">Des milliers d'organisateurs nous font confiance.</p>
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              Témoignages
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Ce que disent nos clients</h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Des milliers d'organisateurs nous font confiance.</p>
           </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid md:grid-cols-3 gap-6">
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid md:grid-cols-3 gap-8">
             {testimonials.map((t, i) => (
-              <motion.div key={t.name} variants={scaleIn} custom={i}>
-                <Card className="hover:shadow-md transition-all duration-300 h-full">
-                  <CardContent className="p-6">
+              <motion.div key={t.name} variants={scaleIn} custom={i} whileHover={{ y: -8 }} transition={{ type: 'spring', stiffness: 300 }}>
+                <Card className="hover:shadow-lg transition-all duration-300 h-full border-border">
+                  <CardContent className="p-7">
                     <div className="flex gap-1 mb-4">
                       {[...Array(5)].map((_, j) => (
-                        <Star key={j} className="h-4 w-4 fill-primary text-primary" />
+                        <motion.div key={j} initial={{ opacity: 0, scale: 0 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 + j * 0.1 }}>
+                          <Star className="h-4 w-4 fill-primary text-primary" />
+                        </motion.div>
                       ))}
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed italic mb-5">"{t.content}"</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed italic mb-6">"{t.content}"</p>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">{t.avatar}</div>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        className="h-11 w-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm"
+                      >
+                        {t.avatar}
+                      </motion.div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{t.name}</p>
                         <p className="text-xs text-muted-foreground">{t.role}</p>
@@ -238,21 +458,60 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Team */}
-      <section id="team" className="py-20 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">L'équipe HK Event</h2>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto">Une équipe passionnée au service de vos événements.</p>
+      {/* FAQ */}
+      <section id="faq" className="py-24 px-4 bg-muted/30">
+        <div className="container mx-auto max-w-3xl">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              FAQ
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Questions fréquentes</h2>
+            <p className="mt-4 text-muted-foreground">Tout ce que vous devez savoir sur HK Event.</p>
           </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
+            <Accordion type="single" collapsible className="space-y-3">
+              {faqs.map((faq, i) => (
+                <motion.div key={i} variants={fadeUp} custom={i}>
+                  <AccordionItem value={`faq-${i}`} className="border border-border rounded-xl px-5 bg-card shadow-sm hover:shadow-md transition-shadow duration-300">
+                    <AccordionTrigger className="text-left text-foreground font-medium hover:no-underline gap-3">
+                      <span className="flex items-center gap-3">
+                        <HelpCircle className="h-5 w-5 text-primary shrink-0" />
+                        {faq.question}
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed pl-8">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                </motion.div>
+              ))}
+            </Accordion>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Team */}
+      <section id="team" className="py-24 px-4">
+        <div className="container mx-auto">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              Notre équipe
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">L'équipe HK Event</h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Une équipe passionnée au service de vos événements.</p>
+          </motion.div>
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {team.map((member, i) => (
-              <motion.div key={member.name} variants={scaleIn} custom={i}>
-                <Card className="text-center hover:shadow-md transition-all duration-300 overflow-hidden group">
+              <motion.div key={member.name} variants={scaleIn} custom={i} whileHover={{ y: -10 }} transition={{ type: 'spring', stiffness: 300 }}>
+                <Card className="text-center hover:shadow-lg transition-all duration-300 overflow-hidden group border-border">
                   <CardContent className="p-6">
-                    <div className="h-24 w-24 rounded-full overflow-hidden mx-auto mb-4 ring-4 ring-primary/10 group-hover:ring-primary/30 transition-all duration-300">
-                      <img src={member.image} alt={member.name} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    </div>
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 3 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      className="h-28 w-28 rounded-full overflow-hidden mx-auto mb-4 ring-4 ring-primary/10 group-hover:ring-primary/40 transition-all duration-500"
+                    >
+                      <img src={member.image} alt={member.name} className="h-full w-full object-cover" />
+                    </motion.div>
                     <h3 className="font-semibold text-foreground">{member.name}</h3>
                     <p className="text-sm text-muted-foreground mt-1">{member.role}</p>
                   </CardContent>
@@ -264,11 +523,14 @@ const LandingPage = () => {
       </section>
 
       {/* Contact */}
-      <section id="contact" className="py-20 px-4">
+      <section id="contact" className="py-24 px-4 bg-muted/30">
         <div className="container mx-auto max-w-4xl">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-12">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Contactez-nous</h2>
-            <p className="mt-3 text-muted-foreground">Une question ? Notre équipe est là pour vous aider.</p>
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              Contact
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Contactez-nous</h2>
+            <p className="mt-4 text-muted-foreground">Une question ? Notre équipe est là pour vous aider.</p>
           </motion.div>
           <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} className="grid md:grid-cols-3 gap-6">
             {[
@@ -276,12 +538,16 @@ const LandingPage = () => {
               { icon: Phone, title: 'Téléphone', info: '+243 XXX XXX XXX' },
               { icon: MapPin, title: 'Adresse', info: 'Kinshasa, RDC' },
             ].map((item, i) => (
-              <motion.div key={item.title} variants={fadeUp} custom={i}>
-                <Card className="text-center hover:shadow-md transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
-                      <item.icon className="h-6 w-6" />
-                    </div>
+              <motion.div key={item.title} variants={fadeUp} custom={i} whileHover={{ y: -8, scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }}>
+                <Card className="text-center hover:shadow-lg transition-all duration-300 border-border">
+                  <CardContent className="p-7">
+                    <motion.div
+                      whileHover={{ rotate: 360 }}
+                      transition={{ duration: 0.6 }}
+                      className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4"
+                    >
+                      <item.icon className="h-7 w-7" />
+                    </motion.div>
                     <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
                     <p className="text-sm text-muted-foreground">{item.info}</p>
                   </CardContent>
@@ -294,19 +560,33 @@ const LandingPage = () => {
 
       {/* CTA */}
       <motion.section
-        initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
-        className="py-20 px-4 bg-sidebar text-sidebar-foreground"
+        initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
+        className="py-24 px-4 bg-sidebar text-sidebar-foreground relative overflow-hidden"
       >
-        <div className="container mx-auto text-center">
+        {/* Animated bg circles */}
+        <motion.div
+          className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-primary/5 blur-3xl"
+          animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl"
+          animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div className="container mx-auto text-center relative z-10">
           <motion.h2 variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="font-display text-3xl md:text-4xl font-bold">Prêt à créer votre événement ?</motion.h2>
+            className="font-display text-3xl md:text-5xl font-bold">Prêt à créer votre événement ?</motion.h2>
           <motion.p variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
-            className="mt-4 text-sidebar-foreground/70 max-w-lg mx-auto">Rejoignez des milliers d'organisateurs qui font confiance à HK Event.</motion.p>
+            className="mt-4 text-sidebar-foreground/70 max-w-lg mx-auto text-lg">Rejoignez des milliers d'organisateurs qui font confiance à HK Event.</motion.p>
           <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={2}>
             <Link to="/auth" className="mt-8 inline-block">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 text-base shadow-[var(--shadow-gold)]">
-                Créer un compte gratuitement <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 h-13 px-10 text-base shadow-[var(--shadow-gold)]">
+                  Créer un compte gratuitement <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
             </Link>
           </motion.div>
         </div>
@@ -315,8 +595,8 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-sidebar text-sidebar-foreground border-t border-sidebar-border">
         <div className="container mx-auto px-4 py-12">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
                 <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center overflow-hidden">
                   <img src={logoWhite} alt="HK Event" className="h-full w-full object-contain" />
@@ -330,7 +610,7 @@ const LandingPage = () => {
               <ul className="space-y-2 text-sm text-sidebar-foreground/60">
                 <li><a href="#services" className="hover:text-sidebar-foreground transition-colors">Services</a></li>
                 <li><a href="#events" className="hover:text-sidebar-foreground transition-colors">Événements</a></li>
-                <li><a href="#testimonials" className="hover:text-sidebar-foreground transition-colors">Témoignages</a></li>
+                <li><a href="#faq" className="hover:text-sidebar-foreground transition-colors">FAQ</a></li>
               </ul>
             </div>
             <div>
@@ -338,6 +618,7 @@ const LandingPage = () => {
               <ul className="space-y-2 text-sm text-sidebar-foreground/60">
                 <li><a href="#team" className="hover:text-sidebar-foreground transition-colors">Équipe</a></li>
                 <li><a href="#contact" className="hover:text-sidebar-foreground transition-colors">Contact</a></li>
+                <li><a href="#testimonials" className="hover:text-sidebar-foreground transition-colors">Témoignages</a></li>
               </ul>
             </div>
             <div>
