@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Accordion,
   AccordionContent,
@@ -13,8 +16,9 @@ import {
   Calendar, Users, Star, Mail, Phone, MapPin,
   ArrowRight, Sparkles, ChevronRight,
   PartyPopper, Mic2, Camera, Utensils,
-  Menu, X, HelpCircle
+  Menu, X, HelpCircle, Moon, Sun, Send
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import teamHerve from '@/assets/team-herve.jpg';
 import teamSarah from '@/assets/team-sarah.jpg';
