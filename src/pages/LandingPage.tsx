@@ -535,36 +535,45 @@ const LandingPage = () => {
 
       {/* Team */}
       <section id="team" className="py-24 px-4">
-  <div className="container mx-auto">
-    <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-      <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-        Notre équipe
-      </motion.span>
-      <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">L'équipe HK Event</h2>
-      <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Une équipe passionnée au service de vos événements.</p>
-    </motion.div>
-    
-    <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 place-items-center">
-      {team.map((member, i) => (
-        <motion.div key={member.name} variants={scaleIn} custom={i} whileHover={{ y: -10 }} transition={{ type: 'spring', stiffness: 300 }} className="flex justify-center">
-          <Card className="text-center hover:shadow-lg transition-all duration-300 overflow-hidden group border-border">
-            <CardContent className="p-6">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 3 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-                className="h-28 w-28 rounded-full overflow-hidden mx-auto mb-4 ring-4 ring-primary/10 group-hover:ring-primary/40 transition-all duration-500"
+        <div className="container mx-auto">
+          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
+              Notre équipe
+            </motion.span>
+            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">L'équipe HK Event</h2>
+            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Une équipe passionnée au service de vos événements.</p>
+          </motion.div>
+          
+          {/* MODIFICATION ICI : Utilisation de flex, flex-wrap et justify-center au lieu de grid-cols-4 */}
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="flex flex-wrap justify-center gap-8">
+            {team.map((member, i) => (
+              <motion.div 
+                key={member.name} 
+                variants={scaleIn} 
+                custom={i} 
+                whileHover={{ y: -10 }} 
+                transition={{ type: 'spring', stiffness: 300 }} 
+                // Ajout d'une largeur (w-full md:w-72) pour que les cartes gardent une belle taille
+                className="w-full md:w-72 flex justify-center"
               >
-                <img src={member.image} alt={member.name} className="h-full w-full object-cover" />
+                <Card className="w-full text-center hover:shadow-lg transition-all duration-300 overflow-hidden group border-border">
+                  <CardContent className="p-6">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 3 }}
+                      transition={{ type: 'spring', stiffness: 300 }}
+                      className="h-28 w-28 rounded-full overflow-hidden mx-auto mb-4 ring-4 ring-primary/10 group-hover:ring-primary/40 transition-all duration-500"
+                    >
+                      <img src={member.image} alt={member.name} className="h-full w-full object-cover" />
+                    </motion.div>
+                    <h3 className="font-semibold text-foreground">{member.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{member.role}</p>
+                  </CardContent>
+                </Card>
               </motion.div>
-              <h3 className="font-semibold text-foreground">{member.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{member.role}</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
-    </motion.div>
-  </div>
-</section>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
       <section id="contact" className="py-24 px-4 bg-muted/30">
         <div className="container mx-auto max-w-5xl">
