@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import teamEspoir from '@/assets/team-espoir.jpg';
-import teamDan from '@/assets/team-dan.jpg';
+import teamHerve from '@/assets/team-herve.jpg';
+import teamSarah from '@/assets/team-sarah.jpg';
 import logoWhite from '@/assets/white.png';
 
 /* ─── Animation variants ─── */
