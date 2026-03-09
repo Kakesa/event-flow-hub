@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import teamEspoir from '@/assets/team-espoir.jpg';
-import teamDan from '@/assets/team-dan.jpg';
+import teamHerve from '@/assets/team-herve.jpg';
+import teamSarah from '@/assets/team-sarah.jpg';
 import logoWhite from '@/assets/white.png';
 
 /* ─── Animation variants ─── */
@@ -91,9 +91,8 @@ const testimonials = [
 ];
 
 const team = [
-  { name: 'Espoir Kakesa', role: 'Fondateur & Lead Développeur', image: teamEspoir },
-  { name: 'Dan Kakene.', role: 'Lead Designer & Responsable Marketing', image: teamDan },
-  
+  { name: 'Espoir Kakesa', role: 'Fondateur & Lead Développeur', image: teamHerve },
+  { name: 'Dan Kakene', role: 'Lead Designer & Responsable Marketing', image: teamSarah },
 ];
 
 const latestEvents = [
@@ -122,12 +121,16 @@ const navLinks = [
 
 const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains('dark'));
+  const [darkMode, setDarkMode] = useState(true);
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
   const { scrollYProgress } = useScroll();
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
 
   const toggleDarkMode = () => {
     const newMode = !darkMode;
