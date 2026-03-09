@@ -104,7 +104,7 @@ const latestEvents = [
 
 const faqs = [
   { question: 'Comment créer mon premier événement ?', answer: 'Inscrivez-vous gratuitement, accédez à votre tableau de bord et cliquez sur "Créer un événement". Remplissez les détails (nom, date, lieu) et commencez à inviter vos invités en quelques minutes.' },
-  { question: 'Est-ce que HK Event est gratuit ?', answer: 'Oui, nous proposons un plan gratuit qui vous permet de gérer jusqu\'à 100 invités par événement. Pour des besoins plus importants, découvrez nos plans Premium et Business.' },
+  { question: 'Est-ce que HK Event est gratuit ?', answer: 'Oui, nous proposons un plan gratuit qui vous permet de gérer jusqu\'à 10 invités par événement. Pour des besoins plus importants, découvrez nos plans Premium et Business.' },
   { question: 'Comment fonctionne le scanner QR Code ?', answer: 'Chaque invité reçoit un QR Code unique avec son invitation. Le jour de l\'événement, utilisez notre scanner intégré pour vérifier rapidement les entrées et suivre la présence en temps réel.' },
   { question: 'Puis-je personnaliser les invitations ?', answer: 'Absolument ! Choisissez parmi nos modèles élégants ou créez le vôtre. Personnalisez les couleurs, les polices, ajoutez votre logo et envoyez par email ou WhatsApp.' },
   { question: 'Comment gérer les réponses RSVP ?', answer: 'Les invités peuvent confirmer leur présence directement depuis l\'invitation. Vous suivez toutes les réponses en temps réel depuis votre tableau de bord avec des statistiques détaillées.' },
