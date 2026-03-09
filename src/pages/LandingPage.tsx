@@ -16,7 +16,7 @@ import {
   Calendar, Users, Star, Mail, Phone, MapPin,
   ArrowRight, Sparkles, ChevronRight,
   PartyPopper, Mic2, Camera, Utensils,
-  Menu, X, HelpCircle, Moon, Sun, Send
+  Menu, X, HelpCircle, Moon, Sun, Send, GlassWater
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -81,7 +81,7 @@ const services = [
   { icon: Mail, title: 'Invitations personnalisées', description: 'Envoyez des invitations élégantes par email ou WhatsApp.' },
   { icon: Camera, title: 'Scanner QR Code', description: 'Accueillez vos invités avec un scan rapide à l\'entrée.' },
   { icon: Mic2, title: 'Livre d\'or digital', description: 'Recueillez les messages et vœux de vos invités en temps réel.' },
-  { icon: Utensils, title: 'Gestion des repas', description: 'Planifiez les menus et gérez les préférences alimentaires.' },
+  { icon: GlassWater, title: 'Preference boisson', description: 'Les invités peuvent choisir leurs boissons préférées.' },
 ];
 
 const testimonials = [
@@ -592,7 +592,7 @@ const LandingPage = () => {
             <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} className="md:col-span-2 space-y-6">
               {[
                 { icon: Mail, title: 'Email', info: 'contact@hkevent.com' },
-                { icon: Phone, title: 'Téléphone', info: '+243 XXX XXX XXX' },
+                { icon: Phone, title: 'Téléphone', info: '+243 828 863 897' },
                 { icon: MapPin, title: 'Adresse', info: 'Kinshasa, RDC' },
               ].map((item, i) => (
                 <motion.div key={item.title} variants={fadeLeft} custom={i} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 300 }}>
@@ -752,7 +752,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="border-t border-sidebar-border mt-10 pt-6 text-center text-sm text-sidebar-foreground/40">
-            © {new Date().getFullYear()} HK Event. Tous droits réservés.
+            © {new Date().getFullYear()} HK Event. Tous droits réservés. Developed by <a href="https://espoir-kakesa.netlify.app" className="text-primary" target="_blank" rel="noopener noreferrer">Espoir Kakesa</a>.
           </div>
         </div>
       </footer>
