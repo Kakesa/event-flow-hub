@@ -68,7 +68,7 @@ const WhatsAppSender = ({
       );
     }
 
-    const header = `✨ *${event.title.toUpperCase()}* ✨`;
+    const header = `*${event.title.toUpperCase()}*`;
 
     return encodeURIComponent(
       `${header}\n\n` +
@@ -98,12 +98,13 @@ const WhatsAppSender = ({
     setSendingStatus('sending');
 
     try {
-      // 1. Ouvrir WhatsApp
+      // Ouvrir WhatsApp directement avec message pré-rempli
       const message = generateWhatsAppMessage(currentGuest);
       const phone = currentGuest.phone.replace(/\D/g, '');
-      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+      const waLink = `https://wa.me/${phone}?text=${message}`;
+      window.open(waLink, '_blank');
 
-      // 2. Notifier le backend
+      // Notifier le backend que l'invitation a été envoyée
       if (event) {
         await invitationsApi.send(currentGuest.id, 'whatsapp');
       }
@@ -111,7 +112,6 @@ const WhatsAppSender = ({
       setSentCount(prev => prev + 1);
       setSendingStatus('success');
 
-      // Pause courte pour le feedback visuel avant de passer au suivant
       setTimeout(() => {
         moveToNext();
       }, 1000);
@@ -198,7 +198,7 @@ const WhatsAppSender = ({
               </div>
 
               <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground">
-                <p><strong>Note :</strong> Cliquer sur "Envoyer" ouvrira un nouvel onglet avec le message pré-rempli sur WhatsApp Web ou Desktop.</p>
+                <p><strong>Note :</strong> Cliquer sur "Envoyer" ouvrira un nouvel onglet avec le message pré-rempli sur WhatsApp Web ou Mobile.</p>
               </div>
             </>
           ) : (
