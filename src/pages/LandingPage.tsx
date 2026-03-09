@@ -91,9 +91,8 @@ const testimonials = [
 ];
 
 const team = [
-  { name: 'Espoir Kakesa', role: 'Fondateur & Lead Développeur', image: teamEspoir },
-  { name: 'Dan Kakene.', role: 'Lead Designer & Responsable Marketing', image: teamDan },
-  
+  { name: 'Espoir Kakesa', role: 'Fondateur & Lead Développeur', image: teamHerve },
+  { name: 'Dan Kakene', role: 'Lead Designer & Responsable Marketing', image: teamSarah },
 ];
 
 const latestEvents = [
