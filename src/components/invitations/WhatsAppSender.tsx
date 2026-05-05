@@ -101,33 +101,7 @@ const WhatsAppSender = ({
   };
 
   const generateWhatsAppMessage = (guest: Guest) => {
-    if (!event) return '';
-
-    const rsvpLink = `${window.location.origin}/rsvp/${event.id}/${guest.id}`;
-    
-    if (customMessage) {
-      return encodeURIComponent(
-        customMessage
-          .replace(/{{guestName}}/g, guest.name)
-          .replace(/{{eventName}}/g, event.title)
-          .replace(/{{eventDate}}/g, new Date(event.date).toLocaleDateString('fr-FR'))
-          .replace(/{{eventLocation}}/g, event.location)
-          .replace(/{{rsvpLink}}/g, rsvpLink)
-      );
-    }
-
-    const header = `*${event.title.toUpperCase()}*`;
-
-    return encodeURIComponent(
-      `${header}\n\n` +
-      `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
-      `📍 *Lieu:* ${event.location}\n\n` +
-      `Bonjour *${guest.name}*,\n\n` +
-      `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
-      `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
-      `Nous avons hâte de vous voir! 🥂\n\n` +
-      `_HK Events_`
-    );
+    return encodeURIComponent(buildMessageText(guest));
   };
 
   const handleSend = async () => {
