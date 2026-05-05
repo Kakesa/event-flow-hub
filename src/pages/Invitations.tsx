@@ -23,6 +23,8 @@ import { cn } from '@/lib/utils';
 import EmailComposer from '@/components/invitations/EmailComposer';
 import EmailHistory from '@/components/invitations/EmailHistory';
 import WhatsAppSender from '@/components/invitations/WhatsAppSender';
+import WhatsAppLog from '@/components/invitations/WhatsAppLog';
+import { logWhatsAppAction } from '@/lib/whatsappLog';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
@@ -140,6 +142,7 @@ const Invitations = () => {
         } catch (error) {
           console.error(`Erreur notification backend pour ${guest.name}:`, error);
         }
+        logWhatsAppAction(selectedEvent, guest.id, guest.name, 'sent');
       }
     }
     
@@ -240,6 +243,10 @@ const Invitations = () => {
             <TabsTrigger value="history">
               <History className="h-4 w-4 mr-2" />
               Historique
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp-log">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Journal WhatsApp
             </TabsTrigger>
           </TabsList>
 
@@ -373,6 +380,11 @@ const Invitations = () => {
           {/* History Tab */}
           <TabsContent value="history">
             <EmailHistory eventId={selectedEvent || undefined} />
+          </TabsContent>
+
+          {/* WhatsApp Log Tab */}
+          <TabsContent value="whatsapp-log">
+            <WhatsAppLog eventId={selectedEvent || undefined} />
           </TabsContent>
         </Tabs>
 
