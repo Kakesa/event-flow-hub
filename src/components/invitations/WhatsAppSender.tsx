@@ -38,6 +38,7 @@ const WhatsAppSender = ({
   const [skippedCount, setSkippedCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success'>('idle');
+  const [copied, setCopied] = useState(false);
 
   const currentGuest = guests[currentIndex];
   const progress = (currentIndex / guests.length) * 100;
