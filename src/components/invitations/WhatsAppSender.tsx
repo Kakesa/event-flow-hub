@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Send, CheckCircle2, ChevronRight, SkipForward, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle2, ChevronRight, SkipForward, AlertCircle, Copy, Check } from 'lucide-react';
 import type { Guest, Event } from '@/types/models';
 import { invitationsApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
