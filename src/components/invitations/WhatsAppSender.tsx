@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Send, CheckCircle2, ChevronRight, SkipForward, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle2, ChevronRight, SkipForward, AlertCircle, Copy, Check } from 'lucide-react';
 import type { Guest, Event } from '@/types/models';
 import { invitationsApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +38,7 @@ const WhatsAppSender = ({
   const [skippedCount, setSkippedCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [sendingStatus, setSendingStatus] = useState<'idle' | 'sending' | 'success'>('idle');
+  const [copied, setCopied] = useState(false);
 
   const currentGuest = guests[currentIndex];
   const progress = (currentIndex / guests.length) * 100;
@@ -49,37 +50,58 @@ const WhatsAppSender = ({
       setSkippedCount(0);
       setIsFinished(false);
       setSendingStatus('idle');
+      setCopied(false);
     }
   }, [open, guests]);
 
-  const generateWhatsAppMessage = (guest: Guest) => {
+  const buildMessageText = (guest: Guest) => {
     if (!event) return '';
-
     const rsvpLink = `${window.location.origin}/rsvp/${event.id}/${guest.id}`;
-    
     if (customMessage) {
-      return encodeURIComponent(
-        customMessage
-          .replace(/{{guestName}}/g, guest.name)
-          .replace(/{{eventName}}/g, event.title)
-          .replace(/{{eventDate}}/g, new Date(event.date).toLocaleDateString('fr-FR'))
-          .replace(/{{eventLocation}}/g, event.location)
-          .replace(/{{rsvpLink}}/g, rsvpLink)
-      );
+      return customMessage
+        .replace(/{{guestName}}/g, guest.name)
+        .replace(/{{eventName}}/g, event.title)
+        .replace(/{{eventDate}}/g, new Date(event.date).toLocaleDateString('fr-FR'))
+        .replace(/{{eventLocation}}/g, event.location)
+        .replace(/{{rsvpLink}}/g, rsvpLink);
     }
-
-    const header = `*${event.title.toUpperCase()}*`;
-
-    return encodeURIComponent(
-      `${header}\n\n` +
+    return `*${event.title.toUpperCase()}*\n\n` +
       `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
       `📍 *Lieu:* ${event.location}\n\n` +
       `Bonjour *${guest.name}*,\n\n` +
       `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
       `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
       `Nous avons hâte de vous voir! 🥂\n\n` +
-      `_HK Events_`
-    );
+      `_HK Events_`;
+  };
+
+  const handleCopyLink = async () => {
+    if (!currentGuest || !event) return;
+    const text = buildMessageText(currentGuest);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({
+        title: "Message copié !",
+        description: "Collez-le dans WhatsApp pour l'envoyer.",
+      });
+      try {
+        await invitationsApi.send(currentGuest.id, 'whatsapp');
+      } catch (e) {
+        console.error(e);
+      }
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de copier le message.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const generateWhatsAppMessage = (guest: Guest) => {
+    return encodeURIComponent(buildMessageText(guest));
   };
 
   const handleSend = async () => {
@@ -197,8 +219,16 @@ const WhatsAppSender = ({
                 </div>
               </div>
 
-              <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground">
-                <p><strong>Note :</strong> Cliquer sur "Envoyer" ouvrira un nouvel onglet avec le message pré-rempli sur WhatsApp Web ou Mobile.</p>
+              {/* Aperçu du message */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aperçu du message</p>
+                <div className="bg-muted/50 p-3 rounded-lg text-xs text-foreground/80 max-h-32 overflow-y-auto whitespace-pre-wrap border border-border">
+                  {currentGuest && buildMessageText(currentGuest)}
+                </div>
+              </div>
+
+              <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1.5">
+                <p><strong>💡 Astuce :</strong> Si l'envoi automatique ne fonctionne pas comme prévu, utilisez <strong>"Copier le message"</strong> puis collez-le dans WhatsApp.</p>
               </div>
             </>
           ) : (
@@ -216,16 +246,34 @@ const WhatsAppSender = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           {!isFinished ? (
             <>
-              <Button variant="ghost" onClick={handleSkip} disabled={sendingStatus === 'sending'}>
+              <Button variant="ghost" onClick={handleSkip} disabled={sendingStatus === 'sending'} className="w-full sm:w-auto">
                 <SkipForward className="h-4 w-4 mr-2" />
                 Ignorer
               </Button>
-              <Button 
-                onClick={handleSend} 
-                className="bg-green-600 hover:bg-green-700 text-white"
+              <Button
+                variant="outline"
+                onClick={handleCopyLink}
+                disabled={sendingStatus === 'sending'}
+                className="w-full sm:w-auto"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2 text-green-600" />
+                    Copié !
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copier le message
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleSend}
+                className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
                 disabled={sendingStatus === 'sending' || !currentGuest?.phone}
               >
                 {sendingStatus === 'sending' ? (
