@@ -16,7 +16,7 @@ import {
   Calendar, Users, Star, Mail, Phone, MapPin,
   ArrowRight, Sparkles, ChevronRight,
   PartyPopper, Mic2, Camera, Utensils,
-  Menu, X, HelpCircle, Moon, Sun, Send, GlassWater
+  Menu, X, HelpCircle, Moon, Sun, Send, GlassWater, CheckCircle2, User, MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 
