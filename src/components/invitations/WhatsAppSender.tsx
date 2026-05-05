@@ -14,6 +14,7 @@ import type { Guest, Event } from '@/types/models';
 import { invitationsApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { logWhatsAppAction } from '@/lib/whatsappLog';
 
 interface WhatsAppSenderProps {
   open: boolean;
@@ -85,6 +86,9 @@ const WhatsAppSender = ({
         title: "Message copié !",
         description: "Collez-le dans WhatsApp pour l'envoyer.",
       });
+      if (event) {
+        logWhatsAppAction(event.id, currentGuest.id, currentGuest.name, 'copied');
+      }
       try {
         await invitationsApi.send(currentGuest.id, 'whatsapp');
       } catch (e) {
@@ -129,6 +133,7 @@ const WhatsAppSender = ({
       // Notifier le backend que l'invitation a été envoyée
       if (event) {
         await invitationsApi.send(currentGuest.id, 'whatsapp');
+        logWhatsAppAction(event.id, currentGuest.id, currentGuest.name, 'sent');
       }
 
       setSentCount(prev => prev + 1);
