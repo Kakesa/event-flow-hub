@@ -124,6 +124,8 @@ const LandingPage = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const { scrollYProgress } = useScroll();
   const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
@@ -138,6 +140,9 @@ const LandingPage = () => {
     document.documentElement.classList.toggle('dark', newMode);
   };
 
+  const messageLength = contactForm.message.length;
+  const messageMax = 1000;
+
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
@@ -147,8 +152,10 @@ const LandingPage = () => {
     setSending(true);
     setTimeout(() => {
       setSending(false);
+      setSent(true);
       toast.success('Message envoyé avec succès ! Nous vous répondrons bientôt.');
       setContactForm({ name: '', email: '', subject: '', message: '' });
+      setTimeout(() => setSent(false), 3500);
     }, 1500);
   };
 
