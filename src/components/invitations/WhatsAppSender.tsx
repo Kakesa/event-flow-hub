@@ -253,9 +253,34 @@ const WhatsAppSender = ({
                 <SkipForward className="h-4 w-4 mr-2" />
                 Ignorer
               </Button>
-              <Button 
-                onClick={handleSend} 
-                className="bg-green-600 hover:bg-green-700 text-white"
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {!isFinished ? (
+            <>
+              <Button variant="ghost" onClick={handleSkip} disabled={sendingStatus === 'sending'} className="w-full sm:w-auto">
+                <SkipForward className="h-4 w-4 mr-2" />
+                Ignorer
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCopyLink}
+                disabled={sendingStatus === 'sending'}
+                className="w-full sm:w-auto"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-4 w-4 mr-2 text-green-600" />
+                    Copié !
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copier le message
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleSend}
+                className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
                 disabled={sendingStatus === 'sending' || !currentGuest?.phone}
               >
                 {sendingStatus === 'sending' ? (
