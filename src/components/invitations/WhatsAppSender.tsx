@@ -219,8 +219,16 @@ const WhatsAppSender = ({
                 </div>
               </div>
 
-              <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground">
-                <p><strong>Note :</strong> Cliquer sur "Envoyer" ouvrira un nouvel onglet avec le message pré-rempli sur WhatsApp Web ou Mobile.</p>
+              {/* Aperçu du message */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aperçu du message</p>
+                <div className="bg-muted/50 p-3 rounded-lg text-xs text-foreground/80 max-h-32 overflow-y-auto whitespace-pre-wrap border border-border">
+                  {currentGuest && buildMessageText(currentGuest)}
+                </div>
+              </div>
+
+              <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1.5">
+                <p><strong>💡 Astuce :</strong> Si l'envoi automatique ne fonctionne pas comme prévu, utilisez <strong>"Copier le message"</strong> puis collez-le dans WhatsApp.</p>
               </div>
             </>
           ) : (
