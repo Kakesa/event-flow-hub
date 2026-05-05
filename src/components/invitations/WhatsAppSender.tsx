@@ -75,6 +75,31 @@ const WhatsAppSender = ({
       `_HK Events_`;
   };
 
+  const handleCopyLink = async () => {
+    if (!currentGuest || !event) return;
+    const text = buildMessageText(currentGuest);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({
+        title: "Message copié !",
+        description: "Collez-le dans WhatsApp pour l'envoyer.",
+      });
+      try {
+        await invitationsApi.send(currentGuest.id, 'whatsapp');
+      } catch (e) {
+        console.error(e);
+      }
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de copier le message.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const generateWhatsAppMessage = (guest: Guest) => {
     if (!event) return '';
 
