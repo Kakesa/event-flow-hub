@@ -620,66 +620,162 @@ const LandingPage = () => {
 
             {/* Contact form */}
             <motion.div variants={fadeRight} initial="hidden" whileInView="visible" viewport={{ once: true }} className="md:col-span-3">
-              <Card className="border-border shadow-lg">
-                <CardContent className="p-6 md:p-8">
-                  <form onSubmit={handleContactSubmit} className="space-y-5">
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="contact-name" className="text-foreground">Nom complet *</Label>
-                        <Input
-                          id="contact-name"
-                          placeholder="Votre nom"
-                          value={contactForm.name}
-                          onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
-                          maxLength={100}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contact-email" className="text-foreground">Email *</Label>
-                        <Input
-                          id="contact-email"
-                          type="email"
-                          placeholder="votre@email.com"
-                          value={contactForm.email}
-                          onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
-                          maxLength={255}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contact-subject" className="text-foreground">Sujet</Label>
-                      <Input
-                        id="contact-subject"
-                        placeholder="Sujet de votre message"
-                        value={contactForm.subject}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
-                        maxLength={200}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contact-message" className="text-foreground">Message *</Label>
-                      <Textarea
-                        id="contact-message"
-                        placeholder="Décrivez votre demande..."
-                        rows={5}
-                        value={contactForm.message}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
-                        maxLength={1000}
-                        required
-                      />
-                    </div>
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12" disabled={sending}>
-                        {sending ? (
-                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full" />
-                        ) : (
-                          <>Envoyer le message <Send className="ml-2 h-4 w-4" /></>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </form>
+              <Card className="border-border shadow-2xl overflow-hidden relative">
+                {/* Animated background blobs */}
+                <motion.div
+                  className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"
+                  animate={{ x: [0, 30, 0], y: [0, 20, 0] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <motion.div
+                  className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none"
+                  animate={{ x: [0, -30, 0], y: [0, -20, 0] }}
+                  transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                <CardContent className="p-6 md:p-8 relative">
+                  <AnimatePresence mode="wait">
+                    {sent ? (
+                      <motion.div
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="py-16 flex flex-col items-center text-center"
+                      >
+                        <motion.div
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                          className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center mb-4"
+                        >
+                          <CheckCircle2 className="h-12 w-12 text-primary" />
+                        </motion.div>
+                        <h3 className="font-display text-2xl font-bold text-foreground">Message envoyé !</h3>
+                        <p className="mt-2 text-muted-foreground">Nous vous répondrons dans les plus brefs délais.</p>
+                      </motion.div>
+                    ) : (
+                      <motion.form
+                        key="form"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onSubmit={handleContactSubmit}
+                        className="space-y-5"
+                      >
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <motion.div
+                            className="space-y-2"
+                            animate={{ scale: focusedField === 'name' ? 1.02 : 1 }}
+                            transition={{ type: 'spring', stiffness: 300 }}
+                          >
+                            <Label htmlFor="contact-name" className="text-foreground flex items-center gap-1.5">
+                              <User className="h-3.5 w-3.5 text-primary" /> Nom complet *
+                            </Label>
+                            <Input
+                              id="contact-name"
+                              placeholder="Votre nom"
+                              value={contactForm.name}
+                              onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
+                              onFocus={() => setFocusedField('name')}
+                              onBlur={() => setFocusedField(null)}
+                              maxLength={100}
+                              required
+                              className="transition-all focus:ring-2 focus:ring-primary/30"
+                            />
+                          </motion.div>
+                          <motion.div
+                            className="space-y-2"
+                            animate={{ scale: focusedField === 'email' ? 1.02 : 1 }}
+                            transition={{ type: 'spring', stiffness: 300 }}
+                          >
+                            <Label htmlFor="contact-email" className="text-foreground flex items-center gap-1.5">
+                              <Mail className="h-3.5 w-3.5 text-primary" /> Email *
+                            </Label>
+                            <Input
+                              id="contact-email"
+                              type="email"
+                              placeholder="votre@email.com"
+                              value={contactForm.email}
+                              onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                              onFocus={() => setFocusedField('email')}
+                              onBlur={() => setFocusedField(null)}
+                              maxLength={255}
+                              required
+                              className="transition-all focus:ring-2 focus:ring-primary/30"
+                            />
+                          </motion.div>
+                        </div>
+                        <motion.div
+                          className="space-y-2"
+                          animate={{ scale: focusedField === 'subject' ? 1.01 : 1 }}
+                          transition={{ type: 'spring', stiffness: 300 }}
+                        >
+                          <Label htmlFor="contact-subject" className="text-foreground flex items-center gap-1.5">
+                            <Sparkles className="h-3.5 w-3.5 text-primary" /> Sujet
+                          </Label>
+                          <Input
+                            id="contact-subject"
+                            placeholder="Sujet de votre message"
+                            value={contactForm.subject}
+                            onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
+                            onFocus={() => setFocusedField('subject')}
+                            onBlur={() => setFocusedField(null)}
+                            maxLength={200}
+                            className="transition-all focus:ring-2 focus:ring-primary/30"
+                          />
+                        </motion.div>
+                        <motion.div
+                          className="space-y-2"
+                          animate={{ scale: focusedField === 'message' ? 1.01 : 1 }}
+                          transition={{ type: 'spring', stiffness: 300 }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="contact-message" className="text-foreground flex items-center gap-1.5">
+                              <MessageSquare className="h-3.5 w-3.5 text-primary" /> Message *
+                            </Label>
+                            <motion.span
+                              key={messageLength}
+                              initial={{ scale: 1.2, opacity: 0.5 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              className={`text-xs font-medium ${messageLength > messageMax * 0.9 ? 'text-destructive' : 'text-muted-foreground'}`}
+                            >
+                              {messageLength}/{messageMax}
+                            </motion.span>
+                          </div>
+                          <Textarea
+                            id="contact-message"
+                            placeholder="Décrivez votre demande..."
+                            rows={5}
+                            value={contactForm.message}
+                            onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
+                            onFocus={() => setFocusedField('message')}
+                            onBlur={() => setFocusedField(null)}
+                            maxLength={messageMax}
+                            required
+                            className="transition-all focus:ring-2 focus:ring-primary/30 resize-none"
+                          />
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400 }}>
+                          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 shadow-[var(--shadow-gold)] relative overflow-hidden group" disabled={sending}>
+                            <motion.span
+                              className="absolute inset-0 bg-white/20"
+                              initial={{ x: '-100%' }}
+                              whileHover={{ x: '100%' }}
+                              transition={{ duration: 0.6 }}
+                            />
+                            {sending ? (
+                              <div className="flex items-center gap-2">
+                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full" />
+                                <span>Envoi en cours...</span>
+                              </div>
+                            ) : (
+                              <span className="flex items-center">Envoyer le message <Send className="ml-2 h-4 w-4" /></span>
+                            )}
+                          </Button>
+                        </motion.div>
+                      </motion.form>
+                    )}
+                  </AnimatePresence>
                 </CardContent>
               </Card>
             </motion.div>
