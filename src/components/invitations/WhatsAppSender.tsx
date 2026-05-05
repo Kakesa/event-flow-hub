@@ -246,13 +246,6 @@ const WhatsAppSender = ({
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          {!isFinished ? (
-            <>
-              <Button variant="ghost" onClick={handleSkip} disabled={sendingStatus === 'sending'}>
-                <SkipForward className="h-4 w-4 mr-2" />
-                Ignorer
-              </Button>
         <DialogFooter className="flex-col sm:flex-row gap-2">
           {!isFinished ? (
             <>
