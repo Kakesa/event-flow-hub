@@ -107,28 +107,38 @@ export const logWhatsAppAction = async (
   }
   recentActions.set(dedupeKey, { ts: now, idemKey });
 
-  if (!skipOptimistic) {
-    const store = readStore();
-    const key = keyOf(eventId, guestId);
-    const isoNow = new Date().toISOString();
-    const existing: WhatsAppLogEntry = store[key] || {
-      guestId,
-      guestName,
-      eventId,
-      copyCount: 0,
-      sendCount: 0,
-    };
-    if (action === 'copied') {
-      existing.copiedAt = isoNow;
-      existing.copyCount += 1;
-    } else {
-      existing.sentAt = isoNow;
-      existing.sendCount += 1;
-    }
+  const store = readStore();
+  const key = keyOf(eventId, guestId);
+  const isoNow = new Date().toISOString();
+  const existing: WhatsAppLogEntry = store[key] || {
+    guestId,
+    guestName,
+    eventId,
+    copyCount: 0,
+    sendCount: 0,
+    skippedCount: 0,
+  };
+
+  if (skipOptimistic) {
+    // Clic ignoré (anti-doublon) : on incrémente le compteur sans toucher aux compteurs réels.
+    existing.skippedCount = (existing.skippedCount || 0) + 1;
+    existing.lastSkippedAt = isoNow;
     existing.guestName = guestName;
     store[key] = existing;
     writeStore(store);
+    return;
   }
+
+  if (action === 'copied') {
+    existing.copiedAt = isoNow;
+    existing.copyCount += 1;
+  } else {
+    existing.sentAt = isoNow;
+    existing.sendCount += 1;
+  }
+  existing.guestName = guestName;
+  store[key] = existing;
+  writeStore(store);
 
   // Sync backend (idempotent côté serveur grâce à la clé)
   try {
