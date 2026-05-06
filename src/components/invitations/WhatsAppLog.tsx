@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Send, Trash2, MessageSquare, Inbox } from 'lucide-react';
+import { Copy, Send, Trash2, MessageSquare, Inbox, ShieldAlert } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,6 +74,7 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
 
   const totalCopied = entries.filter(e => e.copiedAt).length;
   const totalSent = entries.filter(e => e.sentAt).length;
+  const totalSkipped = entries.reduce((sum, e) => sum + (e.skippedCount || 0), 0);
 
   return (
     <Card>
@@ -88,6 +95,23 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
           <Badge variant="secondary" className="gap-1">
             <Send className="h-3 w-3" /> {totalSent} envoyé(s)
           </Badge>
+          {totalSkipped > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400"
+                  >
+                    <ShieldAlert className="h-3 w-3" /> {totalSkipped} ignoré(s)
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Clics ignorés par l'anti-doublon (idempotence)
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {entries.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -160,6 +184,36 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
                               <Send className="h-3 w-3" /> Envoyé
                             </Badge>
                           )}
+                          {entry.skippedCount && entry.skippedCount > 0 ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    key={entry.skippedCount}
+                                  >
+                                    <Badge
+                                      variant="outline"
+                                      className="gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400"
+                                    >
+                                      <ShieldAlert className="h-3 w-3" />
+                                      ×{entry.skippedCount} ignoré
+                                      {entry.skippedCount > 1 ? 's' : ''}
+                                    </Badge>
+                                  </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Clics rapides ignorés (anti-doublon)
+                                  {entry.lastSkippedAt && (
+                                    <div className="text-xs opacity-70 mt-1">
+                                      Dernier : {formatDate(entry.lastSkippedAt)}
+                                    </div>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
