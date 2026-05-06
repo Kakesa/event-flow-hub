@@ -470,11 +470,16 @@ export const whatsappLogApi = {
     guestId: string;
     guestName: string;
     action: "copied" | "sent";
+    idempotencyKey?: string;
   }): Promise<ApiResponse<WhatsAppLogEntryDTO>> => {
+    const { idempotencyKey, ...body } = payload;
     const res = await fetch(`${API_BASE_URL}/whatsapp-log`, {
       method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify(payload),
+      headers: {
+        ...getHeaders(),
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+      },
+      body: JSON.stringify(body),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
