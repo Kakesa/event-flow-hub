@@ -444,6 +444,52 @@ export const invitationsApi = {
   },
 };
 
+// ==================== WHATSAPP LOG ====================
+export interface WhatsAppLogEntryDTO {
+  guestId: string;
+  guestName: string;
+  eventId: string;
+  copiedAt?: string;
+  sentAt?: string;
+  copyCount: number;
+  sendCount: number;
+}
+
+export const whatsappLogApi = {
+  list: async (eventId?: string): Promise<ApiResponse<WhatsAppLogEntryDTO[]>> => {
+    const url = eventId
+      ? `${API_BASE_URL}/whatsapp-log?eventId=${encodeURIComponent(eventId)}`
+      : `${API_BASE_URL}/whatsapp-log`;
+    const res = await fetch(url, { method: "GET", headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return { success: result.success ?? true, data: result.data || [] };
+  },
+
+  log: async (payload: {
+    eventId: string;
+    guestId: string;
+    guestName: string;
+    action: "copied" | "sent";
+  }): Promise<ApiResponse<WhatsAppLogEntryDTO>> => {
+    const res = await fetch(`${API_BASE_URL}/whatsapp-log`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  clear: async (eventId?: string): Promise<ApiResponse<{ message: string }>> => {
+    const url = eventId
+      ? `${API_BASE_URL}/whatsapp-log?eventId=${encodeURIComponent(eventId)}`
+      : `${API_BASE_URL}/whatsapp-log`;
+    const res = await fetch(url, { method: "DELETE", headers: getHeaders() });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+};
+
 // ==================== EMAILS ====================
 export interface EmailTemplate {
   subject: string;
