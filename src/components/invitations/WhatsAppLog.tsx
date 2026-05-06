@@ -28,6 +28,7 @@ import {
 import {
   getWhatsAppLog,
   clearWhatsAppLog,
+  refreshWhatsAppLog,
   type WhatsAppLogEntry,
 } from '@/lib/whatsappLog';
 
@@ -54,6 +55,8 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
 
   useEffect(() => {
     refresh();
+    // Pull latest from backend on mount / event change
+    refreshWhatsAppLog(eventId).then(setEntries).catch(() => {});
     const handler = () => refresh();
     window.addEventListener('whatsapp-log-updated', handler);
     window.addEventListener('storage', handler);
@@ -103,8 +106,8 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => {
-                      clearWhatsAppLog(eventId);
+                    onClick={async () => {
+                      await clearWhatsAppLog(eventId);
                       refresh();
                     }}
                   >
