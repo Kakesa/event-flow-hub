@@ -74,6 +74,7 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
 
   const totalCopied = entries.filter(e => e.copiedAt).length;
   const totalSent = entries.filter(e => e.sentAt).length;
+  const totalSkipped = entries.reduce((sum, e) => sum + (e.skippedCount || 0), 0);
 
   return (
     <Card>
