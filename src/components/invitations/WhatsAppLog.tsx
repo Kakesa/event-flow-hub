@@ -28,6 +28,7 @@ import {
 import {
   getWhatsAppLog,
   clearWhatsAppLog,
+  refreshWhatsAppLog,
   type WhatsAppLogEntry,
 } from '@/lib/whatsappLog';
 
