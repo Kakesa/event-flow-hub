@@ -106,8 +106,8 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => {
-                      clearWhatsAppLog(eventId);
+                    onClick={async () => {
+                      await clearWhatsAppLog(eventId);
                       refresh();
                     }}
                   >
