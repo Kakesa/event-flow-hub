@@ -160,6 +160,8 @@ export const logWhatsAppAction = async (
         sentAt: res.data.sentAt,
         copyCount: res.data.copyCount ?? s[key]?.copyCount ?? 0,
         sendCount: res.data.sendCount ?? s[key]?.sendCount ?? 0,
+        skippedCount: s[key]?.skippedCount ?? 0,
+        lastSkippedAt: s[key]?.lastSkippedAt,
       };
       writeStore(s);
     }
