@@ -70,6 +70,18 @@ export const refreshWhatsAppLog = async (eventId?: string): Promise<WhatsAppLogE
   return getWhatsAppLog(eventId);
 };
 
+// --- Anti-doublon (debounce) + clés d'idempotence en mémoire ---
+const DEDUPE_WINDOW_MS = 1500;
+const recentActions = new Map<string, { ts: number; idemKey: string }>();
+
+const genIdemKey = () => {
+  // crypto.randomUUID() est dispo dans tous les navigateurs modernes
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return (crypto as Crypto).randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
 /** Enregistre une action localement (optimistic) puis synchronise avec le backend. */
 export const logWhatsAppAction = async (
   eventId: string,
@@ -77,47 +89,72 @@ export const logWhatsAppAction = async (
   guestName: string,
   action: WhatsAppAction,
 ) => {
-  // Optimistic update
-  const store = readStore();
-  const key = keyOf(eventId, guestId);
-  const now = new Date().toISOString();
-  const existing: WhatsAppLogEntry = store[key] || {
-    guestId,
-    guestName,
-    eventId,
-    copyCount: 0,
-    sendCount: 0,
-  };
-  if (action === 'copied') {
-    existing.copiedAt = now;
-    existing.copyCount += 1;
-  } else {
-    existing.sentAt = now;
-    existing.sendCount += 1;
-  }
-  existing.guestName = guestName;
-  store[key] = existing;
-  writeStore(store);
+  const dedupeKey = `${eventId}:${guestId}:${action}`;
+  const now = Date.now();
+  const recent = recentActions.get(dedupeKey);
 
-  // Sync backend
+  // Si une action identique a été déclenchée dans la fenêtre,
+  // on réutilise la même Idempotency-Key et on saute l'optimistic update.
+  let idemKey: string;
+  let skipOptimistic = false;
+  if (recent && now - recent.ts < DEDUPE_WINDOW_MS) {
+    idemKey = recent.idemKey;
+    skipOptimistic = true;
+  } else {
+    idemKey = genIdemKey();
+  }
+  recentActions.set(dedupeKey, { ts: now, idemKey });
+
+  if (!skipOptimistic) {
+    const store = readStore();
+    const key = keyOf(eventId, guestId);
+    const isoNow = new Date().toISOString();
+    const existing: WhatsAppLogEntry = store[key] || {
+      guestId,
+      guestName,
+      eventId,
+      copyCount: 0,
+      sendCount: 0,
+    };
+    if (action === 'copied') {
+      existing.copiedAt = isoNow;
+      existing.copyCount += 1;
+    } else {
+      existing.sentAt = isoNow;
+      existing.sendCount += 1;
+    }
+    existing.guestName = guestName;
+    store[key] = existing;
+    writeStore(store);
+  }
+
+  // Sync backend (idempotent côté serveur grâce à la clé)
   try {
-    const res = await whatsappLogApi.log({ eventId, guestId, guestName, action });
+    const res = await whatsappLogApi.log({
+      eventId,
+      guestId,
+      guestName,
+      action,
+      idempotencyKey: idemKey,
+    });
     if (res?.data) {
       const s = readStore();
+      const key = keyOf(eventId, guestId);
       s[key] = {
         guestId: res.data.guestId,
         guestName: res.data.guestName,
         eventId: res.data.eventId,
         copiedAt: res.data.copiedAt,
         sentAt: res.data.sentAt,
-        copyCount: res.data.copyCount ?? existing.copyCount,
-        sendCount: res.data.sendCount ?? existing.sendCount,
+        copyCount: res.data.copyCount ?? s[key]?.copyCount ?? 0,
+        sendCount: res.data.sendCount ?? s[key]?.sendCount ?? 0,
       };
       writeStore(s);
     }
   } catch (err) {
     console.warn('[whatsappLog] backend sync failed (kept locally):', err);
   }
+};
 };
 
 export const getWhatsAppLog = (eventId?: string): WhatsAppLogEntry[] => {
