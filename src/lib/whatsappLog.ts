@@ -155,7 +155,6 @@ export const logWhatsAppAction = async (
     console.warn('[whatsappLog] backend sync failed (kept locally):', err);
   }
 };
-};
 
 export const getWhatsAppLog = (eventId?: string): WhatsAppLogEntry[] => {
   const store = readStore();
