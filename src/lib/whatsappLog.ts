@@ -17,6 +17,8 @@ export interface WhatsAppLogEntry {
   sentAt?: string;
   copyCount: number;
   sendCount: number;
+  skippedCount?: number;
+  lastSkippedAt?: string;
 }
 
 const STORAGE_KEY = 'hk_whatsapp_log_v2';
