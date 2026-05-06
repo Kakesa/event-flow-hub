@@ -55,6 +55,8 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
 
   useEffect(() => {
     refresh();
+    // Pull latest from backend on mount / event change
+    refreshWhatsAppLog(eventId).then(setEntries).catch(() => {});
     const handler = () => refresh();
     window.addEventListener('whatsapp-log-updated', handler);
     window.addEventListener('storage', handler);
