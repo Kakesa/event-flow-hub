@@ -95,6 +95,23 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
           <Badge variant="secondary" className="gap-1">
             <Send className="h-3 w-3" /> {totalSent} envoyé(s)
           </Badge>
+          {totalSkipped > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400"
+                  >
+                    <ShieldAlert className="h-3 w-3" /> {totalSkipped} ignoré(s)
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Clics ignorés par l'anti-doublon (idempotence)
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {entries.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
