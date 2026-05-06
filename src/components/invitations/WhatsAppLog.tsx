@@ -184,6 +184,36 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
                               <Send className="h-3 w-3" /> Envoyé
                             </Badge>
                           )}
+                          {entry.skippedCount && entry.skippedCount > 0 ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <motion.div
+                                    initial={{ scale: 0.8, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    key={entry.skippedCount}
+                                  >
+                                    <Badge
+                                      variant="outline"
+                                      className="gap-1 border-amber-500/50 text-amber-700 dark:text-amber-400"
+                                    >
+                                      <ShieldAlert className="h-3 w-3" />
+                                      ×{entry.skippedCount} ignoré
+                                      {entry.skippedCount > 1 ? 's' : ''}
+                                    </Badge>
+                                  </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Clics rapides ignorés (anti-doublon)
+                                  {entry.lastSkippedAt && (
+                                    <div className="text-xs opacity-70 mt-1">
+                                      Dernier : {formatDate(entry.lastSkippedAt)}
+                                    </div>
+                                  )}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
