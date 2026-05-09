@@ -20,7 +20,11 @@ interface RegisterData {
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, register } = useAuth();
+
+  const initialTab = searchParams.get('mode') === 'register' ? 'register' : 'login';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
