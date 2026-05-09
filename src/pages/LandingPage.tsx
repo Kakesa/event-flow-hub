@@ -343,7 +343,7 @@ const LandingPage = () => {
             transition={{ duration: 0.7, delay: 0.6 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/auth">
+            <Link to="/auth?mode=register">
               <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-13 text-base shadow-[var(--shadow-gold)]">
                   Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
