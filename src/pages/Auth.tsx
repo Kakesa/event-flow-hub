@@ -130,7 +130,7 @@ const Auth = () => {
         </div>
 
         <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/95">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <CardHeader className="pb-4">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Connexion</TabsTrigger>
