@@ -36,6 +36,7 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/register" element={<Auth />} />
             <Route path="/rsvp/:eventId/:guestId" element={<RSVP />} />
             <Route path="/rsvp/:eventId" element={<RSVP />} />
             <Route path="/invite/:slug" element={<RSVP />} />

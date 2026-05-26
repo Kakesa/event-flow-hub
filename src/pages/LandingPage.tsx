@@ -218,7 +218,7 @@ const LandingPage = () => {
               </AnimatePresence>
             </motion.button>
             <Link to="/auth" className="hidden sm:inline-flex"><Button variant="ghost" size="sm">Se connecter</Button></Link>
-            <Link to="/auth" className="hidden sm:inline-flex"><Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Commencer</Button></Link>
+            <Link to="/auth/register" className="hidden sm:inline-flex"><Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Commencer</Button></Link>
             {/* Hamburger */}
             <motion.button
               className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
@@ -268,7 +268,7 @@ const LandingPage = () => {
                   <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                     <Button variant="outline" className="w-full">Se connecter</Button>
                   </Link>
-                  <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
+                  <Link to="/auth/register" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full bg-primary text-primary-foreground">Commencer</Button>
                   </Link>
                 </div>
@@ -336,7 +336,7 @@ const LandingPage = () => {
             transition={{ duration: 0.7, delay: 0.6 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/auth?mode=register">
+            <Link to="/auth/register">
               <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-13 text-base shadow-[var(--shadow-gold)]">
                   Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />

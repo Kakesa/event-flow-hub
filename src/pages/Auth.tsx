@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,13 @@ interface RegisterData {
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { login, register } = useAuth();
 
-  const initialTab = searchParams.get('mode') === 'register' ? 'register' : 'login';
+  const initialTab =
+    searchParams.get('mode') === 'register' || location.pathname === '/auth/register'
+      ? 'register'
+      : 'login';
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const [showPassword, setShowPassword] = useState(false);
