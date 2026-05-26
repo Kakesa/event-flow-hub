@@ -278,23 +278,16 @@ const LandingPage = () => {
         </AnimatePresence>
       </motion.nav>
 
-      {/* Hero Section with background video */}
+      {/* Hero Section with background media */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background video */}
+        {/* Background media */}
         <motion.div className="absolute inset-0 z-0" style={{ scale: heroScale }}>
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
+          <img
+            src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&h=1080&fit=crop"
+            alt=""
             className="w-full h-full object-cover"
-            poster="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&h=1080&fit=crop"
-          >
-            <source
-              src="https://videos.pexels.com/video-files/3401988/3401988-uhd_2560_1440_30fps.mp4"
-              type="video/mp4"
-            />
-          </video>
+            aria-hidden="true"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
         </motion.div>
 
