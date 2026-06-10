@@ -54,7 +54,11 @@ const formatTime = (dateString: string | undefined) => {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
 
-const RecentActivity = () => {
+interface RecentActivityProps {
+  eventId?: string; // Si fourni, affiche les activités de cet événement seulement
+}
+
+const RecentActivity = ({ eventId }: RecentActivityProps) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +68,16 @@ const RecentActivity = () => {
     setError(null);
     
     try {
-      const res = await activitiesApi.getRecent(10);
+      let res;
+      
+      // Si eventId est fourni, récupérer les activités de cet événement uniquement
+      if (eventId) {
+        res = await activitiesApi.getByEvent(eventId);
+      } else {
+        // Sinon, récupérer les activités récentes de l'utilisateur (le backend doit filtrer)
+        res = await activitiesApi.getRecent(10);
+      }
+      
       if (res.success) {
         setActivities(res.data);
       } else {
@@ -84,7 +97,7 @@ const RecentActivity = () => {
     // Rafraîchir les activités toutes les 30 secondes
     const interval = setInterval(fetchActivities, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [eventId]); // Redépendance si eventId change
 
   if (loading) {
     return (

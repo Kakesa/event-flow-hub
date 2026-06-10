@@ -40,7 +40,7 @@ const Guestbook = () => {
         const eventsRes = await eventsApi.getAll();
         setEvents(eventsRes.data);
         if (eventsRes.data.length > 0) {
-          setSelectedEvent(eventsRes.data[0].id);
+          setSelectedEvent(eventsRes.data[0]._id || eventsRes.data[0].id);
         }
       } catch (error) {
         console.error('Erreur:', error);
@@ -124,7 +124,7 @@ const Guestbook = () => {
     }
   };
 
-  const selectedEventData = events.find(e => e.id === selectedEvent);
+  const selectedEventData = events.find(e => (e._id || e.id) === selectedEvent);
 
   return (
     <DashboardLayout>
@@ -161,7 +161,7 @@ const Guestbook = () => {
               </SelectTrigger>
               <SelectContent>
                 {events.map((event) => (
-                  <SelectItem key={event.id} value={event.id}>
+                  <SelectItem key={event._id || event.id} value={event._id || event.id}>
                     {event.title}
                   </SelectItem>
                 ))}

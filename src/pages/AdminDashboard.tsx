@@ -28,8 +28,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
-import { usersApi, analyticsApi, eventsApi, paymentsApi } from '@/services/api';
-import type { User } from '@/types/models';
+import { usersApi, analyticsApi, eventsApi, paymentsApi, guestbookApi } from '@/services/api';
+import type { GuestbookMessage, User } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -64,6 +64,10 @@ interface Transaction {
   createdAt: string;
 }
 
+interface GuestbookPreviewMessage extends GuestbookMessage {
+  eventName?: string;
+}
+
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 const AdminDashboard = () => {
@@ -80,6 +84,7 @@ const AdminDashboard = () => {
   });
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [guestbookMessages, setGuestbookMessages] = useState<GuestbookPreviewMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30d');
 
@@ -135,6 +140,31 @@ const AdminDashboard = () => {
         // Charger les transactions réelles
         const paymentsRes = await paymentsApi.getAll();
         setTransactions(paymentsRes.data || []);
+
+        // Charger les derniers messages du livre d'or par événement
+        try {
+          const eventsRes = await eventsApi.getAll();
+          const allMessages: GuestbookPreviewMessage[] = [];
+          for (const event of eventsRes.data?.slice(0, 6) || []) {
+            try {
+              const gbRes = await guestbookApi.getByEvent(event._id || event.id);
+              if (gbRes.data) {
+                allMessages.push(
+                  ...gbRes.data.map(message => ({
+                    ...message,
+                    eventName: event.title || 'Événement',
+                  }))
+                );
+              }
+            } catch {
+              // Ignorer les erreurs individuelles pour chaque événement
+            }
+          }
+          allMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setGuestbookMessages(allMessages.slice(0, 5));
+        } catch {
+          console.error('Erreur lors du chargement des messages du livre d\'or');
+        }
 
       } catch (error) {
         console.error('Erreur lors du chargement des données admin:', error);
@@ -406,6 +436,40 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Derniers messages invités</CardTitle>
+                <CardDescription>Messages envoyés aux organisateurs depuis le livre d'or.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {guestbookMessages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun message récent du livre d'or.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {guestbookMessages.map((message) => (
+                      <div key={message.id} className="rounded-lg border border-border p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">{message.name || 'Invité anonyme'}</p>
+                            <p className="text-xs text-muted-foreground">{message.eventName}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(message.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                          </p>
+                        </div>
+                        <p className="mt-3 text-sm text-muted-foreground">{message.message}</p>
+                        {message.reply && (
+                          <div className="mt-3 rounded-lg bg-primary/5 p-3 text-xs">
+                            <span className="font-semibold">Réponse :</span> {message.reply}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="transactions" className="space-y-4">

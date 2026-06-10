@@ -826,7 +826,8 @@ export interface Activity {
 }
 
 export const activitiesApi = {
-  // Récupérer les activités récentes
+  // Récupérer les activités récentes de l'utilisateur courant
+  // ⚠️ Le backend DOIT filtrer par userId pour éviter les fuites de données
   getRecent: async (limit: number = 10): Promise<ApiResponse<Activity[]>> => {
     const res = await fetch(
       `${API_BASE_URL}/activities/recent?limit=${limit}`,
@@ -841,6 +842,7 @@ export const activitiesApi = {
   },
 
   // Récupérer les activités par événement
+  // ⚠️ Le backend DOIT vérifier que l'utilisateur a accès à cet événement
   getByEvent: async (eventId: string): Promise<ApiResponse<Activity[]>> => {
     const res = await fetch(`${API_BASE_URL}/activities/event/${eventId}`, {
       headers: getHeaders(),
