@@ -334,20 +334,19 @@ const LandingPage = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="mt-10 flex items-center justify-center"
           >
             <Link to="/auth/register">
-              <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-13 text-base shadow-[var(--shadow-gold)]">
+              <motion.div 
+                whileHover={{ scale: 1.08, y: -4 }} 
+                whileTap={{ scale: 0.96 }} 
+                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+              >
+                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 h-14 text-lg font-semibold shadow-[var(--shadow-gold)] rounded-full">
                   Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </motion.div>
             </Link>
-            <a href="#services">
-              <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
-                <Button variant="outline" size="lg" className="h-13 text-base px-8 backdrop-blur-sm">Découvrir nos services</Button>
-              </motion.div>
-            </a>
           </motion.div>
 
           {/* Scroll indicator */}
