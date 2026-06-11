@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -119,7 +120,13 @@ const navLinks = [
   { href: '#contact', label: 'Contact' },
 ];
 
+const CREATE_EVENT_PATH = '/events/create';
+
+const hasExistingAccount = () =>
+  !!localStorage.getItem('token') || !!localStorage.getItem('eventflow_user');
+
 const LandingPage = () => {
+  const { isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -142,6 +149,15 @@ const LandingPage = () => {
 
   const messageLength = contactForm.message.length;
   const messageMax = 1000;
+
+  const createEventLink = isAuthenticated
+    ? CREATE_EVENT_PATH
+    : hasExistingAccount()
+      ? '/auth'
+      : '/auth/register';
+  const createEventLinkState = isAuthenticated
+    ? undefined
+    : { from: { pathname: CREATE_EVENT_PATH } };
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,7 +357,7 @@ const LandingPage = () => {
                 transition={{ duration: 0.7, delay: 0.6 }}
                 className="mt-10 flex items-center justify-center lg:justify-start"
               >
-                <Link to="/events/new">
+                <Link to={createEventLink} state={createEventLinkState}>
                   <motion.div
                     whileHover={{ scale: 1.06, y: -3 }}
                     whileTap={{ scale: 0.96 }}

@@ -23,6 +23,8 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { login, register } = useAuth();
+  const redirectTo =
+    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/dashboard';
 
   const initialTab =
     searchParams.get('mode') === 'register' || location.pathname === '/auth/register'
@@ -55,7 +57,7 @@ const Auth = () => {
       const result = await login(loginData.email.trim(), loginData.password);
       if (result.success) {
         toast.success('Connexion réussie !');
-        navigate('/dashboard');
+        navigate(redirectTo, { replace: true });
       } else {
         toast.error(result.error || 'Erreur de connexion');
       }
@@ -109,7 +111,7 @@ const Auth = () => {
 
       if (result.success) {
         toast.success("Inscription réussie ! Bienvenue !");
-        navigate('/dashboard');
+        navigate(redirectTo, { replace: true });
       } else {
         toast.error(result.error || "Erreur lors de l'inscription");
       }
