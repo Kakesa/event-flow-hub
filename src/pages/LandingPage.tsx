@@ -279,75 +279,197 @@ const LandingPage = () => {
       </motion.nav>
 
       {/* Hero Section with background media */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background media */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Background media — bokeh lights, beautiful in light & dark */}
         <motion.div className="absolute inset-0 z-0" style={{ scale: heroScale }}>
           <img
-            src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1920&h=1080&fit=crop"
+            src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&h=1080&fit=crop"
             alt=""
             className="w-full h-full object-cover"
             aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/70 to-background/95" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
         </motion.div>
 
-        <motion.div className="container mx-auto px-4 text-center relative z-10 py-32" style={{ opacity: heroOpacity }}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/20 backdrop-blur-md text-primary-foreground text-sm font-medium mb-8 border border-primary/30"
-          >
-            <motion.div animate={floatAnimation}>
-              <Sparkles className="h-4 w-4" />
-            </motion.div>
-            Plateforme #1 de gestion d'événements
-          </motion.div>
+        {/* Animated subtle orbs */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/25 blur-3xl z-0"
+          animate={{ x: [0, 60, 0], y: [0, 40, 0], scale: [1, 1.15, 1] }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute -bottom-40 -right-32 w-[32rem] h-[32rem] rounded-full bg-accent/20 blur-3xl z-0"
+          animate={{ x: [0, -50, 0], y: [0, -30, 0], scale: [1, 1.2, 1] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        />
 
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight max-w-4xl mx-auto"
-          >
-            Créez des événements{' '}
-            <motion.span
-              className="text-primary inline-block"
-              initial={{ opacity: 0, rotateX: 90 }}
-              animate={{ opacity: 1, rotateX: 0 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              inoubliables
-            </motion.span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="mt-6 text-lg md:text-xl text-foreground/95 max-w-2xl mx-auto leading-relaxed [text-shadow:0_2px_12px_rgba(0,0,0,0.8)]"
-          >
-            Gérez vos invités, envoyez des invitations élégantes et suivez tout en temps réel. HK Event simplifie l'organisation de vos événements.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
-            className="mt-10 flex items-center justify-center"
-          >
-            <Link to="/auth/register">
-              <motion.div 
-                whileHover={{ scale: 1.08, y: -4 }} 
-                whileTap={{ scale: 0.96 }} 
-                transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        <motion.div className="container mx-auto px-4 relative z-10 py-32" style={{ opacity: heroOpacity }}>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left: copy */}
+            <div className="text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/20 backdrop-blur-md text-foreground text-sm font-medium mb-8 border border-primary/30"
               >
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 h-14 text-lg font-semibold shadow-[var(--shadow-gold)] rounded-full">
-                  Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <motion.div animate={floatAnimation}>
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </motion.div>
+                Plateforme #1 de gestion d'événements
               </motion.div>
-            </Link>
-          </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.05]"
+              >
+                Créez des événements{' '}
+                <motion.span
+                  className="text-primary inline-block"
+                  initial={{ opacity: 0, rotateX: 90 }}
+                  animate={{ opacity: 1, rotateX: 0 }}
+                  transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  inoubliables
+                </motion.span>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.4 }}
+                className="mt-6 text-lg md:text-xl text-foreground/90 max-w-xl mx-auto lg:mx-0 leading-relaxed"
+              >
+                Gérez vos invités, envoyez des invitations élégantes et suivez tout en temps réel. HK Event simplifie l'organisation de vos événements.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.6 }}
+                className="mt-10 flex items-center justify-center lg:justify-start"
+              >
+                <Link to="/events/new">
+                  <motion.div
+                    whileHover={{ scale: 1.06, y: -3 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                  >
+                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 h-14 text-lg font-semibold shadow-[var(--shadow-gold)] rounded-full">
+                      Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </motion.div>
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Right: event preview card */}
+            <motion.div
+              initial={{ opacity: 0, y: 40, rotate: -2 }}
+              animate={{ opacity: 1, y: 0, rotate: 0 }}
+              transition={{ duration: 0.9, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="relative hidden lg:block"
+            >
+              <motion.div
+                animate={{ y: [-8, 8, -8] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative rounded-3xl overflow-hidden border border-border/50 bg-card/70 backdrop-blur-xl shadow-2xl"
+              >
+                {/* Card cover */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=900&h=500&fit=crop"
+                    alt=""
+                    className="w-full h-full object-cover"
+                    aria-hidden="true"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+                  <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg">
+                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                    En direct
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-primary font-semibold mb-1">Vendredi 12 juin · 19h00</div>
+                    <h3 className="font-display text-2xl font-bold text-foreground">Soirée Gala Annuelle</h3>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                      <MapPin className="h-3.5 w-3.5" /> Palais des Congrès, Paris
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <div className="text-xl font-bold text-foreground">248</div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Confirmés</div>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <div className="text-xl font-bold text-primary">92%</div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Réponses</div>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-3 text-center">
+                      <div className="text-xl font-bold text-foreground">12j</div>
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Restants</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                    <div className="flex -space-x-2">
+                      {[
+                        'from-primary to-accent',
+                        'from-accent to-primary',
+                        'from-primary/70 to-accent/70',
+                        'from-accent/70 to-primary/70',
+                      ].map((g, i) => (
+                        <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${g} border-2 border-card`} />
+                      ))}
+                      <div className="w-8 h-8 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[10px] font-bold text-foreground">
+                        +244
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                      <CheckCircle2 className="h-4 w-4" /> Tout va bien
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Floating badges */}
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -top-6 -right-4 bg-card/90 backdrop-blur-md border border-border rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
+              >
+                <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Invitations</div>
+                  <div className="text-sm font-bold text-foreground">270 envoyées</div>
+                </div>
+              </motion.div>
+
+              <motion.div
+                animate={{ y: [0, 10, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -bottom-4 -left-6 bg-card/90 backdrop-blur-md border border-border rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2"
+              >
+                <div className="h-9 w-9 rounded-xl bg-accent/20 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-accent-foreground" />
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Nouveau RSVP</div>
+                  <div className="text-sm font-bold text-foreground">Marie L.</div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
 
           {/* Scroll indicator */}
           <motion.div
