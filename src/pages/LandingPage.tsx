@@ -307,20 +307,7 @@ const LandingPage = () => {
         />
 
         <motion.div className="container mx-auto px-4 relative z-10 py-32" style={{ opacity: heroOpacity }}>
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: copy */}
-            <div className="text-center lg:text-left">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/20 backdrop-blur-md text-foreground text-sm font-medium mb-8 border border-primary/30"
-              >
-                <motion.div animate={floatAnimation}>
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </motion.div>
-                Plateforme #1 de gestion d'événements
-              </motion.div>
+          <div className="text-center max-w-3xl mx-auto">
 
               <motion.h1
                 initial={{ opacity: 0, y: 40 }}
