@@ -350,9 +350,10 @@ const LandingPage = () => {
                     <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 h-14 text-lg font-semibold shadow-[var(--shadow-gold)] rounded-full">
                       Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
-                  </motion.div>
-                </Link>
               </motion.div>
+            </Link>
+          </motion.div>
+        </div>
 
           {/* Scroll indicator */}
           <motion.div
