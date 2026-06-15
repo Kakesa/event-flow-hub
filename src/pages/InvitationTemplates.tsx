@@ -195,12 +195,29 @@ const InvitationTemplates = () => {
     }
   };
 
+  const getEventTypeWithArticle = (eventType?: string) => {
+    if (!eventType?.trim()) return 'à notre événement';
+    switch (eventType.trim()) {
+      case 'Mariage': return 'à notre mariage';
+      case 'Anniversaire': return 'à mon anniversaire';
+      case 'Baby Shower': return 'à notre baby shower';
+      case 'Remise de diplôme': return 'à ma remise de diplôme';
+      case 'Événement corporate': return 'à notre événement corporate';
+      case 'Fête': return 'à notre fête';
+      case 'Autre': return 'à notre événement';
+      default: return `à notre ${eventType.toLowerCase()}`;
+    }
+  };
+
   const replaceLocalVariables = (text: string, guest: Guest | null) => {
+    const eventTypeWithArticle = getEventTypeWithArticle(event?.type);
     return text
       .replace(/{{guestName}}/g, guest?.name || 'Cher invité')
       .replace(/{{eventName}}/g, customization.eventName)
       .replace(/{{eventDate}}/g, customization.date)
-      .replace(/{{eventLocation}}/g, customization.location);
+      .replace(/{{eventLocation}}/g, customization.location)
+      .replace(/{{eventTypeWithArticle}}/g, eventTypeWithArticle)
+      .replace(/{{eventType}}/g, event?.type || 'Événement');
   };
 
   const getEmailHtml = () => {

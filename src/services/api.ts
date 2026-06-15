@@ -603,6 +603,7 @@ export const emailsApi = {
       body: JSON.stringify({
         guestIds,
         eventId,
+        method: 'email',
         customMessage,
         subject,
         htmlContent,
