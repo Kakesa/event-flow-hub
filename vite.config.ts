@@ -55,6 +55,8 @@ export default defineConfig(({ mode }) => ({
       },
       devOptions: {
         enabled: true,
+        suppressWarnings: true,
+        navigateFallback: "/index.html",
       },
     }),
     mode === "development" && componentTagger(),
