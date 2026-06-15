@@ -14,14 +14,22 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["images/logo-white.png", "favicon.ico"],
+      includeAssets: [
+        "favicon.ico",
+        "apple-touch-icon.png",
+        "pwa-icon-192.png",
+        "pwa-icon-512.png",
+        "pwa-icon-512-maskable.png",
+        "images/logo-white.png",
+      ],
       manifest: {
+        id: "/",
         name: "HK Event",
         short_name: "HK Event",
         description:
           "Créez, gérez vos invitations et suivez vos invités en temps réel.",
         theme_color: "#1a1a2e",
-        background_color: "#ffffff",
+        background_color: "#1a1a2e",
         display: "standalone",
         orientation: "portrait-primary",
         scope: "/",
@@ -30,18 +38,19 @@ export default defineConfig(({ mode }) => ({
         categories: ["business", "productivity"],
         icons: [
           {
-            src: "images/logo-white.png",
+            src: "pwa-icon-192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
-            src: "images/logo-white.png",
+            src: "pwa-icon-512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "images/logo-white.png",
+            src: "pwa-icon-512-maskable.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",

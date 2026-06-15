@@ -23,6 +23,20 @@ import { Separator } from '@/components/ui/separator';
 import UserAuthorizationNotice from '@/components/common/UserAuthorizationNotice';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import InstallAppPrompt from '@/components/pwa/InstallAppPrompt';
+import { usePwaInstall } from '@/hooks/usePwaInstall';
+
+const INSTALL_DISMISS_KEY = 'hk_event_install_dismissed_until';
+
+const isInstallDismissed = () => {
+  const until = localStorage.getItem(INSTALL_DISMISS_KEY);
+  if (!until) return false;
+  return Date.now() < Number(until);
+};
+
+const dismissInstallPrompt = () => {
+  const sevenDays = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  localStorage.setItem(INSTALL_DISMISS_KEY, String(sevenDays));
+};
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -47,13 +61,22 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { canInstall, isInstalled } = usePwaInstall();
 
   useEffect(() => {
+    if (isInstalled || isInstallDismissed()) return;
+
     if (sessionStorage.getItem('hk_event_show_install') === '1') {
       sessionStorage.removeItem('hk_event_show_install');
       setShowInstallPrompt(true);
+      return;
     }
-  }, []);
+
+    if (canInstall && !sessionStorage.getItem('hk_event_install_prompt_shown')) {
+      sessionStorage.setItem('hk_event_install_prompt_shown', '1');
+      setShowInstallPrompt(true);
+    }
+  }, [canInstall, isInstalled]);
 
   const handleLogout = () => {
     logout();
@@ -218,7 +241,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </div>
 
       <MobileBottomNav />
-      <InstallAppPrompt open={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
+      <InstallAppPrompt
+        open={showInstallPrompt}
+        onClose={() => setShowInstallPrompt(false)}
+        onDismiss={() => {
+          dismissInstallPrompt();
+          setShowInstallPrompt(false);
+        }}
+      />
     </div>
   );
 };

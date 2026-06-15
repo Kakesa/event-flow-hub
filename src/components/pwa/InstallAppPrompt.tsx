@@ -7,9 +7,10 @@ import { usePwaInstall } from '@/hooks/usePwaInstall';
 interface InstallAppPromptProps {
   open: boolean;
   onClose: () => void;
+  onDismiss: () => void;
 }
 
-const InstallAppPrompt = ({ open, onClose }: InstallAppPromptProps) => {
+const InstallAppPrompt = ({ open, onClose, onDismiss }: InstallAppPromptProps) => {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePwaInstall();
   const [installing, setInstalling] = useState(false);
 
@@ -27,7 +28,7 @@ const InstallAppPrompt = ({ open, onClose }: InstallAppPromptProps) => {
     setInstalling(true);
     try {
       const result = await promptInstall();
-      if (result.outcome === 'accepted') {
+      if (result.outcome === 'accepted' || result.outcome === 'dismissed') {
         onClose();
       }
     } finally {
@@ -42,7 +43,7 @@ const InstallAppPrompt = ({ open, onClose }: InstallAppPromptProps) => {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 rounded-2xl overflow-hidden border border-border shrink-0">
-                <img src="/images/logo-white.png" alt="HK Event" className="h-full w-full object-contain bg-[#1a1a2e]" />
+                <img src="/pwa-icon-192.png" alt="HK Event" className="h-full w-full object-contain bg-[#1a1a2e]" />
               </div>
               <div>
                 <h3 className="font-display text-lg font-semibold">Installer HK Event</h3>
@@ -51,7 +52,7 @@ const InstallAppPrompt = ({ open, onClose }: InstallAppPromptProps) => {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
+            <Button variant="ghost" size="icon" onClick={onDismiss} aria-label="Fermer">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -78,7 +79,7 @@ const InstallAppPrompt = ({ open, onClose }: InstallAppPromptProps) => {
             </div>
           )}
 
-          <Button variant="outline" className="w-full" onClick={onClose}>
+          <Button variant="outline" className="w-full" onClick={onDismiss}>
             Plus tard
           </Button>
         </CardContent>
