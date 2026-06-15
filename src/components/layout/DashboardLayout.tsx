@@ -24,6 +24,7 @@ import UserAuthorizationNotice from '@/components/common/UserAuthorizationNotice
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import InstallAppPrompt from '@/components/pwa/InstallAppPrompt';
 import { usePwaInstall } from '@/hooks/usePwaInstall';
+import logoWhite from '@/assets/white.png';
 
 const INSTALL_DISMISS_KEY = 'hk_event_install_dismissed_until';
 
@@ -108,7 +109,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="flex h-16 items-center gap-3 px-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary overflow-hidden">
-              <img src="/src/assets/white.png" alt="Logo HK Event" className="h-full w-full object-contain" />
+              <img src={logoWhite} alt="Logo HK Event" className="h-full w-full object-contain" />
             </div>
             <span className="font-display text-xl font-semibold text-sidebar-foreground">
               HK Event
