@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { Calendar, Clock, MapPin, Upload, Save, ArrowLeft, Trash2, Sparkles, Heart, PartyPopper, GraduationCap, Briefcase, Baby } from 'lucide-react';
 import { eventsApi } from '@/services/api';
+import { resolveAssetUrl } from '@/config/env';
 
 const eventThemes = [
   { id: 'elegant', name: 'Élégant', color: '#D4AF37', icon: Sparkles },
@@ -182,11 +183,9 @@ const EditEvent = () => {
                   {coverPreview ? (
                     <div className="relative h-48 rounded-lg overflow-hidden bg-gray-900/10">
                       <img 
-                        src={coverPreview.startsWith('data:') 
-                          ? coverPreview 
-                          : (coverPreview.startsWith('http') 
-                              ? coverPreview 
-                              : `${import.meta.env.VITE_API_BASE_URL}${coverPreview.startsWith('/') ? '' : '/'}${coverPreview}`)} 
+                        src={coverPreview.startsWith('data:')
+                          ? coverPreview
+                          : (resolveAssetUrl(coverPreview) ?? coverPreview)}
                         alt="Preview" 
                         className="w-full h-full object-contain" 
                       />

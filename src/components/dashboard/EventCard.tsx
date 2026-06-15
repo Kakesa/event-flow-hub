@@ -25,9 +25,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Event } from '../../types/models';
-
-// 🔹 URL de ton backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { resolveAssetUrl } from '@/config/env';
 
 interface EventCardProps {
   event: Event;
@@ -61,11 +59,8 @@ const EventCard = ({ event, guestCount = 0, onDelete, onOpen, canEdit = true, ca
       <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg animate-slide-up">
         <div className="relative h-48 overflow-hidden bg-muted">
           <img
-            src={event.coverImage 
-              ? (event.coverImage.startsWith('http') 
-                  ? event.coverImage 
-                  : `${API_BASE_URL}${event.coverImage}`)
-              : 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
+            src={resolveAssetUrl(event.coverImage)
+              ?? 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'
             }
             alt={event.title}
             className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"

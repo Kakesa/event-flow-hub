@@ -9,6 +9,7 @@ import PermissionButton from '@/components/common/PermissionButton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { eventsApi, guestsApi } from '@/services/api';
+import { resolveAssetUrl } from '@/config/env';
 import type { Event, Guest } from '@/types/models';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -24,13 +25,8 @@ const Events = () => {
   const { user } = useAuth();
   const isUser = user?.role === 'user';
 
-  // 🔹 Fonction pour corriger les chemins locaux
-  const getEventImage = (image?: string) => {
-    if (!image) return 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800'; // Image par défaut
-    if (image.startsWith('http')) return image; // URL externe
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-    return `${baseUrl}${image.startsWith('/') ? '' : '/'}${image}`;
-  };
+  const getEventImage = (image?: string) =>
+    resolveAssetUrl(image) ?? 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800';
 
   // 🔹 Récupération des événements
   useEffect(() => {

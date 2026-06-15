@@ -10,5 +10,10 @@ steps:
       - VITE_API_BASE_URL=${_VITE_API_BASE_URL}
       - .
 
+# Substitutions par défaut (production HK Event)
+substitutions:
+  _VITE_API_URL: https://api.hkeventscd.com/api
+  _VITE_API_BASE_URL: https://api.hkeventscd.com
+
 images:
   - ${_IMAGE}
