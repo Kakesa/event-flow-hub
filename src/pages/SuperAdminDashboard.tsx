@@ -438,48 +438,50 @@ const SuperAdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="activity" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-10 mb-8 h-auto">
-            <TabsTrigger value="activity">
-              <Activity className="h-4 w-4 mr-1" />
+          <div className="overflow-x-auto pb-2 -mx-1 px-1">
+            <TabsList className="inline-flex w-max min-w-full flex-wrap gap-1 mb-4 h-auto p-1">
+            <TabsTrigger value="activity" className="gap-1">
+              <Activity className="h-4 w-4" />
               Activité
             </TabsTrigger>
-            <TabsTrigger value="audit">
-              <FileText className="h-4 w-4 mr-1" />
-              Audit
-            </TabsTrigger>
-            <TabsTrigger value="users">
-              <Users className="h-4 w-4 mr-1" />
-              Utilisateurs
-            </TabsTrigger>
-            <TabsTrigger value="admins">
-              <Shield className="h-4 w-4 mr-1" />
-              Administrateurs
-            </TabsTrigger>
-            <TabsTrigger value="subscriptions">
-              <CreditCard className="h-4 w-4 mr-1" />
-              Abonnements
-            </TabsTrigger>
-            <TabsTrigger value="events">
-              <Calendar className="h-4 w-4 mr-1" />
-              Événements
-            </TabsTrigger>
-            <TabsTrigger value="emails">
-              <Mail className="h-4 w-4 mr-1" />
-              Emails
-            </TabsTrigger>
-            <TabsTrigger value="analytics">
-              <TrendingUp className="h-4 w-4 mr-1" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="visitors">
-              <Globe className="h-4 w-4 mr-1" />
+            <TabsTrigger value="visitors" className="gap-1">
+              <Globe className="h-4 w-4" />
               Visiteurs
             </TabsTrigger>
-            <TabsTrigger value="impersonation">
-              <Eye className="h-4 w-4 mr-1" />
+            <TabsTrigger value="audit" className="gap-1">
+              <FileText className="h-4 w-4" />
+              Audit
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-1">
+              <Users className="h-4 w-4" />
+              Utilisateurs
+            </TabsTrigger>
+            <TabsTrigger value="admins" className="gap-1">
+              <Shield className="h-4 w-4" />
+              Administrateurs
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions" className="gap-1">
+              <CreditCard className="h-4 w-4" />
+              Abonnements
+            </TabsTrigger>
+            <TabsTrigger value="events" className="gap-1">
+              <Calendar className="h-4 w-4" />
+              Événements
+            </TabsTrigger>
+            <TabsTrigger value="emails" className="gap-1">
+              <Mail className="h-4 w-4" />
+              Emails
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1">
+              <TrendingUp className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="impersonation" className="gap-1">
+              <Eye className="h-4 w-4" />
               Usurpation
             </TabsTrigger>
           </TabsList>
+          </div>
 
           {/* Activity Tab */}
           <TabsContent value="activity" className="space-y-4">
