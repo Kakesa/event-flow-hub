@@ -57,6 +57,26 @@ const statusConfig = {
   pending: { label: 'En attente', icon: Clock, color: 'bg-muted', textColor: 'text-muted-foreground' },
 };
 
+const normalizeAnalytics = (data: Partial<EmailAnalytics> | null | undefined): EmailAnalytics | null => {
+  if (!data) return null;
+
+  return {
+    totalSent: data.totalSent ?? 0,
+    totalDelivered: data.totalDelivered ?? 0,
+    totalOpened: data.totalOpened ?? 0,
+    totalClicked: data.totalClicked ?? 0,
+    totalBounced: data.totalBounced ?? 0,
+    totalFailed: data.totalFailed ?? 0,
+    deliveryRate: data.deliveryRate ?? 0,
+    openRate: data.openRate ?? 0,
+    clickRate: data.clickRate ?? 0,
+    bounceRate: data.bounceRate ?? 0,
+    lastUpdated: data.lastUpdated ?? new Date().toISOString(),
+  };
+};
+
+const formatRate = (value?: number) => (value ?? 0).toFixed(1);
+
 const EmailHistory = ({ eventId }: EmailHistoryProps) => {
   const { toast } = useToast();
   const [emails, setEmails] = useState<EmailLog[]>([]);
@@ -73,7 +93,7 @@ const EmailHistory = ({ eventId }: EmailHistoryProps) => {
         emailHistoryApi.getAnalytics(eventId),
       ]);
       setEmails(logsRes.data || []);
-      setAnalytics(analyticsRes.data || null);
+      setAnalytics(normalizeAnalytics(analyticsRes.data));
     } catch (error) {
       toast({
         title: 'Erreur',
@@ -100,10 +120,10 @@ const EmailHistory = ({ eventId }: EmailHistoryProps) => {
   };
 
   const filteredEmails = emails.filter(email => {
-    const matchesSearch = 
-      email.recipientEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.recipientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      (email.recipientEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (email.recipientName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (email.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     
     const matchesStatus = statusFilter === 'all' || email.status === statusFilter;
     
@@ -111,7 +131,7 @@ const EmailHistory = ({ eventId }: EmailHistoryProps) => {
   });
 
   const getStatusBadge = (status: EmailLog['status']) => {
-    const config = statusConfig[status];
+    const config = statusConfig[status] ?? statusConfig.pending;
     const Icon = config.icon;
     
     return (
@@ -220,33 +240,33 @@ const EmailHistory = ({ eventId }: EmailHistoryProps) => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Taux de livraison</span>
-                        <span className="font-medium">{analytics.deliveryRate.toFixed(1)}%</span>
+                        <span className="font-medium">{formatRate(analytics.deliveryRate)}%</span>
                       </div>
-                      <Progress value={analytics.deliveryRate} className="h-2" />
+                      <Progress value={analytics.deliveryRate ?? 0} className="h-2" />
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Taux d'ouverture</span>
-                        <span className="font-medium">{analytics.openRate.toFixed(1)}%</span>
+                        <span className="font-medium">{formatRate(analytics.openRate)}%</span>
                       </div>
-                      <Progress value={analytics.openRate} className="h-2" />
+                      <Progress value={analytics.openRate ?? 0} className="h-2" />
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Taux de clic</span>
-                        <span className="font-medium">{analytics.clickRate.toFixed(1)}%</span>
+                        <span className="font-medium">{formatRate(analytics.clickRate)}%</span>
                       </div>
-                      <Progress value={analytics.clickRate} className="h-2" />
+                      <Progress value={analytics.clickRate ?? 0} className="h-2" />
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Taux de rebond</span>
-                        <span className="font-medium text-destructive">{analytics.bounceRate.toFixed(1)}%</span>
+                        <span className="font-medium text-destructive">{formatRate(analytics.bounceRate)}%</span>
                       </div>
-                      <Progress value={analytics.bounceRate} className="h-2 [&>div]:bg-destructive" />
+                      <Progress value={analytics.bounceRate ?? 0} className="h-2 [&>div]:bg-destructive" />
                     </div>
                   </CardContent>
                 </Card>
