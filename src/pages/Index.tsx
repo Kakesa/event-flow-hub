@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
 import { eventsApi, analyticsApi, guestsApi, guestbookApi } from '@/services/api';
+import { SUPER_ADMIN_NAME, SUPER_ADMIN_PHONES } from '@/components/common/UserAuthorizationNotice';
 import type { Event, Guest, GuestbookMessage } from '@/types/models';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -203,6 +204,7 @@ const Index = () => {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const isBasicUser = user?.role === 'user';
 
   const handleReply = async (msg: GuestbookMessage) => {
     if (!replyText.trim()) return;
@@ -240,7 +242,9 @@ const Index = () => {
               Bonjour {user?.name || 'Utilisateur'} !
             </h1>
             <p className="text-muted-foreground mt-1">
-              Voici un aperçu de vos événements
+              {isBasicUser
+                ? 'Votre espace sera disponible après validation par le super admin'
+                : 'Voici un aperçu de vos événements'}
             </p>
           </div>
 
@@ -310,13 +314,32 @@ const Index = () => {
               )}
             </div>
 
-            <Button onClick={() => navigate('/events/create')} className="shadow-gold">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvel événement
-            </Button>
+            {!isBasicUser && (
+              <Button onClick={() => navigate('/events/create')} className="shadow-gold">
+                <Plus className="h-4 w-4 mr-2" />
+                Nouvel événement
+              </Button>
+            )}
           </div>
         </div>
 
+        {isBasicUser ? (
+          <Card className="border-dashed">
+            <CardContent className="py-10 text-center space-y-3">
+              <Clock className="h-10 w-10 text-amber-500 mx-auto" />
+              <h2 className="font-display text-xl font-semibold">En attente d&apos;autorisation</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Contactez le super admin <strong>{SUPER_ADMIN_NAME}</strong> au{' '}
+                {SUPER_ADMIN_PHONES.join(' ou ')} pour obtenir les droits de création
+                d&apos;événements. En attendant, vous pouvez utiliser le scanner QR depuis le menu.
+              </p>
+              <Button variant="outline" onClick={() => navigate('/scanner')}>
+                Ouvrir le scanner QR
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
@@ -581,6 +604,8 @@ const Index = () => {
             </div>
           </div>
         </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

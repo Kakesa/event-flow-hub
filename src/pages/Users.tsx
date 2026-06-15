@@ -241,6 +241,43 @@ const Users = () => {
     }
   };
 
+  const handleUpdateRole = async (userId: string, newRole: UserRole) => {
+    if (currentUser?.role !== "superadmin") return;
+
+    try {
+      const res = await usersApi.update(userId, { role: newRole });
+      toast({
+        title: "Succès",
+        description:
+          newRole === "admin"
+            ? "Utilisateur promu administrateur"
+            : "Rôle mis à jour",
+      });
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, ...res.data, role: newRole } : u))
+      );
+    } catch {
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le rôle",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRoleLabel = (role?: UserRole) => {
+    switch (role) {
+      case "superadmin":
+        return "Super Admin";
+      case "admin":
+        return "Admin";
+      case "organizer":
+        return "Organisateur";
+      default:
+        return "Utilisateur";
+    }
+  };
+
   /* ================= UI ================= */
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "superadmin")) {
     return (
@@ -348,7 +385,23 @@ const Users = () => {
                       <TableCell>{u.name}</TableCell>
                       <TableCell>{u.email}</TableCell>
                       <TableCell>
-                        <Badge>{u.role === "admin" ? "Admin" : "Utilisateur"}</Badge>
+                        {currentUser.role === "superadmin" && u.role !== "superadmin" ? (
+                          <Select
+                            value={u.role || "user"}
+                            onValueChange={(value: UserRole) => handleUpdateRole(u._id, value)}
+                          >
+                            <SelectTrigger className="w-[160px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="user">Utilisateur</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="organizer">Organisateur</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge>{getRoleLabel(u.role)}</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

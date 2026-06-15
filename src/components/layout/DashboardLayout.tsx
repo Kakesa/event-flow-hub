@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import UserAuthorizationNotice from '@/components/common/UserAuthorizationNotice';
+import MobileBottomNav from '@/components/layout/MobileBottomNav';
+import InstallAppPrompt from '@/components/pwa/InstallAppPrompt';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -40,9 +43,17 @@ const navigation = [
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('hk_event_show_install') === '1') {
+      sessionStorage.removeItem('hk_event_show_install');
+      setShowInstallPrompt(true);
+    }
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -200,10 +211,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-8">
+        <main className="p-4 pb-24 lg:p-8 lg:pb-8">
+          {user?.role === 'user' && <UserAuthorizationNotice />}
           {children}
         </main>
       </div>
+
+      <MobileBottomNav />
+      <InstallAppPrompt open={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
     </div>
   );
 };

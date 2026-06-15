@@ -7,8 +7,8 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
 
@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(res.data.user);
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('eventflow_user', JSON.stringify(res.data.user));
-        return { success: true };
+        return { success: true, user: res.data.user };
       }
       return { success: false, error: 'Email ou mot de passe incorrect' };
     } catch (err: unknown) {

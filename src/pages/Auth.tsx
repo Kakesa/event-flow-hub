@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { showUserAuthorizationToast } from '@/components/common/UserAuthorizationNotice';
 
 interface RegisterData {
   name: string;
@@ -57,6 +58,9 @@ const Auth = () => {
       const result = await login(loginData.email.trim(), loginData.password);
       if (result.success) {
         toast.success('Connexion réussie !');
+        if (result.user?.role === 'user') {
+          showUserAuthorizationToast(toast);
+        }
         navigate(redirectTo, { replace: true });
       } else {
         toast.error(result.error || 'Erreur de connexion');
@@ -111,6 +115,10 @@ const Auth = () => {
 
       if (result.success) {
         toast.success("Inscription réussie ! Bienvenue !");
+        if (result.user?.role === 'user') {
+          showUserAuthorizationToast(toast);
+        }
+        sessionStorage.setItem('hk_event_show_install', '1');
         navigate(redirectTo, { replace: true });
       } else {
         toast.error(result.error || "Erreur lors de l'inscription");

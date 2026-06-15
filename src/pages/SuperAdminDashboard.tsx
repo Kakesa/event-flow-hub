@@ -221,10 +221,17 @@ const SuperAdminDashboard = () => {
     toast({ title: 'Actualisé', description: 'Données mises à jour' });
   };
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
+    if (!userId) return;
+
     try {
       await usersApi.update(userId, { role: newRole as User['role'] });
-      toast({ title: 'Succès', description: 'Rôle mis à jour' });
-      // Rafraîchir les données
+      toast({
+        title: 'Succès',
+        description:
+          newRole === 'admin'
+            ? 'Utilisateur promu administrateur'
+            : 'Rôle mis à jour',
+      });
       const [updatedUsers, updatedAdmins] = await Promise.all([
         usersApi.getAll(),
         usersApi.getAdmins(),
@@ -633,7 +640,27 @@ const SuperAdminDashboard = () => {
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                           </div>
                         </TableCell>
-                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>
+                          {user.role === 'superadmin' ? (
+                            getRoleBadge(user.role)
+                          ) : (
+                            <Select
+                              value={user.role || 'user'}
+                              onValueChange={(value) =>
+                                handleUpdateUserRole(user._id || user.id || '', value)
+                              }
+                            >
+                              <SelectTrigger className="w-[160px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">Utilisateur</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="organizer">Organisateur</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">
                             {user.subscriptionType || 'free'}
@@ -669,10 +696,6 @@ const SuperAdminDashboard = () => {
                               <DropdownMenuItem onClick={() => navigate(`/users/${user._id || user.id}`)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Voir détails
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleUpdateUserRole(user._id || user.id || '', 'admin')}>
-                                <Shield className="h-4 w-4 mr-2" />
-                                Promouvoir admin
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
