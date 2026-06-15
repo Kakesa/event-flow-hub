@@ -24,6 +24,7 @@ import Users from "./pages/Users";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
+import VisitTracker from "@/hooks/useTrackVisit";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+          <VisitTracker />
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<Auth />} />

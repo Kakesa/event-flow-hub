@@ -811,6 +811,40 @@ export const analyticsApi = {
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
+
+  trackVisit: async (payload: {
+    visitorId: string;
+    path?: string;
+    referrer?: string;
+  }): Promise<ApiResponse<void>> => {
+    const res = await fetch(`${API_BASE_URL}/analytics/visit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await handleResponse<{ success: boolean }>(res);
+    return { success: result.success ?? true, data: undefined };
+  },
+
+  getVisitorStats: async (
+    period: "day" | "week" | "month" | "year" = "week",
+  ): Promise<
+    ApiResponse<{
+      period: string;
+      totalVisits: number;
+      uniqueVisitors: number;
+      chartData: { label: string; visits: number; uniqueVisitors: number }[];
+      topPages: { path: string; visits: number }[];
+      startDate: string;
+      endDate: string;
+    }>
+  > => {
+    const res = await fetch(`${API_BASE_URL}/analytics/visitors?period=${period}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
 };
 
 // ==================== ACTIVITÉS RÉCENTES ====================

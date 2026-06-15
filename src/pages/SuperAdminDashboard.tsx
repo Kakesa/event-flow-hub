@@ -54,6 +54,7 @@ import { cn } from '@/lib/utils';
 import AuditLogsPanel from '@/components/superadmin/AuditLogsPanel';
 import UserImpersonation from '@/components/superadmin/UserImpersonation';
 import SubscriptionManager from '@/components/superadmin/SubscriptionManager';
+import VisitorsPanel from '@/components/superadmin/VisitorsPanel';
 
 interface PlatformStats {
   totalUsers: number;
@@ -437,7 +438,7 @@ const SuperAdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="activity" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-9 mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-10 mb-8 h-auto">
             <TabsTrigger value="activity">
               <Activity className="h-4 w-4 mr-1" />
               Activité
@@ -469,6 +470,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="analytics">
               <TrendingUp className="h-4 w-4 mr-1" />
               Analytics
+            </TabsTrigger>
+            <TabsTrigger value="visitors">
+              <Globe className="h-4 w-4 mr-1" />
+              Visiteurs
             </TabsTrigger>
             <TabsTrigger value="impersonation">
               <Eye className="h-4 w-4 mr-1" />
@@ -1011,6 +1016,11 @@ const SuperAdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Visitors Tab */}
+          <TabsContent value="visitors">
+            <VisitorsPanel />
           </TabsContent>
         </Tabs>
 
