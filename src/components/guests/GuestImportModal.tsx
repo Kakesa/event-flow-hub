@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { guestsApi } from '@/services/api';
 import type { Guest } from '@/types/models';
+import { isValidCongolesePhone, normalizePhoneToE164 } from '@/utils/phoneUtils';
 
 interface GuestImportModalProps {
   isOpen: boolean;
@@ -64,18 +65,19 @@ const GuestImportModal = ({
       const values = line.split(/[;,\t]/).map(v => v.trim().replace(/"/g, ''));
       const name = values[nameIndex] || '';
       const email = emailIndex !== -1 ? values[emailIndex] : undefined;
-      const phone = phoneIndex !== -1 ? values[phoneIndex] : undefined;
+      const rawPhone = phoneIndex !== -1 ? values[phoneIndex] : undefined;
+      const normalizedPhone = rawPhone ? normalizePhoneToE164(rawPhone) : undefined;
       const table = tableIndex !== -1 ? values[tableIndex] : undefined;
 
       const guestErrors: string[] = [];
       if (!name) guestErrors.push('Nom requis');
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) guestErrors.push('Email invalide');
-      if (phone && !/^[+\d\s()-]{8,}$/.test(phone)) guestErrors.push('Téléphone invalide');
+      if (rawPhone && !normalizedPhone) guestErrors.push('Téléphone invalide (ex: +243828863897)');
 
       return {
         name,
         email: email || undefined,
-        phone: phone || undefined,
+        phone: normalizedPhone,
         table: table || undefined,
         status: 'pending' as const,
         isValid: guestErrors.length === 0 && !!name,

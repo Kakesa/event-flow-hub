@@ -30,7 +30,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
+import { Phone } from 'lucide-react';
 import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
+import {
+  formatPhoneInput,
+  normalizePhoneToE164,
+} from '@/utils/phoneUtils';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -136,17 +141,35 @@ const Guests = () => {
       return;
     }
 
+    let normalizedPhone: string | undefined;
+    if (newGuest.phone.trim()) {
+      normalizedPhone = normalizePhoneToE164(newGuest.phone);
+      if (!normalizedPhone) {
+        toast({
+          title: 'Erreur',
+          description: 'Numéro invalide. Exemple : +243828863897',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    const guestPayload = {
+      ...newGuest,
+      phone: normalizedPhone || '',
+    };
+
     const checkDuplicates = () => {
-      return guests.find(g => 
-        g.name.toLowerCase() === newGuest.name.toLowerCase() ||
-        (newGuest.email && g.email?.toLowerCase() === newGuest.email.toLowerCase()) ||
-        (newGuest.phone && g.phone === newGuest.phone)
+      return guests.find(g =>
+        g.name.toLowerCase() === guestPayload.name.toLowerCase() ||
+        (guestPayload.email && g.email?.toLowerCase() === guestPayload.email.toLowerCase()) ||
+        (normalizedPhone && normalizePhoneToE164(g.phone) === normalizedPhone)
       );
     };
 
     const proceedWithCreation = async () => {
       try {
-        await guestsApi.create(newGuest.eventId, newGuest);
+        await guestsApi.create(guestPayload.eventId, guestPayload);
 
         toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
         setIsAddDialogOpen(false);
@@ -170,7 +193,7 @@ const Guests = () => {
       const fields = [];
       if (duplicate.name.toLowerCase() === newGuest.name.toLowerCase()) fields.push('nom');
       if (newGuest.email && duplicate.email?.toLowerCase() === newGuest.email.toLowerCase()) fields.push('email');
-      if (newGuest.phone && duplicate.phone === newGuest.phone) fields.push('téléphone');
+      if (normalizedPhone && normalizePhoneToE164(duplicate.phone) === normalizedPhone) fields.push('téléphone');
       
       setDuplicateMessage(`Un invité avec le même ${fields.join(', ')} a déjà été invité. Voulez-vous quand même l'ajouter ?`);
       setIsDuplicateDialogOpen(true);
@@ -207,8 +230,20 @@ const Guests = () => {
     guestId: string,
     method: 'email' | 'whatsapp' | 'sms'
   ) => {
+    const guest = guests.find(g => g.id === guestId);
+    const eventId = guest?.eventId || eventFilter;
+
+    if (!eventId) {
+      toast({
+        title: 'Erreur',
+        description: 'Événement introuvable pour cet invité',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      await invitationsApi.send(guestId, method);
+      await invitationsApi.send(guestId, eventId, method);
       toast({ title: 'Succès', description: `Invitation envoyée par ${method}` });
     } catch {
       toast({
@@ -278,11 +313,30 @@ const Guests = () => {
                   value={newGuest.email}
                   onChange={e => setNewGuest({ ...newGuest, email: e.target.value })}
                 />
-                <Input
-                  placeholder="Téléphone"
-                  value={newGuest.phone}
-                  onChange={e => setNewGuest({ ...newGuest, phone: e.target.value })}
-                />
+                <div className="space-y-2">
+                  <Label>Téléphone (WhatsApp)</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                    <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
+                      <span className="text-sm text-muted-foreground font-medium">+243</span>
+                    </div>
+                    <Input
+                      className="pl-24"
+                      type="tel"
+                      placeholder="828863897"
+                      value={newGuest.phone}
+                      onChange={e =>
+                        setNewGuest({
+                          ...newGuest,
+                          phone: formatPhoneInput(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enregistré au format +243828863897 pour WhatsApp
+                  </p>
+                </div>
                 <Input
                   placeholder="Numéro de table (Optionnel)"
                   value={newGuest.table}

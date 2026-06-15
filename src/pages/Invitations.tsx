@@ -25,6 +25,7 @@ import EmailHistory from '@/components/invitations/EmailHistory';
 import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 import WhatsAppLog from '@/components/invitations/WhatsAppLog';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
+import { getWhatsAppDigits } from '@/utils/phoneUtils';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
@@ -54,7 +55,7 @@ const Invitations = () => {
         const res = await eventsApi.getAll();
         setEvents(res.data);
         if (res.data.length > 0) {
-          setSelectedEvent(res.data[0].id);
+          setSelectedEvent(res.data[0]._id || res.data[0].id);
         }
       } catch {
         toast({ title: 'Erreur', description: 'Impossible de charger les événements', variant: 'destructive' });
@@ -115,7 +116,7 @@ const Invitations = () => {
 
   // 🔹 Envoyer via WhatsApp (Action directe ou Unitaire)
   const handleWhatsAppSend = async (guestsToSend: Guest[]) => {
-    const event = events.find(e => e.id === selectedEvent);
+    const event = events.find(e => (e._id || e.id) === selectedEvent);
     if (!event) return;
 
     for (const guest of guestsToSend) {
@@ -134,11 +135,11 @@ const Invitations = () => {
           `_HK Events_`
         );
 
-        window.open(`https://wa.me/${guest.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+        window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
         
         // Notifier le backend
         try {
-          await invitationsApi.send(guest.id, 'whatsapp');
+          await invitationsApi.send(guest.id, selectedEvent, 'whatsapp');
         } catch (error) {
           console.error(`Erreur notification backend pour ${guest.name}:`, error);
         }
@@ -179,7 +180,7 @@ const Invitations = () => {
         setSending(false);
         return; 
       } else if (selectedMethod === 'sms') {
-        await invitationsApi.sendBulk(selectedGuests, 'sms');
+        await invitationsApi.sendBulk(selectedGuests, selectedEvent, 'sms');
       }
 
       toast({
@@ -215,11 +216,14 @@ const Invitations = () => {
                 <SelectValue placeholder="Choisir un événement" />
               </SelectTrigger>
               <SelectContent>
-                {events.map(event => (
-                  <SelectItem key={event.id} value={event.id}>
+                {events.map(event => {
+                  const eventId = event._id || event.id;
+                  return (
+                  <SelectItem key={eventId} value={eventId}>
                     {event.title}
                   </SelectItem>
-                ))}
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -393,7 +397,7 @@ const Invitations = () => {
           open={showEmailComposer}
           onClose={() => setShowEmailComposer(false)}
           selectedGuests={guests.filter(g => selectedGuests.includes(g.id))}
-          event={events.find(e => e.id === selectedEvent) || null}
+          event={events.find(e => (e._id || e.id) === selectedEvent) || null}
           onSuccess={() => {
             setSelectedGuests([]);
             refreshGuests();
@@ -408,7 +412,7 @@ const Invitations = () => {
             setSending(false);
           }}
           guests={whatsappGuests}
-          event={events.find(e => e.id === selectedEvent) || null}
+          event={events.find(e => (e._id || e.id) === selectedEvent) || null}
           onSuccess={() => {
             setSelectedGuests([]);
             refreshGuests();

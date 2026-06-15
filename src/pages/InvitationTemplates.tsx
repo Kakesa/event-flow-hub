@@ -17,6 +17,7 @@ import {
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
 import { guestsApi, eventsApi, emailsApi, invitationsApi, BASE_URL } from '@/services/api';
+import { getWhatsAppDigits } from '@/utils/phoneUtils';
 import type { Guest, Event } from '@/types/models';
 import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 
@@ -138,7 +139,7 @@ const InvitationTemplates = () => {
 
   const openWhatsApp = (phone: string) => {
     const message = generateWhatsAppMessage();
-    window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${getWhatsAppDigits(phone)}?text=${message}`, '_blank');
   };
 
   const copyInvitationLink = () => {

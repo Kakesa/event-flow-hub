@@ -367,12 +367,13 @@ export const invitationsApi = {
   // 🔹 Envoyer à un invité
   send: async (
     guestId: string,
+    eventId: string,
     method: Invitation["distributionMethod"],
   ): Promise<ApiResponse<Invitation>> => {
     const res = await fetch(`${API_BASE_URL}/invitations/send`, {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify({ guestId, method }),
+      body: JSON.stringify({ guestId, eventId, method }),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
@@ -381,12 +382,13 @@ export const invitationsApi = {
   // 🔹 Envoi bulk
   sendBulk: async (
     guestIds: string[],
+    eventId: string,
     method: Invitation["distributionMethod"],
   ): Promise<ApiResponse<Invitation[]>> => {
     const res = await fetch(`${API_BASE_URL}/invitations/send-bulk`, {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify({ guestIds, method }),
+      body: JSON.stringify({ guestIds, eventId, method }),
     });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
     return { success: result.success ?? true, data: result.data };

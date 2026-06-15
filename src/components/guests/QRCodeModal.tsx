@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { qrCodeApi } from '@/services/api';
 import type { Guest } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
+import { getWhatsAppDigits } from '@/utils/phoneUtils';
 
 interface QRCodeModalProps {
   guest: Guest | null;
@@ -81,7 +82,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
     const message = encodeURIComponent(
       `Bonjour ${guest.name}! 🎉\n\nVoici votre code d'invitation: ${qrData?.code || ''}\n\nPrésentez ce code à l'entrée de l'événement.`
     );
-    window.open(`https://wa.me/${guest.phone.replace(/\D/g, '')}?text=${message}`);
+    window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`);
   };
 
   return (

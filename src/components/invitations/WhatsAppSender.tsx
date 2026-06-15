@@ -15,6 +15,7 @@ import { invitationsApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
+import { getWhatsAppDigits } from '@/utils/phoneUtils';
 
 interface WhatsAppSenderProps {
   open: boolean;
@@ -90,7 +91,7 @@ const WhatsAppSender = ({
         logWhatsAppAction(event.id, currentGuest.id, currentGuest.name, 'copied');
       }
       try {
-        await invitationsApi.send(currentGuest.id, 'whatsapp');
+        await invitationsApi.send(currentGuest.id, event._id || event.id, 'whatsapp');
       } catch (e) {
         console.error(e);
       }
@@ -126,13 +127,13 @@ const WhatsAppSender = ({
     try {
       // Ouvrir WhatsApp directement avec message pré-rempli
       const message = generateWhatsAppMessage(currentGuest);
-      const phone = currentGuest.phone.replace(/\D/g, '');
+      const phone = getWhatsAppDigits(currentGuest.phone);
       const waLink = `https://wa.me/${phone}?text=${message}`;
       window.open(waLink, '_blank');
 
       // Notifier le backend que l'invitation a été envoyée
       if (event) {
-        await invitationsApi.send(currentGuest.id, 'whatsapp');
+        await invitationsApi.send(currentGuest.id, event._id || event.id, 'whatsapp');
         logWhatsAppAction(event.id, currentGuest.id, currentGuest.name, 'sent');
       }
 
