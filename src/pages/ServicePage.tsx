@@ -182,7 +182,7 @@ const ServicePage = () => {
           <p className="mt-4 text-[#faf8f5]/80 font-light">Connectez-vous ou créez un compte pour accéder à toutes les fonctionnalités.</p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">
-              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#faf8f5] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
+              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#0f0f0e] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
                 Connexion
               </Button>
             </Link>

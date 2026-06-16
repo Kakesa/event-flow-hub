@@ -12,7 +12,7 @@ const ServicesIndexPage = () => (
         <h1 className="font-display text-4xl md:text-6xl font-semibold text-[#4a5a44] tracking-wide">Nos services</h1>
         <div className="wedding-divider mt-6">✦</div>
         <p className="mt-6 text-lg text-[#7a8b72] font-light max-w-2xl mx-auto">
-          Tout ce dont vous avez besoin pour orchestrer une célébration mémorable, avec l&apos;élégance d&apos;un site mariage premium.
+          Tout ce dont vous avez besoin pour bien gerer vos invités, avec l&apos;élégance d&apos;un site mariage premium.
         </p>
       </div>
     </section>
