@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, CheckCircle2, User, MessageSquare, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,8 +33,12 @@ const TEAM = [
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+  },
+} satisfies Variants;
 
 function useCountdown(target: Date) {
   const calc = useCallback(() => {
@@ -186,11 +190,13 @@ const LandingPage = () => {
           <SectionTitle script="Notre histoire" title="Une passion pour l'élégance" />
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="relative">
-              <img
-                src={WEDDING_IMAGES.story}
-                alt="Moment de célébration — HK Event"
-                className="w-full aspect-[4/5] object-cover shadow-xl border border-[#e8e0d8]"
-              />
+              <div className="w-full aspect-[4/5] bg-[#faf8f5] border border-[#e8e0d8] shadow-xl overflow-hidden flex items-center justify-center p-4 md:p-6">
+                <img
+                  src={WEDDING_IMAGES.story}
+                  alt="Invitation personnalisée — HK Event"
+                  className="w-full h-full object-contain"
+                />
+              </div>
               <img
                 src={WEDDING_IMAGES.storyAlt}
                 alt="Couple en cérémonie"
@@ -270,7 +276,7 @@ const LandingPage = () => {
       {/* Gallery preview */}
       <section id="galerie" className="py-24 px-4">
         <div className="max-w-6xl mx-auto">
-          <SectionTitle script="Galerie" title="Moments précieux" subtitle="Des célébrations magnifiques, orchestrées avec HK Event" />
+          <SectionTitle script="Galerie" title="Moments précieux" subtitle="Ils nous ont fait confiance. Voici leurs moments magnifiques. On garde des bons souvenirs des nos clients. Veux-tu être parmi eux ?" />
           <div className="columns-2 md:columns-3 gap-4 space-y-4">
             {GALLERY_ITEMS.slice(0, 6).map((item, i) => (
               <motion.div

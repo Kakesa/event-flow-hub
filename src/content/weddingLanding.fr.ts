@@ -2,7 +2,7 @@
 
 export const WEDDING_IMAGES = {
   hero: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&q=80',
-  story: '/images/gallery/gallery-garden-embrace.png',
+  story: '/images/services/invitations-personnalise.png',
   storyAlt: '/images/gallery/gallery-intimate-moment.png',
   gallery: [
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=80',
