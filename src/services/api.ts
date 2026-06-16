@@ -741,15 +741,91 @@ export const emailHistoryApi = {
 };
 
 // ==================== LIVRE D'OR ====================
+const normalizeGuestbookEntry = (
+  eventId: string,
+  raw: Record<string, unknown>,
+): GuestbookMessage => ({
+  id: String(raw._id || raw.id || ""),
+  eventId,
+  guestId: raw.guestId ? String(raw.guestId) : undefined,
+  name: String(raw.guestName || raw.name || "Anonyme"),
+  message: String(raw.message || ""),
+  reply: raw.reply ? String(raw.reply) : undefined,
+  repliedAt: raw.repliedAt ? String(raw.repliedAt) : undefined,
+  createdAt: String(raw.createdAt || raw.respondedAt || new Date().toISOString()),
+});
+
+const mergeGuestbookSources = (
+  eventId: string,
+  guestbookEntries: Record<string, unknown>[],
+  guests: Record<string, unknown>[],
+): GuestbookMessage[] => {
+  const fromGuestbook = guestbookEntries.map((m) =>
+    normalizeGuestbookEntry(eventId, m),
+  );
+
+  const fromGuests = guests
+    .filter((g) => String(g.message || "").trim())
+    .map((g) =>
+      normalizeGuestbookEntry(eventId, {
+        _id: g._id || g.id,
+        guestId: g._id || g.id,
+        guestName: g.name,
+        message: g.message,
+        createdAt: g.respondedAt || g.updatedAt || g.createdAt,
+      }),
+    );
+
+  const merged = [...fromGuestbook];
+  for (const guestMsg of fromGuests) {
+    const duplicate = merged.some(
+      (m) =>
+        (guestMsg.guestId && m.guestId === guestMsg.guestId) ||
+        (m.message === guestMsg.message && m.name === guestMsg.name),
+    );
+    if (!duplicate) merged.push(guestMsg);
+  }
+
+  return merged.sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+};
+
 export const guestbookApi = {
   getByEvent: async (
     eventId: string,
   ): Promise<ApiResponse<GuestbookMessage[]>> => {
-    const res = await fetch(`${API_BASE_URL}/events/${eventId}/guestbook`, {
-      headers: getHeaders(),
-    });
-    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    return { success: result.success ?? true, data: result.data };
+    const [gbRes, guestsRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/events/${eventId}/guestbook`, {
+        headers: getHeaders(),
+      }),
+      fetch(`${API_BASE_URL}/guests/event/${eventId}`, {
+        headers: getHeaders(),
+      }),
+    ]);
+
+    const gbResult = await handleResponse<{ success: boolean; data: any[] }>(
+      gbRes,
+    );
+    let guests: Record<string, unknown>[] = [];
+    try {
+      const guestsResult = await handleResponse<{
+        success: boolean;
+        data: any[];
+      }>(guestsRes);
+      guests = guestsResult.data || [];
+    } catch {
+      // Livre d'or seul si accès invités refusé
+    }
+
+    const data = mergeGuestbookSources(
+      eventId,
+      gbResult.data || [],
+      guests,
+    );
+
+    return { success: gbResult.success ?? true, data };
   },
 
   addMessage: async (

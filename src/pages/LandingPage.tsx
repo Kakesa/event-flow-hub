@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { Mail, Phone, MapPin, Send, CheckCircle2, User, MessageSquare, ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -13,153 +12,66 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import {
-  Calendar, Users, Star, Mail, Phone, MapPin,
-  ArrowRight, Sparkles, ChevronRight,
-  PartyPopper, Mic2, Camera, Utensils,
-  Menu, X, HelpCircle, Moon, Sun, Send, GlassWater, CheckCircle2, User, MessageSquare
-} from 'lucide-react';
 import { toast } from 'sonner';
+import WeddingPublicLayout from '@/components/landing/WeddingPublicLayout';
 
 import teamEspoir from '@/assets/team-espoir.jpg';
 import teamDan from '@/assets/team-dan.jpg';
-import logoWhite from '@/assets/white.png';
+import {
+  WEDDING_IMAGES,
+  TESTIMONIALS,
+  FAQ_ITEMS,
+  COUNTDOWN_TARGET,
+} from '@/content/weddingLanding.fr';
+import { SERVICES } from '@/content/services.fr';
+import { GALLERY_ITEMS } from '@/content/gallery.fr';
 
-/* ─── Animation variants ─── */
-const fadeUp = {
-  hidden: { opacity: 0, y: 50 },
-  visible: (i: number = 0) => ({
-    opacity: 1, y: 0,
-    transition: { duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
-const fadeLeft = {
-  hidden: { opacity: 0, x: -60 },
-  visible: (i: number = 0) => ({
-    opacity: 1, x: 0,
-    transition: { duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
-const fadeRight = {
-  hidden: { opacity: 0, x: 60 },
-  visible: (i: number = 0) => ({
-    opacity: 1, x: 0,
-    transition: { duration: 0.7, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
-const staggerContainer = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.85, y: 20 },
-  visible: (i: number = 0) => ({
-    opacity: 1, scale: 1, y: 0,
-    transition: { duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] as const },
-  }),
-};
-
-const floatAnimation = {
-  y: [-8, 8, -8],
-  transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' as const },
-};
-
-/* ─── Data ─── */
-const stats = [
-  { label: 'Événements créés', value: '2,500+', icon: Calendar },
-  { label: 'Invités gérés', value: '150K+', icon: Users },
-  { label: 'Taux de satisfaction', value: '98%', icon: Star },
-  { label: 'Messages envoyés', value: '500K+', icon: Mail },
-];
-
-const services = [
-  { icon: PartyPopper, title: 'Gestion d\'événements', description: 'Créez et gérez vos événements de A à Z avec notre plateforme intuitive.' },
-  { icon: Users, title: 'Gestion des invités', description: 'Importez, suivez et communiquez avec vos invités en temps réel.' },
-  { icon: Mail, title: 'Invitations personnalisées', description: 'Envoyez des invitations élégantes par email ou WhatsApp.' },
-  { icon: Camera, title: 'Scanner QR Code', description: 'Accueillez vos invités avec un scan rapide à l\'entrée.' },
-  { icon: Mic2, title: 'Livre d\'or digital', description: 'Recueillez les messages et vœux de vos invités en temps réel.' },
-  { icon: GlassWater, title: 'Preference boisson', description: 'Les invités peuvent choisir leurs boissons préférées.' },
-];
-
-const testimonials = [
-  { name: 'Marie K.', role: 'Organisatrice de mariage', content: 'HK Event a transformé la gestion de notre mariage. Tout était parfaitement organisé !', avatar: 'MK' },
-  { name: 'Jean-Paul M.', role: 'Directeur d\'entreprise', content: 'Un outil indispensable pour nos événements corporate. Simple et efficace.', avatar: 'JP' },
-  { name: 'Amina D.', role: 'Wedding Planner', content: 'Je recommande HK Event à tous mes clients. La gestion des invités n\'a jamais été aussi facile.', avatar: 'AD' },
-];
-
-const team = [
+const TEAM = [
   { name: 'Espoir Kakesa', role: 'Fondateur & Lead Développeur', image: teamEspoir },
-  { name: 'Dan Kakene', role: 'Lead Designer & Responsable Marketing', image: teamDan },
+  { name: 'Dan Kakene', role: 'Lead Designer & Marketing', image: teamDan },
 ];
 
-const latestEvents = [
-  { title: 'Gala de Charité 2025', date: '15 Mars 2025', guests: 350, image: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=400&h=250&fit=crop' },
-  { title: 'Mariage Élégance', date: '22 Février 2025', guests: 200, image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=250&fit=crop' },
-  { title: 'Conférence Tech Africa', date: '10 Janvier 2025', guests: 500, image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=250&fit=crop' },
-];
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+};
 
-const faqs = [
-  { question: 'Comment créer mon premier événement ?', answer: 'Inscrivez-vous gratuitement, accédez à votre tableau de bord et cliquez sur "Créer un événement". Remplissez les détails (nom, date, lieu) et commencez à inviter vos invités en quelques minutes.' },
-  { question: 'Est-ce que HK Event est gratuit ?', answer: 'Oui, nous proposons un plan gratuit qui vous permet de gérer jusqu\'à 10 invités par événement. Pour des besoins plus importants, découvrez nos plans Premium et Business.' },
-  { question: 'Comment fonctionne le scanner QR Code ?', answer: 'Chaque invité reçoit un QR Code unique avec son invitation. Le jour de l\'événement, utilisez notre scanner intégré pour vérifier rapidement les entrées et suivre la présence en temps réel.' },
-  { question: 'Puis-je personnaliser les invitations ?', answer: 'Absolument ! Choisissez parmi nos modèles élégants ou créez le vôtre. Personnalisez les couleurs, les polices, ajoutez votre logo et envoyez par email ou WhatsApp.' },
-  { question: 'Comment gérer les réponses RSVP ?', answer: 'Les invités peuvent confirmer leur présence directement depuis l\'invitation. Vous suivez toutes les réponses en temps réel depuis votre tableau de bord avec des statistiques détaillées.' },
-  { question: 'HK Event est-il disponible en Afrique ?', answer: 'Oui ! HK Event est conçu spécialement pour le marché africain avec un support des paiements locaux (M-Pesa, Airtel Money) et une interface optimisée pour les connexions mobiles.' },
-];
+function useCountdown(target: Date) {
+  const calc = useCallback(() => {
+    const diff = target.getTime() - Date.now();
+    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+    return {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / (1000 * 60)) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    };
+  }, [target]);
 
-const navLinks = [
-  { href: '#services', label: 'Services' },
-  { href: '#events', label: 'Événements' },
-  { href: '#testimonials', label: 'Témoignages' },
-  { href: '#team', label: 'Équipe' },
-  { href: '#faq', label: 'FAQ' },
-  { href: '#contact', label: 'Contact' },
-];
+  const [time, setTime] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setTime(calc()), 1000);
+    return () => clearInterval(id);
+  }, [calc]);
+  return time;
+}
 
-const CREATE_EVENT_PATH = '/events/create';
-
-const hasExistingAccount = () =>
-  !!localStorage.getItem('token') || !!localStorage.getItem('eventflow_user');
+const SectionTitle = ({ script, title, subtitle }: { script: string; title: string; subtitle?: string }) => (
+  <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
+    <p className="wedding-script text-4xl md:text-5xl text-[#b8956c] mb-2">{script}</p>
+    <h2 className="font-display text-3xl md:text-5xl font-semibold text-[#4a5a44] tracking-wide">{title}</h2>
+    {subtitle && <p className="mt-4 text-lg text-[#7a8b72] max-w-xl mx-auto font-light">{subtitle}</p>}
+    <div className="wedding-divider mt-6">✦</div>
+  </motion.div>
+);
 
 const LandingPage = () => {
-  const { isAuthenticated } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { scrollYProgress } = useScroll();
-  const heroScale = useTransform(scrollYProgress, [0, 0.15], [1, 1.1]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const countdown = useCountdown(COUNTDOWN_TARGET);
 
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    document.documentElement.classList.toggle('dark', newMode);
-  };
-
-  const messageLength = contactForm.message.length;
-  const messageMax = 1000;
-
-  const createEventLink = isAuthenticated
-    ? CREATE_EVENT_PATH
-    : hasExistingAccount()
-      ? '/auth'
-      : '/auth/register';
-  const createEventLinkState = isAuthenticated
-    ? undefined
-    : { from: { pathname: CREATE_EVENT_PATH } };
-
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContact = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
       toast.error('Veuillez remplir tous les champs obligatoires.');
@@ -169,711 +81,394 @@ const LandingPage = () => {
     setTimeout(() => {
       setSending(false);
       setSent(true);
-      toast.success('Message envoyé avec succès ! Nous vous répondrons bientôt.');
+      toast.success('Message envoyé ! Nous vous répondrons bientôt.');
       setContactForm({ name: '', email: '', subject: '', message: '' });
       setTimeout(() => setSent(false), 3500);
-    }, 1500);
+    }, 1200);
   };
 
   return (
-    <div className="min-h-screen bg-background font-body overflow-x-hidden">
-      {/* Progress bar */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-primary z-[60] origin-left"
-        style={{ scaleX: scrollYProgress }}
-      />
-
-      {/* Navigation */}
-      <motion.nav
-        initial={{ y: -80 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border"
-      >
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <motion.div className="flex items-center gap-2" whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 400 }}>
-            <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center overflow-hidden">
-              <img src={logoWhite} alt="HK Event" className="h-full w-full object-contain" />
-            </div>
-            <span className="font-display text-xl font-bold text-foreground">HK Event</span>
-          </motion.div>
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <motion.a
-                key={link.href}
-                href={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors relative"
-                whileHover={{ y: -2 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                {link.label}
-              </motion.a>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Dark mode toggle */}
-            <motion.button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ rotate: 15 }}
-            >
-              <AnimatePresence mode="wait">
-                {darkMode ? (
-                  <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <Sun className="h-5 w-5 text-primary" />
-                  </motion.div>
-                ) : (
-                  <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <Moon className="h-5 w-5 text-foreground" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-            <Link to="/auth" className="hidden sm:inline-flex"><Button variant="ghost" size="sm">Se connecter</Button></Link>
-            <Link to="/auth/register" className="hidden sm:inline-flex"><Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">Commencer</Button></Link>
-            {/* Hamburger */}
-            <motion.button
-              className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              whileTap={{ scale: 0.9 }}
-            >
-              <AnimatePresence mode="wait">
-                {mobileMenuOpen ? (
-                  <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <X className="h-6 w-6 text-foreground" />
-                  </motion.div>
-                ) : (
-                  <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <Menu className="h-6 w-6 text-foreground" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </div>
+    <WeddingPublicLayout navTransparent>
+      {/* Hero */}
+      <section id="accueil" className="relative min-h-screen flex items-center justify-center">
+        <div className="absolute inset-0">
+          <img src={WEDDING_IMAGES.hero} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#faf8f5]" />
         </div>
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="md:hidden overflow-hidden bg-background border-b border-border"
-            >
-              <div className="px-4 py-4 flex flex-col gap-1">
-                {navLinks.map((link, i) => (
-                  <motion.a
-                    key={link.href}
-                    href={link.href}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-3 px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                  >
-                    {link.label}
-                  </motion.a>
-                ))}
-                <div className="flex gap-3 mt-3 pt-3 border-t border-border">
-                  <Link to="/auth" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">Se connecter</Button>
-                  </Link>
-                  <Link to="/auth/register" className="flex-1" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-primary text-primary-foreground">Commencer</Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
-
-      {/* Hero Section with background media */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Background media — bokeh lights, beautiful in light & dark */}
-        <motion.div className="absolute inset-0 z-0" style={{ scale: heroScale }}>
-          <img
-            src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1920&h=1080&fit=crop"
-            alt=""
-            className="w-full h-full object-cover"
-            aria-hidden="true"
+        <div className="relative z-10 text-center px-4 pt-20 pb-32 max-w-4xl mx-auto text-white">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="wedding-script text-5xl md:text-7xl text-[#f5ebe6] mb-4"
+          >
+            Organisez l&apos;extraordinaire
+          </motion.p>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="font-display text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.08em] uppercase"
+          >
+            HK Event
+          </motion.h1>
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="h-px w-32 bg-[#b8956c] mx-auto my-6"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/70 to-background/95" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/40" />
-        </motion.div>
-
-        {/* Animated subtle orbs */}
-        <motion.div
-          aria-hidden="true"
-          className="absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-primary/25 blur-3xl z-0"
-          animate={{ x: [0, 60, 0], y: [0, 40, 0], scale: [1, 1.15, 1] }}
-          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          aria-hidden="true"
-          className="absolute -bottom-40 -right-32 w-[32rem] h-[32rem] rounded-full bg-accent/20 blur-3xl z-0"
-          animate={{ x: [0, -50, 0], y: [0, -30, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        <motion.div className="container mx-auto px-4 relative z-10 py-32" style={{ opacity: heroOpacity }}>
-          <div className="text-center max-w-3xl mx-auto">
-
-              <motion.h1
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-[1.05]"
-              >
-                Créez des événements{' '}
-                <motion.span
-                  className="text-primary inline-block"
-                  initial={{ opacity: 0, rotateX: 90 }}
-                  animate={{ opacity: 1, rotateX: 0 }}
-                  transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  inoubliables
-                </motion.span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.4 }}
-                className="mt-6 text-lg md:text-xl text-foreground/90 max-w-xl mx-auto lg:mx-0 leading-relaxed"
-              >
-                Gérez vos invités, envoyez des invitations élégantes et suivez tout en temps réel. HK Event simplifie l'organisation de vos événements.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.6 }}
-                className="mt-10 flex items-center justify-center lg:justify-start"
-              >
-                <Link to={createEventLink} state={createEventLinkState}>
-                  <motion.div
-                    whileHover={{ scale: 1.06, y: -3 }}
-                    whileTap={{ scale: 0.96 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                  >
-                    <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 h-14 text-lg font-semibold shadow-[var(--shadow-gold)] rounded-full">
-                      Créer mon premier événement <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-              </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="text-lg md:text-xl font-light tracking-wide text-white/90 max-w-lg mx-auto"
+          >
+            La plateforme élégante pour vos mariages, galas et célébrations inoubliables
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="mt-10 flex flex-col sm:flex-row gap-4 justify-center"
+          >
+            <Link to="/auth">
+              <Button size="lg" className="wedding-btn-gold rounded-none uppercase tracking-widest px-10 h-12 text-sm">
+                Connexion
+              </Button>
+            </Link>
+            <Link to="/auth/register">
+              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 h-12 text-sm border-white text-white bg-white/10 hover:bg-white hover:text-[#4a5a44] backdrop-blur-sm">
+                Inscription
+              </Button>
             </Link>
           </motion.div>
-        </div>
-
-          {/* Scroll indicator */}
-          <motion.div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2"
-            animate={{ y: [0, 12, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          <motion.a
+            href="#compte-a-rebours"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="inline-block mt-16 animate-bounce"
           >
-            <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/40 flex items-start justify-center p-1.5">
-              <motion.div
-                className="w-1.5 h-1.5 rounded-full bg-primary"
-                animate={{ y: [0, 16, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            </div>
-          </motion.div>
-        </motion.div>
+            <ChevronDown className="h-8 w-8 text-white/70" />
+          </motion.a>
+        </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 px-4 border-y border-border bg-muted/30 relative">
-        <motion.div
-          variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}
-          className="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-8"
-        >
-          {stats.map((stat, i) => (
-            <motion.div key={stat.label} variants={fadeUp} custom={i} className="text-center group">
-              <motion.div
-                whileHover={{ scale: 1.15, rotate: 5 }}
-                transition={{ type: 'spring', stiffness: 400 }}
-                className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-primary mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
-              >
-                <stat.icon className="h-7 w-7" />
-              </motion.div>
-              <motion.p
-                className="font-display text-3xl md:text-4xl font-bold text-foreground"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: i * 0.15 }}
-              >
-                {stat.value}
-              </motion.p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* Latest Events */}
-      <section id="events" className="py-24 px-4">
-        <div className="container mx-auto">
-          <motion.div variants={fadeLeft} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-              Événements récents
-            </motion.span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Derniers événements</h2>
-            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Découvrez quelques-uns des événements récemment organisés avec HK Event.</p>
-          </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid md:grid-cols-3 gap-8">
-            {latestEvents.map((event, i) => (
-              <motion.div key={event.title} variants={scaleIn} custom={i} whileHover={{ y: -10 }} transition={{ type: 'spring', stiffness: 300 }}>
-                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-500 border-border">
-                  <div className="aspect-video overflow-hidden relative">
-                    <img src={event.image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  <CardContent className="p-5">
-                    <h3 className="font-display text-lg font-semibold text-foreground">{event.title}</h3>
-                    <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" />{event.date}</span>
-                      <span className="flex items-center gap-1.5"><Users className="h-4 w-4" />{event.guests} invités</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+      {/* Countdown */}
+      <section id="compte-a-rebours" className="py-20 px-4 -mt-16 relative z-10">
+        <div className="max-w-3xl mx-auto text-center">
+          <SectionTitle
+            script="Save the date"
+            title="Compte à rebours"
+            subtitle="Préparez votre prochaine célébration avec sérénité"
+          />
+          <div className="grid grid-cols-4 gap-3 md:gap-6">
+            {[
+              { val: countdown.days, label: 'Jours' },
+              { val: countdown.hours, label: 'Heures' },
+              { val: countdown.minutes, label: 'Minutes' },
+              { val: countdown.seconds, label: 'Secondes' },
+            ].map(({ val, label }) => (
+              <div key={label} className="countdown-box py-6 md:py-8 px-2">
+                <p className="font-display text-3xl md:text-5xl font-semibold text-[#4a5a44]">{String(val).padStart(2, '0')}</p>
+                <p className="text-xs md:text-sm uppercase tracking-widest text-[#7a8b72] mt-2">{label}</p>
+              </div>
             ))}
-          </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Story */}
+      <section id="histoire" className="py-24 px-4 bg-[#f5ebe6]/40">
+        <div className="max-w-6xl mx-auto">
+          <SectionTitle script="Notre histoire" title="Une passion pour l'élégance" />
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="relative">
+              <img src={WEDDING_IMAGES.story} alt="Célébration" className="w-full aspect-[4/5] object-cover shadow-xl" />
+              <img
+                src={WEDDING_IMAGES.storyAlt}
+                alt=""
+                className="absolute -bottom-8 -right-4 md:-right-8 w-40 md:w-52 aspect-square object-cover border-4 border-[#faf8f5] shadow-lg hidden sm:block"
+              />
+            </motion.div>
+            <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="space-y-6 text-lg text-[#5a6a54] font-light leading-relaxed">
+              <p>
+                HK Event est née d&apos;une conviction simple : chaque grand moment mérite une organisation aussi
+                raffinée que la cérémonie elle-même. Mariages, anniversaires, galas — nous accompagnons les
+                organisateurs africains avec des outils modernes et une esthétique soignée.
+              </p>
+              <p>
+                Invitations personnalisées, suivi RSVP en temps réel, scanner QR à l&apos;accueil et livre d&apos;or
+                digital : tout est pensé pour que vous viviez pleinement votre événement, sans stress.
+              </p>
+              <p className="wedding-script text-3xl text-[#b8956c]">Avec amour, l&apos;équipe HK Event</p>
+            </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 px-4 bg-muted/30">
-        <div className="container mx-auto">
-          <motion.div variants={fadeRight} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-              Ce que nous offrons
-            </motion.span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Nos services</h2>
-            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Tout ce dont vous avez besoin pour organiser des événements exceptionnels.</p>
-          </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service, i) => (
-              <motion.div key={service.title} variants={fadeUp} custom={i} whileHover={{ y: -8, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}>
-                <Card className="group hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full">
-                  <CardContent className="p-7">
-                    <motion.div
-                      whileHover={{ rotate: [0, -10, 10, 0] }}
-                      transition={{ duration: 0.5 }}
-                      className="h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
-                    >
-                      <service.icon className="h-7 w-7" />
-                    </motion.div>
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-2">{service.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>
-                  </CardContent>
-                </Card>
+      <section id="services" className="py-24 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <SectionTitle
+            script="Prestations"
+            title="Nos services"
+            subtitle="Chaque détail compte pour une célébration parfaite"
+          />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            {SERVICES.map((service, i) => (
+              <motion.article
+                key={service.slug}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+              >
+                <Link to={`/services/${service.slug}`} className="group block h-full">
+                  <div className={`overflow-hidden aspect-[4/3] relative ${service.isIllustration ? 'bg-[#faf8f5]' : ''}`}>
+                    <img
+                      src={service.cardImage}
+                      alt={service.title}
+                      className={
+                        service.isIllustration
+                          ? 'w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500'
+                          : 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
+                      }
+                    />
+                    {!service.isIllustration && (
+                      <div className="absolute inset-0 bg-[#4a5a44]/0 group-hover:bg-[#4a5a44]/25 transition-colors duration-500" />
+                    )}
+                  </div>
+                  <div className="pt-6 text-center border-b border-[#e8e0d8] pb-6 group-hover:border-[#b8956c] transition-colors">
+                    <p className="wedding-script text-3xl text-[#b8956c]">{service.script}</p>
+                    <h3 className="font-display text-xl font-semibold text-[#4a5a44] mt-2">{service.title}</h3>
+                    <p className="mt-3 text-sm text-[#7a8b72] font-light leading-relaxed px-2">{service.shortDescription}</p>
+                    <span className="inline-flex items-center gap-2 mt-5 text-xs uppercase tracking-[0.2em] text-[#4a5a44] group-hover:text-[#b8956c] transition-colors">
+                      En savoir plus <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
+                </Link>
+              </motion.article>
+            ))}
+          </div>
+          <div className="text-center mt-12">
+            <Link to="/services">
+              <Button variant="outline" className="wedding-btn-outline rounded-none uppercase tracking-widest px-8">
+                Voir tous les services
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery preview */}
+      <section id="galerie" className="py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <SectionTitle script="Galerie" title="Moments précieux" subtitle="Des célébrations magnifiques, orchestrées avec HK Event" />
+          <div className="columns-2 md:columns-3 gap-4 space-y-4">
+            {GALLERY_ITEMS.slice(0, 6).map((item, i) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className="break-inside-avoid overflow-hidden group"
+              >
+                <Link to="/galerie">
+                  <img
+                    src={item.src}
+                    alt={item.caption}
+                    className={`w-full object-cover group-hover:scale-105 transition-transform duration-700 ${item.layout === 'tall' ? 'aspect-[3/4]' : 'aspect-square'}`}
+                  />
+                </Link>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
+          <div className="text-center mt-12">
+            <Link to="/galerie">
+              <Button variant="outline" className="wedding-btn-outline rounded-none uppercase tracking-widest px-10">
+                Voir toute la galerie
+              </Button>
+            </Link>
+          </div>
         </div>
+      </section>
+
+      {/* Venue / Platform highlight */}
+      <section className="relative py-32 px-4">
+        <div className="absolute inset-0">
+          <img src={WEDDING_IMAGES.venue} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-[#4a5a44]/75" />
+        </div>
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="relative z-10 max-w-2xl mx-auto text-center text-[#faf8f5]"
+        >
+          <p className="wedding-script text-5xl text-[#d4bc94] mb-4">Le lieu idéal</p>
+          <h2 className="font-display text-3xl md:text-4xl font-semibold">Votre événement, partout en Afrique</h2>
+          <p className="mt-6 text-lg font-light text-[#faf8f5]/85 leading-relaxed">
+            Que ce soit à Kinshasa, Lubumbashi ou ailleurs, HK Event vous accompagne avec une interface mobile,
+            des paiements locaux et un support dédié.
+          </p>
+        </motion.div>
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-24 px-4">
-        <div className="container mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-              Témoignages
-            </motion.span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Ce que disent nos clients</h2>
-            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Des milliers d'organisateurs nous font confiance.</p>
-          </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <motion.div key={t.name} variants={scaleIn} custom={i} whileHover={{ y: -8 }} transition={{ type: 'spring', stiffness: 300 }}>
-                <Card className="hover:shadow-lg transition-all duration-300 h-full border-border">
-                  <CardContent className="p-7">
-                    <div className="flex gap-1 mb-4">
-                      {[...Array(5)].map((_, j) => (
-                        <motion.div key={j} initial={{ opacity: 0, scale: 0 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 + j * 0.1 }}>
-                          <Star className="h-4 w-4 fill-primary text-primary" />
-                        </motion.div>
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed italic mb-6">"{t.content}"</p>
-                    <div className="flex items-center gap-3">
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        className="h-11 w-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm"
-                      >
-                        {t.avatar}
-                      </motion.div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.role}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+      <section id="temoignages" className="py-24 px-4 bg-[#f5ebe6]/30">
+        <div className="max-w-6xl mx-auto">
+          <SectionTitle script="Témoignages" title="Ce qu'ils en disent" />
+          <div className="grid md:grid-cols-3 gap-8">
+            {TESTIMONIALS.map((t, i) => (
+              <motion.blockquote
+                key={t.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white p-8 shadow-sm border border-[#e8e0d8] text-center"
+              >
+                <p className="wedding-script text-5xl text-[#b8956c]/40 leading-none mb-4">&ldquo;</p>
+                <p className="text-[#5a6a54] font-light italic leading-relaxed mb-6">{t.quote}</p>
+                <footer>
+                  <p className="font-display font-semibold text-[#4a5a44]">{t.name}</p>
+                  <p className="text-sm text-[#7a8b72] mt-1">{t.role}</p>
+                </footer>
+              </motion.blockquote>
             ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="py-24 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-3xl">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-              FAQ
-            </motion.span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Questions fréquentes</h2>
-            <p className="mt-4 text-muted-foreground">Tout ce que vous devez savoir sur HK Event.</p>
-          </motion.div>
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, i) => (
-                <motion.div key={i} variants={fadeUp} custom={i}>
-                  <AccordionItem value={`faq-${i}`} className="border border-border rounded-xl px-5 bg-card shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <AccordionTrigger className="text-left text-foreground font-medium hover:no-underline gap-3">
-                      <span className="flex items-center gap-3">
-                        <HelpCircle className="h-5 w-5 text-primary shrink-0" />
-                        {faq.question}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed pl-8">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                </motion.div>
-              ))}
-            </Accordion>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* Team */}
-      <section id="team" className="py-24 px-4">
-        <div className="container mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-              Notre équipe
-            </motion.span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">L'équipe HK Event</h2>
-            <p className="mt-4 text-muted-foreground max-w-lg mx-auto">Une équipe passionnée au service de vos événements.</p>
-          </motion.div>
-          
-          {/* MODIFICATION ICI : Utilisation de flex, flex-wrap et justify-center au lieu de grid-cols-4 */}
-          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="flex flex-wrap justify-center gap-8">
-            {team.map((member, i) => (
-              <motion.div 
-                key={member.name} 
-                variants={scaleIn} 
-                custom={i} 
-                whileHover={{ y: -10 }} 
-                transition={{ type: 'spring', stiffness: 300 }} 
-                // Ajout d'une largeur (w-full md:w-72) pour que les cartes gardent une belle taille
-                className="w-full md:w-72 flex justify-center"
+      <section id="equipe" className="py-24 px-4">
+        <div className="max-w-4xl mx-auto">
+          <SectionTitle script="Notre équipe" title="Les visages derrière HK Event" />
+          <div className="flex flex-wrap justify-center gap-12">
+            {TEAM.map((member, i) => (
+              <motion.div
+                key={member.name}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="text-center"
               >
-                <Card className="w-full text-center hover:shadow-lg transition-all duration-300 overflow-hidden group border-border">
-                  <CardContent className="p-6">
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: 3 }}
-                      transition={{ type: 'spring', stiffness: 300 }}
-                      className="h-28 w-28 rounded-full overflow-hidden mx-auto mb-4 ring-4 ring-primary/10 group-hover:ring-primary/40 transition-all duration-500"
-                    >
-                      <img src={member.image} alt={member.name} className="h-full w-full object-cover" />
-                    </motion.div>
-                    <h3 className="font-semibold text-foreground">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{member.role}</p>
-                  </CardContent>
-                </Card>
+                <div className="h-36 w-36 md:h-44 md:w-44 rounded-full overflow-hidden mx-auto border-2 border-[#b8956c] p-1">
+                  <img src={member.image} alt={member.name} className="h-full w-full object-cover rounded-full" />
+                </div>
+                <h3 className="font-display text-xl font-semibold text-[#4a5a44] mt-5">{member.name}</h3>
+                <p className="text-sm text-[#7a8b72] mt-1 uppercase tracking-wider">{member.role}</p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      <section id="contact" className="py-24 px-4 bg-muted/30">
-        <div className="container mx-auto max-w-5xl">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <motion.span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-              Contact
-            </motion.span>
-            <h2 className="font-display text-3xl md:text-5xl font-bold text-foreground">Contactez-nous</h2>
-            <p className="mt-4 text-muted-foreground">Une question ? Notre équipe est là pour vous aider.</p>
-          </motion.div>
-          <div className="grid md:grid-cols-5 gap-8">
-            {/* Contact info */}
-            <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }} className="md:col-span-2 space-y-6">
+      {/* FAQ */}
+      <section id="faq" className="py-24 px-4 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <SectionTitle script="Questions" title="Foire aux questions" />
+          <Accordion type="single" collapsible className="space-y-3">
+            {FAQ_ITEMS.map((item, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border border-[#e8e0d8] px-5 bg-[#faf8f5]">
+                <AccordionTrigger className="text-left font-display text-lg text-[#4a5a44] hover:no-underline">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-[#7a8b72] font-light leading-relaxed pb-4">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
+      {/* Auth CTA */}
+      <section className="py-24 px-4 bg-[#4a5a44] text-center">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="max-w-xl mx-auto">
+          <p className="wedding-script text-5xl text-[#d4bc94] mb-4">Rejoignez-nous</p>
+          <h2 className="font-display text-3xl md:text-4xl text-[#faf8f5] font-semibold">Créez votre compte gratuitement</h2>
+          <p className="mt-4 text-[#faf8f5]/80 font-light">Connectez-vous ou inscrivez-vous pour commencer à organiser votre événement.</p>
+          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/auth">
+              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#faf8f5] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
+                Connexion
+              </Button>
+            </Link>
+            <Link to="/auth/register">
+              <Button size="lg" className="wedding-btn-gold rounded-none uppercase tracking-widest px-10">
+                Inscription
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <SectionTitle script="Contact" title="Écrivez-nous" subtitle="Une question ? Notre équipe vous répond avec plaisir." />
+          <div className="grid md:grid-cols-5 gap-10">
+            <div className="md:col-span-2 space-y-6">
               {[
-                { icon: Mail, title: 'Email', info: 'contact@hkevent.com' },
+                { icon: Mail, title: 'E-mail', info: 'contact@hkevent.com' },
                 { icon: Phone, title: 'Téléphone', info: '+243 828 863 897' },
                 { icon: MapPin, title: 'Adresse', info: 'Kinshasa, RDC' },
-              ].map((item, i) => (
-                <motion.div key={item.title} variants={fadeLeft} custom={i} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 300 }}>
-                  <Card className="hover:shadow-lg transition-all duration-300 border-border">
-                    <CardContent className="p-5 flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <item.icon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.info}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+              ].map((item) => (
+                <div key={item.title} className="flex items-center gap-4 p-5 bg-white border border-[#e8e0d8]">
+                  <div className="h-12 w-12 flex items-center justify-center text-[#b8956c]">
+                    <item.icon className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold text-[#4a5a44]">{item.title}</p>
+                    <p className="text-sm text-[#7a8b72]">{item.info}</p>
+                  </div>
+                </div>
               ))}
-            </motion.div>
-
-            {/* Contact form */}
-            <motion.div variants={fadeRight} initial="hidden" whileInView="visible" viewport={{ once: true }} className="md:col-span-3">
-              <Card className="border-border shadow-2xl overflow-hidden relative">
-                {/* Animated background blobs */}
-                <motion.div
-                  className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none"
-                  animate={{ x: [0, 30, 0], y: [0, 20, 0] }}
-                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                  className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none"
-                  animate={{ x: [0, -30, 0], y: [0, -20, 0] }}
-                  transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <CardContent className="p-6 md:p-8 relative">
-                  <AnimatePresence mode="wait">
-                    {sent ? (
-                      <motion.div
-                        key="success"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="py-16 flex flex-col items-center text-center"
-                      >
-                        <motion.div
-                          initial={{ scale: 0, rotate: -180 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-                          className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center mb-4"
-                        >
-                          <CheckCircle2 className="h-12 w-12 text-primary" />
-                        </motion.div>
-                        <h3 className="font-display text-2xl font-bold text-foreground">Message envoyé !</h3>
-                        <p className="mt-2 text-muted-foreground">Nous vous répondrons dans les plus brefs délais.</p>
-                      </motion.div>
-                    ) : (
-                      <motion.form
-                        key="form"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onSubmit={handleContactSubmit}
-                        className="space-y-5"
-                      >
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <motion.div
-                            className="space-y-2"
-                            animate={{ scale: focusedField === 'name' ? 1.02 : 1 }}
-                            transition={{ type: 'spring', stiffness: 300 }}
-                          >
-                            <Label htmlFor="contact-name" className="text-foreground flex items-center gap-1.5">
-                              <User className="h-3.5 w-3.5 text-primary" /> Nom complet *
-                            </Label>
-                            <Input
-                              id="contact-name"
-                              placeholder="Votre nom"
-                              value={contactForm.name}
-                              onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
-                              onFocus={() => setFocusedField('name')}
-                              onBlur={() => setFocusedField(null)}
-                              maxLength={100}
-                              required
-                              className="transition-all focus:ring-2 focus:ring-primary/30"
-                            />
-                          </motion.div>
-                          <motion.div
-                            className="space-y-2"
-                            animate={{ scale: focusedField === 'email' ? 1.02 : 1 }}
-                            transition={{ type: 'spring', stiffness: 300 }}
-                          >
-                            <Label htmlFor="contact-email" className="text-foreground flex items-center gap-1.5">
-                              <Mail className="h-3.5 w-3.5 text-primary" /> Email *
-                            </Label>
-                            <Input
-                              id="contact-email"
-                              type="email"
-                              placeholder="votre@email.com"
-                              value={contactForm.email}
-                              onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
-                              onFocus={() => setFocusedField('email')}
-                              onBlur={() => setFocusedField(null)}
-                              maxLength={255}
-                              required
-                              className="transition-all focus:ring-2 focus:ring-primary/30"
-                            />
-                          </motion.div>
-                        </div>
-                        <motion.div
-                          className="space-y-2"
-                          animate={{ scale: focusedField === 'subject' ? 1.01 : 1 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                        >
-                          <Label htmlFor="contact-subject" className="text-foreground flex items-center gap-1.5">
-                            <Sparkles className="h-3.5 w-3.5 text-primary" /> Sujet
-                          </Label>
-                          <Input
-                            id="contact-subject"
-                            placeholder="Sujet de votre message"
-                            value={contactForm.subject}
-                            onChange={(e) => setContactForm(prev => ({ ...prev, subject: e.target.value }))}
-                            onFocus={() => setFocusedField('subject')}
-                            onBlur={() => setFocusedField(null)}
-                            maxLength={200}
-                            className="transition-all focus:ring-2 focus:ring-primary/30"
-                          />
-                        </motion.div>
-                        <motion.div
-                          className="space-y-2"
-                          animate={{ scale: focusedField === 'message' ? 1.01 : 1 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="contact-message" className="text-foreground flex items-center gap-1.5">
-                              <MessageSquare className="h-3.5 w-3.5 text-primary" /> Message *
-                            </Label>
-                            <motion.span
-                              key={messageLength}
-                              initial={{ scale: 1.2, opacity: 0.5 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              className={`text-xs font-medium ${messageLength > messageMax * 0.9 ? 'text-destructive' : 'text-muted-foreground'}`}
-                            >
-                              {messageLength}/{messageMax}
-                            </motion.span>
-                          </div>
-                          <Textarea
-                            id="contact-message"
-                            placeholder="Décrivez votre demande..."
-                            rows={5}
-                            value={contactForm.message}
-                            onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
-                            onFocus={() => setFocusedField('message')}
-                            onBlur={() => setFocusedField(null)}
-                            maxLength={messageMax}
-                            required
-                            className="transition-all focus:ring-2 focus:ring-primary/30 resize-none"
-                          />
-                        </motion.div>
-                        <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400 }}>
-                          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 shadow-[var(--shadow-gold)] relative overflow-hidden group" disabled={sending}>
-                            <motion.span
-                              className="absolute inset-0 bg-white/20"
-                              initial={{ x: '-100%' }}
-                              whileHover={{ x: '100%' }}
-                              transition={{ duration: 0.6 }}
-                            />
-                            {sending ? (
-                              <div className="flex items-center gap-2">
-                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full" />
-                                <span>Envoi en cours...</span>
-                              </div>
-                            ) : (
-                              <span className="flex items-center">Envoyer le message <Send className="ml-2 h-4 w-4" /></span>
-                            )}
-                          </Button>
-                        </motion.div>
-                      </motion.form>
-                    )}
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
-            </motion.div>
+            </div>
+            <div className="md:col-span-3 bg-white border border-[#e8e0d8] p-6 md:p-8">
+              {sent ? (
+                <div className="py-12 text-center">
+                  <CheckCircle2 className="h-16 w-16 text-[#7a8b72] mx-auto mb-4" />
+                  <h3 className="font-display text-2xl text-[#4a5a44]">Message envoyé !</h3>
+                  <p className="text-[#7a8b72] mt-2">Nous vous répondrons très bientôt.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleContact} className="space-y-5">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-[#4a5a44] flex items-center gap-1"><User className="h-3.5 w-3.5" /> Nom *</Label>
+                      <Input id="name" value={contactForm.name} onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))} className="rounded-none border-[#e8e0d8]" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-[#4a5a44] flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> E-mail *</Label>
+                      <Input id="email" type="email" value={contactForm.email} onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))} className="rounded-none border-[#e8e0d8]" required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subject" className="text-[#4a5a44]">Sujet</Label>
+                    <Input id="subject" value={contactForm.subject} onChange={(e) => setContactForm((p) => ({ ...p, subject: e.target.value }))} className="rounded-none border-[#e8e0d8]" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="message" className="text-[#4a5a44] flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> Message *</Label>
+                    <Textarea id="message" rows={5} value={contactForm.message} onChange={(e) => setContactForm((p) => ({ ...p, message: e.target.value }))} className="rounded-none border-[#e8e0d8] resize-none" required />
+                  </div>
+                  <Button type="submit" disabled={sending} className="w-full wedding-btn-gold rounded-none uppercase tracking-widest h-12">
+                    {sending ? 'Envoi…' : <>Envoyer <Send className="ml-2 h-4 w-4" /></>}
+                  </Button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </section>
-
-      {/* CTA */}
-      <motion.section
-        initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
-        className="py-24 px-4 bg-sidebar text-sidebar-foreground relative overflow-hidden"
-      >
-        {/* Animated bg circles */}
-        <motion.div
-          className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-primary/5 blur-3xl"
-          animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl"
-          animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        <div className="container mx-auto text-center relative z-10">
-          <motion.h2 variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            className="font-display text-3xl md:text-5xl font-bold">Prêt à créer votre événement ?</motion.h2>
-          <motion.p variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={1}
-            className="mt-4 text-sidebar-foreground/70 max-w-lg mx-auto text-lg">Rejoignez des milliers d'organisateurs qui font confiance à HK Event.</motion.p>
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} custom={2}>
-            <Link to="/auth" className="mt-8 inline-block">
-              <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }} transition={{ type: 'spring', stiffness: 400 }}>
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 h-13 px-10 text-base shadow-[var(--shadow-gold)]">
-                  Créer un compte gratuitement <ChevronRight className="ml-2 h-5 w-5" />
-                </Button>
-              </motion.div>
-            </Link>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Footer */}
-      <footer className="bg-sidebar text-sidebar-foreground border-t border-sidebar-border">
-        <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center overflow-hidden">
-                  <img src={logoWhite} alt="HK Event" className="h-full w-full object-contain" />
-                </div>
-                <span className="font-display text-lg font-bold">HK Event</span>
-              </div>
-              <p className="text-sm text-sidebar-foreground/60 leading-relaxed">La plateforme de gestion d'événements la plus complète d'Afrique.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Produit</h4>
-              <ul className="space-y-2 text-sm text-sidebar-foreground/60">
-                <li><a href="#services" className="hover:text-sidebar-foreground transition-colors">Services</a></li>
-                <li><a href="#events" className="hover:text-sidebar-foreground transition-colors">Événements</a></li>
-                <li><a href="#faq" className="hover:text-sidebar-foreground transition-colors">FAQ</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Entreprise</h4>
-              <ul className="space-y-2 text-sm text-sidebar-foreground/60">
-                <li><a href="#team" className="hover:text-sidebar-foreground transition-colors">Équipe</a></li>
-                <li><a href="#contact" className="hover:text-sidebar-foreground transition-colors">Contact</a></li>
-                <li><a href="#testimonials" className="hover:text-sidebar-foreground transition-colors">Témoignages</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Légal</h4>
-              <ul className="space-y-2 text-sm text-sidebar-foreground/60">
-                <li><a href="#" className="hover:text-sidebar-foreground transition-colors">Confidentialité</a></li>
-                <li><a href="#" className="hover:text-sidebar-foreground transition-colors">Conditions d'utilisation</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-sidebar-border mt-10 pt-6 text-center text-sm text-sidebar-foreground/40">
-            © {new Date().getFullYear()} HK Event. Tous droits réservés. Developed by <a href="https://espoir-kakesa.netlify.app" className="text-primary" target="_blank" rel="noopener noreferrer">Espoir Kakesa</a>.
-          </div>
-        </div>
-      </footer>
-    </div>
+    </WeddingPublicLayout>
   );
 };
 

@@ -68,7 +68,7 @@ const InvitationTemplates = () => {
     location: '',
     message: 'Nous serions honorés de votre présence à cet événement exceptionnel.',
     primaryColor: templates[0].primaryColor,
-    fontFamily: 'Playfair Display',
+    fontFamily: 'Lato',
   });
 
   // Charger les données de l'événement et les invités
@@ -241,9 +241,9 @@ const InvitationTemplates = () => {
 
     return `
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
       </style>
-      <div style="font-family: 'Playfair Display', serif; max-width: 600px; margin: 0 auto; background-color: ${backgroundColor}; border-radius: 0; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.45); border: none; position: relative;">
+      <div style="font-family: 'Lato', sans-serif; max-width: 600px; margin: 0 auto; background-color: ${backgroundColor}; border-radius: 0; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.45); border: none; position: relative;">
         <!-- Header Image with Overlay & Torn Edge -->
         <div style="position: relative; height: 450px; overflow: hidden; background-color: #222;">
           <img src="${eventImageUrl}" alt="Event" style="width: 100%; height: 100%; object-fit: cover; object-position: center 25%; display: block;" />
@@ -271,25 +271,25 @@ const InvitationTemplates = () => {
           <!-- Ornamental Decorations -->
           <div style="font-size: 36px; margin-bottom: 30px; color: ${accentColor}; letter-spacing: 8px; opacity: 0.8;">━━━━  ❀  ━━━━</div>
           
-          <p style="font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 6px; font-size: 14px; margin-bottom: 25px; opacity: 0.9; font-weight: 700;">
+          <p style="font-family: 'Lato', sans-serif; text-transform: uppercase; letter-spacing: 6px; font-size: 14px; margin-bottom: 25px; opacity: 0.9; font-weight: 700;">
             ${customization.title}
           </p>
           
-          <h1 style="font-size: 48px; font-family: 'Playfair Display', serif; margin: 0 0 35px 0; font-weight: 700; color: ${accentColor}; line-height: 1.2; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+          <h1 style="font-size: 48px; font-family: 'Lato', sans-serif; margin: 0 0 35px 0; font-weight: 700; color: ${accentColor}; line-height: 1.2; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.15);">
             ${customization.eventName.toUpperCase()}
           </h1>
           
           <div style="width: 100px; height: 1px; background-color: ${accentColor}; margin: 0 auto 40px auto; opacity: 0.5;"></div>
           
-          <p style="font-family: 'Montserrat', sans-serif; font-size: 19px; line-height: 2; margin-bottom: 50px; font-weight: 300; opacity: 0.95; max-width: 480px; margin-left: auto; margin-right: auto;">
+          <p style="font-family: 'Roboto', sans-serif; font-size: 19px; line-height: 2; margin-bottom: 50px; font-weight: 300; opacity: 0.95; max-width: 480px; margin-left: auto; margin-right: auto;">
             "${customization.message}"
           </p>
 
           <div style="background-color: rgba(255,255,255,0.05); padding: 45px 30px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 50px; display: inline-block; width: 100%; box-sizing: border-box; backdrop-filter: blur(10px); border-radius: 4px;">
-            <div style="font-family: 'Cinzel', serif; font-size: 32px; font-weight: 700; margin-bottom: 15px; letter-spacing: 4px; color: ${accentColor};">
+            <div style="font-family: 'Lato', sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 15px; letter-spacing: 4px; color: ${accentColor};">
               ${customization.date.toUpperCase()}
             </div>
-            <div style="font-family: 'Montserrat', sans-serif; font-size: 15px; opacity: 0.8; letter-spacing: 3px; text-transform: uppercase; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 15px; display: inline-block; font-weight: 600;">
+            <div style="font-family: 'Roboto', sans-serif; font-size: 15px; opacity: 0.8; letter-spacing: 3px; text-transform: uppercase; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 15px; display: inline-block; font-weight: 600;">
               📍 ${customization.location}
             </div>
           </div>
@@ -298,7 +298,7 @@ const InvitationTemplates = () => {
             Confirmer ma présence
           </a>
           
-          <div style="margin-top: 70px; font-family: 'Cinzel', serif; font-size: 11px; opacity: 0.5; letter-spacing: 5px; text-transform: uppercase; font-weight: 700;">
+          <div style="margin-top: 70px; font-family: 'Lato', sans-serif; font-size: 11px; opacity: 0.5; letter-spacing: 5px; text-transform: uppercase; font-weight: 700;">
              <div style="margin-bottom: 15px;">
                <img src="${window.location.origin}/images/logo-white.png" alt="Logo" style="width: 40px; height: 40px; border-radius: 50%; opacity: 0.8; display: inline-block;" />
              </div>
@@ -578,8 +578,8 @@ const InvitationTemplates = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Playfair Display">Playfair Display (Élégant)</SelectItem>
-                          <SelectItem value="Inter">Inter (Moderne)</SelectItem>
+                          <SelectItem value="Lato">Lato (Titres)</SelectItem>
+                          <SelectItem value="Roboto">Roboto (Texte)</SelectItem>
                           <SelectItem value="Georgia">Georgia (Classique)</SelectItem>
                           <SelectItem value="Arial">Arial (Simple)</SelectItem>
                         </SelectContent>

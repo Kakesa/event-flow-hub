@@ -14,8 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['Playfair Display', 'serif'],
-        body: ['Inter', 'sans-serif'],
+        display: ['Lato', 'sans-serif'],
+        body: ['Roboto', 'sans-serif'],
+        script: ['Lato', 'sans-serif'],
+        wedding: ['Roboto', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

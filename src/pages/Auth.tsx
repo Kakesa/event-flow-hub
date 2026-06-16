@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,24 +132,31 @@ const Auth = () => {
   };
 
   // ------------------- RENDER -------------------
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    return () => document.documentElement.classList.add('dark');
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-2 border-primary mb-4 relative overflow-hidden">
-            <img src={logoBlack} alt="Logo HK Event" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-primary/10"></div>
-          </div>
-          <h1 className="font-display text-3xl font-bold text-foreground">HK Event</h1>
-          <p className="text-muted-foreground mt-2">Gérez vos événements avec élégance</p>
+          <Link to="/" className="inline-block">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full border-2 border-[#b8956c] mb-4 overflow-hidden bg-white p-1">
+              <img src={logoBlack} alt="Logo HK Event" className="h-full w-full object-contain" />
+            </div>
+          </Link>
+          <p className="font-display text-3xl font-light text-[#b8956c] mb-1 tracking-wide">Bienvenue</p>
+          <h1 className="font-display text-3xl font-semibold text-[#4a5a44] tracking-wide">HK Event</h1>
+          <p className="text-[#7a8b72] mt-2 font-light">Connexion ou inscription à votre espace</p>
         </div>
 
-        <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/95">
+        <Card className="border-[#e8e0d8] shadow-lg bg-white rounded-none">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <CardHeader className="pb-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Connexion</TabsTrigger>
-                <TabsTrigger value="register">Inscription</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 rounded-none bg-[#f5ebe6]">
+                <TabsTrigger value="login" className="rounded-none data-[state=active]:bg-[#4a5a44] data-[state=active]:text-white">Connexion</TabsTrigger>
+                <TabsTrigger value="register" className="rounded-none data-[state=active]:bg-[#4a5a44] data-[state=active]:text-white">Inscription</TabsTrigger>
               </TabsList>
             </CardHeader>
 
@@ -192,7 +199,7 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={loadingLogin}>
+                  <Button type="submit" className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider" disabled={loadingLogin}>
                     {loadingLogin ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </form>
@@ -208,7 +215,7 @@ const Auth = () => {
                       <Input
                         className="pl-10"
                         type="text"
-                        placeholder="John Doe"
+                        placeholder="Witness kakesa"
                         value={registerData.name}
                         onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                       />
@@ -287,7 +294,7 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={loadingRegister}>
+                  <Button type="submit" className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider" disabled={loadingRegister}>
                     {loadingRegister ? 'Inscription...' : "S'inscrire"}
                   </Button>
                 </form>

@@ -42,7 +42,7 @@ const defaultThemes: { name: string; theme: InvitationTheme }[] = [
       secondaryColor: '#F5E6C8',
       backgroundColor: '#FFFEF5',
       textColor: '#333333',
-      fontFamily: 'Playfair Display',
+      fontFamily: 'Lato',
       fontSize: 16,
       borderRadius: 12,
       pattern: 'none',
@@ -68,7 +68,7 @@ const defaultThemes: { name: string; theme: InvitationTheme }[] = [
       secondaryColor: '#DBEAFE',
       backgroundColor: '#FFFFFF',
       textColor: '#1E293B',
-      fontFamily: 'Inter',
+      fontFamily: 'Roboto',
       fontSize: 15,
       borderRadius: 8,
       pattern: 'lines',
@@ -90,11 +90,10 @@ const defaultThemes: { name: string; theme: InvitationTheme }[] = [
 ];
 
 const fontOptions = [
-  { value: 'Inter', label: 'Inter (Moderne)' },
-  { value: 'Playfair Display', label: 'Playfair Display (Élégant)' },
+  { value: 'Roboto', label: 'Roboto (Corps de texte)' },
+  { value: 'Lato', label: 'Lato (Titres)' },
   { value: 'Dancing Script', label: 'Dancing Script (Romantique)' },
   { value: 'Lora', label: 'Lora (Classique)' },
-  { value: 'Montserrat', label: 'Montserrat (Sans-serif)' },
 ];
 
 const InvitationThemeEditor = ({
