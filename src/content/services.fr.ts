@@ -20,7 +20,8 @@ export const SERVICES: ServiceItem[] = [
     title: 'Planification d\'événements',
     shortDescription: 'Créez et configurez votre mariage, gala ou cérémonie en quelques clics.',
     heroImage: '/images/services/planification-hero.jpg',
-    cardImage: '/images/services/planification-card-custom.png',
+    cardImage: '/images/services/planification-dashboard.png',
+    isIllustration: true,
     intro: 'De la première idée au jour J, HK Event vous accompagne avec une interface claire et élégante. Définissez la date, le lieu, le type d\'événement et invitez votre équipe en toute simplicité.',
     features: [
       { title: 'Tableau de bord intuitif', description: 'Visualisez tous vos événements, statistiques et activités récentes en un coup d\'œil.' },
@@ -41,7 +42,8 @@ export const SERVICES: ServiceItem[] = [
     title: 'Invitations personnalisées',
     shortDescription: 'Des invitations élégantes par e-mail ou WhatsApp, à votre image.',
     heroImage: '/images/gallery/gallery-bride-portrait.png',
-    cardImage: '/images/services/invitations-card.jpg',
+    cardImage: '/images/services/invitations-personnalise.png',
+    isIllustration: true,
     intro: 'Choisissez parmi nos modèles raffinés ou personnalisez chaque détail : couleurs, textes, photos. Envoyez vos invitations en masse et suivez leur livraison.',
     features: [
       { title: 'Modèles élégants', description: 'Des designs inspirés des plus belles cérémonies, prêts à personnaliser.' },
@@ -62,7 +64,8 @@ export const SERVICES: ServiceItem[] = [
     title: 'RSVP en ligne',
     shortDescription: 'Suivez les réponses de vos invités en temps réel, sans relances interminables.',
     heroImage: '/images/gallery/gallery-couple-road.png',
-    cardImage: '/images/gallery/gallery-intimate-moment.png',
+    cardImage: '/images/services/rsvp-save-the-date.png',
+    isIllustration: true,
     intro: 'Vos invités confirment ou déclinent directement depuis leur invitation. Vous recevez les réponses instantanément et visualisez les statistiques mises à jour en direct.',
     features: [
       { title: 'Lien RSVP unique', description: 'Chaque invité reçoit un lien personnel sécurisé.' },
@@ -105,7 +108,8 @@ export const SERVICES: ServiceItem[] = [
     title: 'Livre d\'or digital',
     shortDescription: 'Recueillez les vœux et messages de vos invités en temps réel.',
     heroImage: '/images/gallery/gallery-garden-embrace.png',
-    cardImage: '/images/services/livre-dor-card-custom.png',
+    cardImage: '/images/services/livre-dor-card.png',
+    isIllustration: true,
     intro: 'Vos invités laissent leurs messages, vœux et anecdotes directement depuis leur invitation. Vous modérez, répondez et conservez ces souvenirs précieux pour toujours.',
     features: [
       { title: 'Messages en direct', description: 'Les vœux apparaissent sur votre espace en temps réel.' },

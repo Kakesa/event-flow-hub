@@ -25,7 +25,7 @@ import {
   Legend,
 } from 'recharts';
 
-const COLORS = ['hsl(38, 92%, 50%)', 'hsl(142, 76%, 36%)', 'hsl(200, 80%, 50%)', 'hsl(340, 75%, 55%)', 'hsl(262, 83%, 58%)'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
 const Analytics = () => {
   const [analytics, setAnalytics] = useState<AnalyticsType | null>(null);
@@ -66,9 +66,9 @@ const Analytics = () => {
   };
 
   const statusData = analytics ? [
-    { name: 'Confirmés', value: analytics.totalConfirmed, color: 'hsl(142, 76%, 36%)' },
-    { name: 'Déclinés', value: analytics.totalDeclined, color: 'hsl(0, 84%, 60%)' },
-    { name: 'En attente', value: analytics.totalPending, color: 'hsl(38, 92%, 50%)' },
+    { name: 'Confirmés', value: analytics.totalConfirmed, color: 'hsl(var(--success))' },
+    { name: 'Déclinés', value: analytics.totalDeclined, color: 'hsl(var(--destructive))' },
+    { name: 'En attente', value: analytics.totalPending, color: 'hsl(var(--primary))' },
   ] : [];
 
   const drinksData = analytics ? Object.entries(analytics.preferredDrinksStats).map(([name, value]) => ({

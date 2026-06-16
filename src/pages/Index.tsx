@@ -30,7 +30,7 @@ import {
   Bar,
 } from 'recharts';
 
-const COLORS = ['hsl(142, 76%, 36%)', 'hsl(0, 84%, 60%)', 'hsl(38, 92%, 50%)'];
+const COLORS = ['hsl(var(--success))', 'hsl(var(--destructive))', 'hsl(var(--primary))'];
 
 interface Notification {
   id: string;
@@ -464,7 +464,7 @@ const Index = () => {
                     <XAxis type="number" tick={{ fontSize: 10 }} />
                     <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 10 }} />
                     <Tooltip />
-                    <Bar dataKey="guests" fill="hsl(38, 92%, 50%)" name="Total" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="guests" fill="hsl(var(--primary))" name="Total" radius={[0, 4, 4, 0]} />
                     <Bar dataKey="confirmed" fill="hsl(142, 76%, 36%)" name="Confirmés" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
