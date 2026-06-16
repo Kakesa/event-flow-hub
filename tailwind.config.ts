@@ -16,6 +16,8 @@ export default {
       fontFamily: {
         display: ['Playfair Display', 'serif'],
         body: ['Inter', 'sans-serif'],
+        script: ['Great Vibes', 'cursive'],
+        wedding: ['Cormorant Garamond', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",

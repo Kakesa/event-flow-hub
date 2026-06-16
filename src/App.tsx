@@ -23,6 +23,9 @@ import EditEvent from "./pages/EditEvent";
 import Users from "./pages/Users";
 import AdminDashboard from "./pages/AdminDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import GalleryPage from "./pages/GalleryPage";
+import ServicesIndexPage from "./pages/ServicesIndexPage";
+import ServicePage from "./pages/ServicePage";
 import NotFound from "./pages/NotFound";
 import VisitTracker from "@/hooks/useTrackVisit";
 
@@ -45,6 +48,9 @@ const App = () => (
             <Route path="/rsvp/:eventId" element={<RSVP />} />
             <Route path="/invite/:slug" element={<RSVP />} />
             <Route path="/" element={<LandingPage />} />
+            <Route path="/services" element={<ServicesIndexPage />} />
+            <Route path="/services/:slug" element={<ServicePage />} />
+            <Route path="/galerie" element={<GalleryPage />} />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />

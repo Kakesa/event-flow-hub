@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -207,4 +207,69 @@
 
 .animate-fall-petal {
   animation: fallPetal linear infinite;
+}
+
+/* ─── Landing mariage (style Renderforest template) ─── */
+.wedding-landing {
+  --wedding-cream: #faf8f5;
+  --wedding-sage: #7a8b72;
+  --wedding-sage-dark: #4a5a44;
+  --wedding-gold: #b8956c;
+  --wedding-gold-light: #d4bc94;
+  --wedding-blush: #f5ebe6;
+  background-color: var(--wedding-cream);
+  color: var(--wedding-sage-dark);
+  font-family: 'Cormorant Garamond', 'Playfair Display', serif;
+}
+
+.wedding-landing .wedding-script {
+  font-family: 'Great Vibes', cursive;
+}
+
+.wedding-landing .wedding-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--wedding-gold);
+  letter-spacing: 0.35em;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.wedding-landing .wedding-divider::before,
+.wedding-landing .wedding-divider::after {
+  content: '';
+  height: 1px;
+  width: 4rem;
+  background: linear-gradient(90deg, transparent, var(--wedding-gold), transparent);
+}
+
+.wedding-landing .wedding-btn-outline {
+  border: 1px solid var(--wedding-sage-dark);
+  color: var(--wedding-sage-dark);
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.wedding-landing .wedding-btn-outline:hover {
+  background: var(--wedding-sage-dark);
+  color: white;
+}
+
+.wedding-landing .wedding-btn-gold {
+  background: var(--wedding-gold);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.wedding-landing .wedding-btn-gold:hover {
+  background: var(--wedding-sage-dark);
+}
+
+.wedding-landing .countdown-box {
+  border: 1px solid var(--wedding-gold-light);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
 }
