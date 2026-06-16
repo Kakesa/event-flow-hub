@@ -37,6 +37,7 @@ const Guestbook = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        setLoading(true);
         const eventsRes = await eventsApi.getAll();
         setEvents(eventsRes.data);
         if (eventsRes.data.length > 0) {
@@ -54,6 +55,7 @@ const Guestbook = () => {
   const fetchMessages = useCallback(async (showNotification = false) => {
     if (!selectedEvent) return;
     try {
+      setLoading(true);
       const res = await guestbookApi.getByEvent(selectedEvent);
       const newMessages = res.data || [];
 
@@ -73,6 +75,13 @@ const Guestbook = () => {
       setMessages(newMessages);
     } catch (error) {
       console.error('Erreur:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les messages',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   }, [selectedEvent, notificationsEnabled, toast]);
 
@@ -80,7 +89,7 @@ const Guestbook = () => {
     if (selectedEvent) {
       fetchMessages(false);
     }
-  }, [selectedEvent]);
+  }, [selectedEvent, fetchMessages]);
 
   // Polling toutes les 10 secondes
   useEffect(() => {

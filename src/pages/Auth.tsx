@@ -146,7 +146,7 @@ const Auth = () => {
               <img src={logoBlack} alt="Logo HK Event" className="h-full w-full object-contain" />
             </div>
           </Link>
-          <p className="font-[Great_Vibes,cursive] text-3xl text-[#b8956c] mb-1" style={{ fontFamily: "'Great Vibes', cursive" }}>Bienvenue</p>
+          <p className="font-display text-3xl font-light text-[#b8956c] mb-1 tracking-wide">Bienvenue</p>
           <h1 className="font-display text-3xl font-semibold text-[#4a5a44] tracking-wide">HK Event</h1>
           <p className="text-[#7a8b72] mt-2 font-light">Connexion ou inscription à votre espace</p>
         </div>

@@ -19,7 +19,6 @@ import teamEspoir from '@/assets/team-espoir.jpg';
 import teamDan from '@/assets/team-dan.jpg';
 import {
   WEDDING_IMAGES,
-  SCHEDULE,
   TESTIMONIALS,
   FAQ_ITEMS,
   COUNTDOWN_TARGET,
@@ -294,41 +293,6 @@ const LandingPage = () => {
                 Voir toute la galerie
               </Button>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Schedule / Services */}
-      <section id="programme" className="py-24 px-4 bg-[#4a5a44] text-[#faf8f5]">
-        <div className="max-w-3xl mx-auto">
-          <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">
-            <p className="wedding-script text-4xl md:text-5xl text-[#d4bc94] mb-2">Programme</p>
-            <h2 className="font-display text-3xl md:text-5xl font-semibold tracking-wide">Votre journée parfaite</h2>
-            <p className="mt-4 text-lg text-[#faf8f5]/80 font-light">De la préparation à la dernière danse</p>
-            <div className="wedding-divider mt-6 text-[#d4bc94]">✦</div>
-          </motion.div>
-          <div className="relative border-l border-[#b8956c]/50 ml-4 md:ml-8 space-y-12">
-            {SCHEDULE.map((item, i) => (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative pl-8 md:pl-12"
-              >
-                <span className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-[#b8956c] ring-4 ring-[#4a5a44]" />
-                <p className="wedding-script text-2xl text-[#d4bc94]">{item.time}</p>
-                <h3 className="font-display text-xl md:text-2xl font-semibold mt-1">{item.title}</h3>
-                <p className="mt-2 text-[#faf8f5]/75 font-light leading-relaxed">{item.description}</p>
-                <Link
-                  to={`/services/${item.slug}`}
-                  className="inline-flex items-center gap-1 mt-3 text-sm text-[#d4bc94] uppercase tracking-wider hover:underline"
-                >
-                  Découvrir le service <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>

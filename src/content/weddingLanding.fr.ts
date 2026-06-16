@@ -19,36 +19,8 @@ export const NAV_LINKS = [
   { href: '#accueil', label: 'Accueil' },
   { href: '/services', label: 'Services', isRoute: true },
   { href: '/galerie', label: 'Galerie', isRoute: true },
-  { href: '#programme', label: 'Programme' },
   { href: '#contact', label: 'Contact' },
 ] as const;
-
-export const SCHEDULE = [
-  {
-    time: '09:00',
-    title: 'Création d\'événement',
-    description: 'Configurez votre mariage, gala ou cérémonie en quelques minutes depuis votre espace personnel.',
-    slug: 'planification',
-  },
-  {
-    time: '11:00',
-    title: 'Invitations & RSVP',
-    description: 'Envoyez des invitations élégantes par e-mail ou WhatsApp et suivez les réponses en direct.',
-    slug: 'invitations',
-  },
-  {
-    time: '14:00',
-    title: 'Accueil des invités',
-    description: 'Scannez les QR codes à l\'entrée et gérez la présence de vos invités sans stress.',
-    slug: 'accueil-qr',
-  },
-  {
-    time: '18:00',
-    title: 'Souvenirs & messages',
-    description: 'Recueillez les vœux dans le livre d\'or digital et partagez les moments forts.',
-    slug: 'livre-d-or',
-  },
-];
 
 export const TESTIMONIALS = [
   {

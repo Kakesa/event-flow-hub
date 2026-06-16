@@ -117,10 +117,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto lg:hidden"
+              className="ml-auto lg:hidden h-11 w-11"
               onClick={() => setSidebarOpen(false)}
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </Button>
           </div>
 
@@ -214,10 +214,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden h-11 w-11"
             onClick={() => setSidebarOpen(true)}
+            aria-label="Ouvrir le menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-7 w-7" />
           </Button>
 
           <div className="flex-1" />

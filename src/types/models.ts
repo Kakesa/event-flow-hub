@@ -86,8 +86,11 @@ export interface Guest {
   status: GuestStatus;
 
   drinkPreference?: string;
+  dietaryRestrictions?: string;
+  message?: string;
   qrCode?: string;
   table?: string;
+  respondedAt?: string;
 
   createdAt?: string;
   updatedAt?: string;
