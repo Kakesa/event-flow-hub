@@ -92,7 +92,7 @@ const LandingPage = () => {
   };
 
   return (
-    <WeddingPublicLayout navTransparent>
+    <WeddingPublicLayout>
       {/* Hero */}
       <section id="accueil" className="relative min-h-screen flex items-center justify-center">
         <div className="absolute inset-0">
@@ -107,7 +107,6 @@ const LandingPage = () => {
             transition={{ delay: 0.2 }}
             className="wedding-script text-5xl md:text-7xl text-[#f5ebe6] mb-4"
           >
-            Bienvenue chez HK Event
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}

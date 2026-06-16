@@ -6,10 +6,6 @@ import { Button } from '@/components/ui/button';
 import logoBlack from '@/assets/black.png';
 import { NAV_LINKS } from '@/content/weddingLanding.fr';
 
-interface WeddingNavbarProps {
-  transparent?: boolean;
-}
-
 const NavLink = ({ href, label, onClick, mobile }: { href: string; label: string; onClick?: () => void; mobile?: boolean }) => {
   const location = useLocation();
   const isHome = location.pathname === '/';
@@ -33,23 +29,11 @@ const NavLink = ({ href, label, onClick, mobile }: { href: string; label: string
   );
 };
 
-export const WeddingNavbar = ({ transparent = false }: WeddingNavbarProps) => {
+export const WeddingNavbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const navClass =
-    transparent && !scrolled
-      ? 'bg-transparent'
-      : 'bg-[#faf8f5]/95 shadow-sm border-b border-[#e8e0d8]';
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${navClass}`}>
+    <header className="fixed top-0 inset-x-0 z-50 bg-white shadow-sm border-b border-[#e8e0d8] transition-all duration-500">
       <div className="max-w-6xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className="h-10 w-10 rounded-full border border-[#b8956c] p-0.5 overflow-hidden bg-white">
@@ -87,7 +71,7 @@ export const WeddingNavbar = ({ transparent = false }: WeddingNavbarProps) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="lg:hidden overflow-hidden bg-[#faf8f5] border-b border-[#e8e0d8]"
+            className="lg:hidden overflow-hidden bg-white border-b border-[#e8e0d8]"
           >
             <div className="px-4 py-4 flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
@@ -155,10 +139,9 @@ export const WeddingSectionTitle = ({
 
 interface WeddingPublicLayoutProps {
   children: React.ReactNode;
-  navTransparent?: boolean;
 }
 
-const WeddingPublicLayout = ({ children, navTransparent = false }: WeddingPublicLayoutProps) => {
+const WeddingPublicLayout = ({ children }: WeddingPublicLayoutProps) => {
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     return () => document.documentElement.classList.add('dark');
@@ -166,7 +149,7 @@ const WeddingPublicLayout = ({ children, navTransparent = false }: WeddingPublic
 
   return (
     <div className="wedding-landing min-h-screen overflow-x-hidden">
-      <WeddingNavbar transparent={navTransparent} />
+      <WeddingNavbar />
       {children}
       <WeddingFooter />
     </div>
