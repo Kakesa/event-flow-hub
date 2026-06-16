@@ -215,7 +215,7 @@ const Auth = () => {
                       <Input
                         className="pl-10"
                         type="text"
-                        placeholder="John Doe"
+                        placeholder="Witness kakesa"
                         value={registerData.name}
                         onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                       />
