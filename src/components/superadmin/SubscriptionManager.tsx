@@ -118,7 +118,8 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
   const filteredUsers = users.filter(u => {
     const matchesSearch = 
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase());
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.phone || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesPlan = 
       planFilter === 'all' || 
@@ -352,6 +353,9 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
                         <div>
                           <p className="font-medium">{user.name}</p>
                           <p className="text-sm text-muted-foreground">{user.email}</p>
+                          {user.phone?.trim() && (
+                            <p className="text-sm text-muted-foreground">{user.phone}</p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>{getPlanBadge(user.subscriptionType)}</TableCell>

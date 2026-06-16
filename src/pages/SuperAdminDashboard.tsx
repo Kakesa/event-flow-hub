@@ -135,7 +135,7 @@ const SuperAdminDashboard = () => {
       setLoading(true);
       
       const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes, adminsRes] = await Promise.all([
-        usersApi.getAll(),
+        usersApi.getAll({ limit: 500 }),
         analyticsApi.getOverview(),
         eventsApi.getAllFromAllAdmins(),
         emailHistoryApi.getLogs(),
@@ -234,7 +234,7 @@ const SuperAdminDashboard = () => {
             : 'Rôle mis à jour',
       });
       const [updatedUsers, updatedAdmins] = await Promise.all([
-        usersApi.getAll(),
+        usersApi.getAll({ limit: 500 }),
         usersApi.getAdmins(),
       ]);
       if (updatedUsers.success) setUsers(updatedUsers.data);
@@ -250,7 +250,7 @@ const SuperAdminDashboard = () => {
       toast({ title: 'Succès', description: currentStatus ? 'Utilisateur désactivé' : 'Utilisateur activé' });
       // Rafraîchir les données
       const [updatedUsers, updatedAdmins] = await Promise.all([
-        usersApi.getAll(),
+        usersApi.getAll({ limit: 500 }),
         usersApi.getAdmins(),
       ]);
       if (updatedUsers.success) setUsers(updatedUsers.data);
@@ -262,12 +262,14 @@ const SuperAdminDashboard = () => {
 
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.phone || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const filteredAdmins = admins.filter(a => 
     a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    a.email.toLowerCase().includes(searchTerm.toLowerCase())
+    a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (a.phone || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredEvents = events.filter(e => {
@@ -595,7 +597,7 @@ const SuperAdminDashboard = () => {
                 if (res.success) {
                   // Mettre à jour les stats locales sans tout recharger si possible
                   // Mais fetchAllData est plus sûr pour les stats de revenus
-                  const updatedUsers = await usersApi.getAll();
+                  const updatedUsers = await usersApi.getAll({ limit: 500 });
                   if (updatedUsers.success) setUsers(updatedUsers.data);
                 }
               }}
@@ -631,6 +633,7 @@ const SuperAdminDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Utilisateur</TableHead>
+                      <TableHead>Téléphone</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Abonnement</TableHead>
                       <TableHead>Statut</TableHead>
@@ -646,6 +649,9 @@ const SuperAdminDashboard = () => {
                             <p className="font-medium">{user.name}</p>
                             <p className="text-sm text-muted-foreground">{user.email}</p>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {user.phone?.trim() || '—'}
                         </TableCell>
                         <TableCell>
                           {user.role === 'superadmin' ? (
@@ -762,6 +768,7 @@ const SuperAdminDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Administrateur</TableHead>
+                      <TableHead>Téléphone</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead>Inscrit le</TableHead>
@@ -776,6 +783,9 @@ const SuperAdminDashboard = () => {
                             <p className="font-medium">{admin.name}</p>
                             <p className="text-sm text-muted-foreground">{admin.email}</p>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {admin.phone?.trim() || '—'}
                         </TableCell>
                         <TableCell>
                           {getRoleBadge(admin.role)}

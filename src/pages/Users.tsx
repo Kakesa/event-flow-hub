@@ -107,7 +107,7 @@ const Users = () => {
 
     try {
       setLoading(true);
-      const res = await usersApi.getAll();
+      const res = await usersApi.getAll({ limit: 500 });
       setUsers(res.data);
       setTotal(res.data.length);
     } catch {
@@ -130,7 +130,8 @@ const Users = () => {
     return users.filter(
       (u) =>
         u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase())
+        u.email.toLowerCase().includes(search.toLowerCase()) ||
+        (u.phone || '').toLowerCase().includes(search.toLowerCase())
     );
   }, [users, search]);
 
@@ -374,6 +375,7 @@ const Users = () => {
                   <TableRow>
                     <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Téléphone</TableHead>
                     <TableHead>Rôle</TableHead>
                     <TableHead />
                   </TableRow>
@@ -384,6 +386,7 @@ const Users = () => {
                     <TableRow key={u._id}>
                       <TableCell>{u.name}</TableCell>
                       <TableCell>{u.email}</TableCell>
+                      <TableCell>{u.phone?.trim() || '—'}</TableCell>
                       <TableCell>
                         {currentUser.role === "superadmin" && u.role !== "superadmin" ? (
                           <Select

@@ -81,7 +81,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/auth');
+    navigate('/');
   };
 
   const userInitials = user 

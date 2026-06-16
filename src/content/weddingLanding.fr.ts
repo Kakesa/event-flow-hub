@@ -2,8 +2,8 @@
 
 export const WEDDING_IMAGES = {
   hero: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1920&q=80',
-  story: 'https://images.unsplash.com/photo-1464366400600-7168b8f9bc26?w=900&q=80',
-  storyAlt: 'https://images.unsplash.com/photo-1470225620780-dbae8db9ab10?w=900&q=80',
+  story: '/images/gallery/gallery-garden-embrace.png',
+  storyAlt: '/images/gallery/gallery-intimate-moment.png',
   gallery: [
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=80',
     'https://images.unsplash.com/photo-1465497035980-0f5e2d0c8e8e?w=600&q=80',

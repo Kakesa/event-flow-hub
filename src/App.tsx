@@ -28,6 +28,7 @@ import ServicesIndexPage from "./pages/ServicesIndexPage";
 import ServicePage from "./pages/ServicePage";
 import NotFound from "./pages/NotFound";
 import VisitTracker from "@/hooks/useTrackVisit";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_relativeSplatPath: true }}>
+          <ScrollToTop />
           <VisitTracker />
           <Routes>
             {/* Public routes */}

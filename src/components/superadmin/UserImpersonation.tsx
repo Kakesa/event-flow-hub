@@ -98,7 +98,8 @@ const UserImpersonation = ({ users, className }: UserImpersonationProps) => {
   const filteredUsers = users.filter(u => 
     u.role !== 'superadmin' && (
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (u.phone || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
@@ -266,6 +267,9 @@ const UserImpersonation = ({ users, className }: UserImpersonationProps) => {
                         <div>
                           <p className="font-medium">{user.name}</p>
                           <p className="text-sm text-muted-foreground">{user.email}</p>
+                          {user.phone?.trim() && (
+                            <p className="text-sm text-muted-foreground">{user.phone}</p>
+                          )}
                         </div>
                       </div>
                     </TableCell>

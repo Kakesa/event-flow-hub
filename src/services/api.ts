@@ -1022,8 +1022,15 @@ export const qrCodeApi = {
 
 // ==================== UTILISATEURS (ROLES & PERMISSIONS) ====================
 export const usersApi = {
-  getAll: async (): Promise<ApiResponse<User[]>> => {
-    const res = await fetch(`${API_BASE_URL}/auth/users`, {
+  getAll: async (options?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<User[]>> => {
+    const params = new URLSearchParams();
+    params.set("page", String(options?.page ?? 1));
+    params.set("limit", String(options?.limit ?? 500));
+
+    const res = await fetch(`${API_BASE_URL}/auth/users?${params.toString()}`, {
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);

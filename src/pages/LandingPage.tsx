@@ -186,10 +186,14 @@ const LandingPage = () => {
           <SectionTitle script="Notre histoire" title="Une passion pour l'élégance" />
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="relative">
-              <img src={WEDDING_IMAGES.story} alt="Célébration" className="w-full aspect-[4/5] object-cover shadow-xl" />
+              <img
+                src={WEDDING_IMAGES.story}
+                alt="Moment de célébration — HK Event"
+                className="w-full aspect-[4/5] object-cover shadow-xl border border-[#e8e0d8]"
+              />
               <img
                 src={WEDDING_IMAGES.storyAlt}
-                alt=""
+                alt="Couple en cérémonie"
                 className="absolute -bottom-8 -right-4 md:-right-8 w-40 md:w-52 aspect-square object-cover border-4 border-[#faf8f5] shadow-lg hidden sm:block"
               />
             </motion.div>
@@ -397,7 +401,7 @@ const LandingPage = () => {
           <p className="mt-4 text-[#faf8f5]/80 font-light">Connectez-vous ou inscrivez-vous pour commencer à organiser votre événement.</p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">
-              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#faf8f5] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
+              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#080808] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
                 Connexion
               </Button>
             </Link>
