@@ -1,14 +1,22 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /services
+Allow: /services/
+Allow: /galerie
+
+Disallow: /dashboard
+Disallow: /events
+Disallow: /guests
+Disallow: /guestbook
+Disallow: /analytics
+Disallow: /invitations
+Disallow: /scanner
+Disallow: /settings
+Disallow: /users
+Disallow: /admin
+Disallow: /superadmin
+Disallow: /auth
+Disallow: /rsvp/
+Disallow: /invite/
+
+Sitemap: https://www.hkeventscd.com/sitemap.xml

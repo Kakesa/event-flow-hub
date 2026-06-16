@@ -115,7 +115,7 @@ const LandingPage = () => {
             transition={{ delay: 0.4 }}
             className="font-display text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.08em] uppercase"
           >
-            HK Event
+            Gestion d&apos;événements &amp; mariages
           </motion.h1>
           <motion.div
             initial={{ scaleX: 0 }}

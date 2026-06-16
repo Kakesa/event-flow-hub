@@ -29,6 +29,7 @@ import ServicePage from "./pages/ServicePage";
 import NotFound from "./pages/NotFound";
 import VisitTracker from "@/hooks/useTrackVisit";
 import ScrollToTop from "@/components/ScrollToTop";
+import RouteSEO from "@/components/RouteSEO";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter future={{ v7_relativeSplatPath: true }}>
           <ScrollToTop />
+          <RouteSEO />
           <VisitTracker />
           <Routes>
             {/* Public routes */}
