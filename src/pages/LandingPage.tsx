@@ -107,7 +107,7 @@ const LandingPage = () => {
             transition={{ delay: 0.2 }}
             className="wedding-script text-5xl md:text-7xl text-[#f5ebe6] mb-4"
           >
-            Organisez l&apos;extraordinaire
+            Bienvenue chez HK Event
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
