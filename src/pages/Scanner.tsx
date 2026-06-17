@@ -39,8 +39,9 @@ const Scanner = () => {
       } else {
         toast({ title: 'Erreur', description: 'QR Code invalide - Accès refusé', variant: 'destructive' });
       }
-    } catch {
-      toast({ title: 'Erreur', description: 'Impossible de scanner le code', variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Impossible de scanner le code";
+      toast({ title: "Erreur", description: message, variant: "destructive" });
     } finally {
       setScanning(false);
     }

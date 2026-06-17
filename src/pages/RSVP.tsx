@@ -22,6 +22,7 @@ import {
   GlassWater,
   Sparkles,
   PartyPopper,
+  Download,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import logoBlack from "@/assets/black.png";
@@ -30,6 +31,7 @@ import type { Event, Guest } from "@/types/models";
 import { rsvpApi, eventsApi, emailsApi, BASE_URL } from "@/services/api";
 import { getEventTypePhraseParts, getEventTypeWithArticle } from "@/lib/eventTypePhrases";
 import RsvpInvitationHero from "@/components/rsvp/RsvpInvitationHero";
+import { downloadQrCodePng } from "@/utils/downloadQrCode";
 
 type RsvpChoice = "confirmed" | "declined" | "pending" | "";
 
@@ -221,6 +223,17 @@ interface SuccessViewProps {
 const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
   const confirmed = formData.status === "confirmed";
 
+  const handleDownloadQr = async () => {
+    const svg = document.getElementById("rsvp-guest-qr") as SVGSVGElement | null;
+    if (!svg) return;
+    try {
+      await downloadQrCodePng(svg, `pass-${guest?.name?.replace(/\s+/g, "_") || "invitation"}.png`);
+      toast.success("QR code téléchargé");
+    } catch {
+      toast.error("Impossible de télécharger le QR code");
+    }
+  };
+
   return (
     <div className="rsvp-page min-h-screen flex items-center justify-center p-4 py-16 relative">
       <FloatingHearts />
@@ -323,11 +336,26 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
             </div>
             <div className="flex flex-col items-center py-8 px-6 bg-white">
               <div className="p-4 bg-white rounded-lg shadow-inner border border-[#e8e0d8]">
-                <QRCodeSVG value={guest.qrCode} size={180} level="H" includeMargin />
+                <QRCodeSVG
+                  id="rsvp-guest-qr"
+                  value={guest.qrCode}
+                  size={200}
+                  level="H"
+                  includeMargin
+                />
               </div>
-              <p className="mt-4 text-[10px] font-mono text-[#7a8b72] uppercase tracking-widest">
-                Présentez ce code à l&apos;accueil
+              <p className="mt-4 text-xs text-[#7a8b72] text-center max-w-xs">
+                Présentez ce QR code à l&apos;accueil le jour de l&apos;événement
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-5 wedding-btn-outline rounded-none uppercase tracking-wider text-xs"
+                onClick={handleDownloadQr}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger mon QR code
+              </Button>
             </div>
           </motion.div>
         )}
@@ -468,7 +496,7 @@ const RSVP = () => {
           dietaryRestrictions: formData.dietaryRestrictions,
           message: formData.message,
         });
-        if (res.success) setGuest(res.data);
+        if (res.success) setGuest({ ...res.data, id: res.data.id || (res.data as Guest & { _id?: string })._id || "" });
       } else {
         if (!formData.name || !formData.email) {
           toast.error("Nom et email requis");
@@ -486,8 +514,8 @@ const RSVP = () => {
           plusOneName: formData.plusOneName,
         });
         if (res.success) {
-          setGuest(res.data);
-          currentGuestId = res.data.id;
+          setGuest({ ...res.data, id: res.data.id || (res.data as Guest & { _id?: string })._id || "" });
+          currentGuestId = res.data.id || (res.data as Guest & { _id?: string })._id || "";
         } else {
           throw new Error(res.message || "Erreur lors de l'inscription");
         }

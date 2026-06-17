@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { qrCodeApi } from '@/services/api';
+import { downloadQrCodePng } from '@/utils/downloadQrCode';
 import type { Guest } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { getWhatsAppDigits } from '@/utils/phoneUtils';
@@ -48,31 +49,23 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
     }
   };
 
-  const handleDownload = () => {
-    const canvas = document.querySelector('#qr-code-svg');
-    if (!canvas) return;
+  const handleDownload = async () => {
+    const svg = document.querySelector('#qr-code-svg') as SVGSVGElement | null;
+    if (!svg || !qrData?.qrCode) return;
 
-    const svg = canvas as SVGElement;
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
-
-    const downloadLink = document.createElement('a');
-    downloadLink.href = svgUrl;
-    downloadLink.download = `qrcode-${guest?.name.replace(/\s+/g, '_')}.svg`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
-    URL.revokeObjectURL(svgUrl);
-
-    toast({ title: 'Téléchargé', description: 'QR Code téléchargé avec succès' });
+    try {
+      await downloadQrCodePng(svg, `qrcode-${guest?.name.replace(/\s+/g, '_') || 'invite'}.png`);
+      toast({ title: 'Téléchargé', description: 'QR Code téléchargé avec succès' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de télécharger le QR code', variant: 'destructive' });
+    }
   };
 
   const handleSendByEmail = () => {
     if (!guest) return;
     const subject = encodeURIComponent("Votre invitation - QR Code");
     const body = encodeURIComponent(
-      `Bonjour ${guest.name},\n\nVeuillez trouver ci-joint votre QR code d'invitation.\n\nCode: ${qrData?.code || ''}\n\nCordialement`
+      `Bonjour ${guest.name},\n\nVeuillez trouver ci-joint votre QR code d'invitation.\n\nPrésentez ce code à l'entrée.\n\nCordialement`
     );
     window.open(`mailto:${guest.email}?subject=${subject}&body=${body}`);
   };
@@ -80,7 +73,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
   const handleSendByWhatsApp = () => {
     if (!guest) return;
     const message = encodeURIComponent(
-      `Bonjour ${guest.name}! 🎉\n\nVoici votre code d'invitation: ${qrData?.code || ''}\n\nPrésentez ce code à l'entrée de l'événement.`
+      `Bonjour ${guest.name}! 🎉\n\nVoici votre QR code d'invitation. Présentez-le à l'entrée de l'événement.`
     );
     window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`);
   };
@@ -105,7 +98,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
               <div className="p-6 bg-white rounded-xl shadow-lg">
                 <QRCodeSVG
                   id="qr-code-svg"
-                  value={qrData.code}
+                  value={qrData.qrCode}
                   size={200}
                   level="H"
                   includeMargin
@@ -113,8 +106,8 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
                   fgColor="#000000"
                 />
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Code: <span className="font-mono font-semibold">{qrData.code}</span>
+              <p className="mt-4 text-xs text-muted-foreground text-center max-w-xs">
+                Présentez ce QR code à l&apos;entrée de l&apos;événement
               </p>
             </>
           ) : (

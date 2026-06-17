@@ -985,12 +985,11 @@ export const qrCodeApi = {
       data: { qrCode: string; code?: string };
     }>(res);
 
-    // Générer un code aléatoire si non fourni par le backend
-    const code = result.data?.code || `INV-${guestId.slice(-8).toUpperCase()}`;
+    const qrCode = result.data?.qrCode || "";
 
     return {
       success: result.success ?? true,
-      data: { qrCode: result.data?.qrCode || "", code },
+      data: { qrCode, code: qrCode },
     };
   },
 
@@ -999,8 +998,9 @@ export const qrCodeApi = {
    */
   scan: async (
     code: string,
-  ): Promise<ApiResponse<{ guest: Guest; isValid: boolean }>> => {
-    const res = await fetch(`${API_BASE_URL}/public/checkin/${code}`, {
+  ): Promise<ApiResponse<{ guest: Guest; isValid: boolean; message?: string }>> => {
+    const token = encodeURIComponent(code.trim());
+    const res = await fetch(`${API_BASE_URL}/public/checkin/${token}`, {
       method: "GET",
       headers: getHeaders(),
     });
@@ -1015,6 +1015,7 @@ export const qrCodeApi = {
       data: {
         guest: result.data?.guest,
         isValid,
+        message: (result as { message?: string }).message,
       },
     };
   },
