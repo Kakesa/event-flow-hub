@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { qrCodeApi } from '@/services/api';
 import { downloadQrCodePng } from '@/utils/downloadQrCode';
+import { getGuestCheckInUrl } from '@/utils/qrCode';
 import type { Guest } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { getWhatsAppDigits } from '@/utils/phoneUtils';
@@ -98,7 +99,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
               <div className="p-6 bg-white rounded-xl shadow-lg">
                 <QRCodeSVG
                   id="qr-code-svg"
-                  value={qrData.qrCode}
+                  value={getGuestCheckInUrl(qrData.qrCode)}
                   size={200}
                   level="H"
                   includeMargin

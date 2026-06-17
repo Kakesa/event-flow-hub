@@ -32,6 +32,7 @@ import { rsvpApi, eventsApi, emailsApi, BASE_URL } from "@/services/api";
 import { getEventTypePhraseParts, getEventTypeWithArticle } from "@/lib/eventTypePhrases";
 import RsvpInvitationHero from "@/components/rsvp/RsvpInvitationHero";
 import { downloadQrCodePng } from "@/utils/downloadQrCode";
+import { getGuestCheckInUrl } from "@/utils/qrCode";
 
 type RsvpChoice = "confirmed" | "declined" | "pending" | "";
 
@@ -338,7 +339,7 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
               <div className="p-4 bg-white rounded-lg shadow-inner border border-[#e8e0d8]">
                 <QRCodeSVG
                   id="rsvp-guest-qr"
-                  value={guest.qrCode}
+                  value={getGuestCheckInUrl(guest.qrCode)}
                   size={200}
                   level="H"
                   includeMargin

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/accordion';
 import { toast } from 'sonner';
 import WeddingPublicLayout from '@/components/landing/WeddingPublicLayout';
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 import teamEspoir from '@/assets/team-espoir.jpg';
 import teamDan from '@/assets/team-dan.jpg';
@@ -96,7 +97,14 @@ const LandingPage = () => {
       {/* Hero */}
       <section id="accueil" className="relative min-h-screen flex items-center justify-center">
         <div className="absolute inset-0">
-          <img src={WEDDING_IMAGES.hero} alt="" className="w-full h-full object-cover" />
+          <OptimizedImage
+            src={WEDDING_IMAGES.hero}
+            webpSrcSet={WEDDING_IMAGES.heroWebpSrcSet}
+            sizes="100vw"
+            alt=""
+            priority
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#faf8f5]" />
         </div>
 
@@ -194,9 +202,11 @@ const LandingPage = () => {
                   src={WEDDING_IMAGES.story}
                   alt="Invitation personnalisée — HK Event"
                   className="w-full h-full object-contain"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
-              <img
+              <OptimizedImage
                 src={WEDDING_IMAGES.storyAlt}
                 alt="Couple en cérémonie"
                 className="absolute -bottom-8 -right-4 md:-right-8 w-40 md:w-52 aspect-square object-cover border-4 border-[#faf8f5] shadow-lg hidden sm:block"
@@ -237,7 +247,7 @@ const LandingPage = () => {
               >
                 <Link to={`/services/${service.slug}`} className="group block h-full">
                   <div className="overflow-hidden aspect-[4/3] relative">
-                    <img
+                    <OptimizedImage
                       src={service.cardImage}
                       alt={service.title}
                       className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
@@ -281,7 +291,7 @@ const LandingPage = () => {
                 className="break-inside-avoid overflow-hidden group"
               >
                 <Link to="/galerie">
-                  <img
+                  <OptimizedImage
                     src={item.src}
                     alt={item.caption}
                     className={`w-full object-cover group-hover:scale-105 transition-transform duration-700 ${item.layout === 'tall' ? 'aspect-[3/4]' : 'aspect-square'}`}
@@ -303,7 +313,13 @@ const LandingPage = () => {
       {/* Venue / Platform highlight */}
       <section className="relative py-32 px-4">
         <div className="absolute inset-0">
-          <img src={WEDDING_IMAGES.venue} alt="" className="w-full h-full object-cover" />
+          <OptimizedImage
+            src={WEDDING_IMAGES.venue}
+            webpSrcSet={WEDDING_IMAGES.venueWebpSrcSet}
+            sizes="100vw"
+            alt=""
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-[#4a5a44]/75" />
         </div>
         <motion.div

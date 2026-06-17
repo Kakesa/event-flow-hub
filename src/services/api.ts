@@ -10,6 +10,7 @@ import type {
   ModulePermission,
 } from "@/types/models";
 import { API_BASE_URL, BASE_URL } from "@/config/env";
+import { parseScanToken } from "@/utils/qrCode";
 
 export { API_BASE_URL, BASE_URL, resolveAssetUrl } from "@/config/env";
 
@@ -999,7 +1000,7 @@ export const qrCodeApi = {
   scan: async (
     code: string,
   ): Promise<ApiResponse<{ guest: Guest; isValid: boolean; message?: string }>> => {
-    const token = encodeURIComponent(code.trim());
+    const token = encodeURIComponent(parseScanToken(code));
     const res = await fetch(`${API_BASE_URL}/public/checkin/${token}`, {
       method: "GET",
       headers: getHeaders(),

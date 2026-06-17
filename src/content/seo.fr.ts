@@ -33,6 +33,7 @@ const PRIVATE_PREFIXES = [
   '/superadmin',
   '/rsvp',
   '/invite',
+  '/checkin',
 ];
 
 export const isPrivatePath = (pathname: string) =>

@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logoBlack from '@/assets/black.png';
 import { NAV_LINKS } from '@/content/weddingLanding.fr';
 
 const NavLink = ({ href, label, onClick, mobile }: { href: string; label: string; onClick?: () => void; mobile?: boolean }) => {
@@ -37,7 +36,13 @@ export const WeddingNavbar = () => {
       <div className="max-w-6xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
           <div className="h-10 w-10 rounded-full border border-[#b8956c] p-0.5 overflow-hidden bg-white">
-            <img src={logoBlack} alt="HK Event" className="h-full w-full object-contain" />
+            <img
+              src="/pwa-icon-192.png"
+              alt="HK Event"
+              width={40}
+              height={40}
+              className="h-full w-full object-contain"
+            />
           </div>
           <span className="font-display text-xl font-semibold text-[#4a5a44] tracking-widest hidden sm:block">HK Event</span>
         </Link>

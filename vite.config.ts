@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
       },
@@ -73,6 +73,21 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts') || id.includes('d3-')) return 'charts';
+            if (id.includes('html5-qrcode') || id.includes('qrcode')) return 'qr';
+            if (id.includes('framer-motion')) return 'motion';
+            if (id.includes('@radix-ui')) return 'radix';
+            if (id.includes('react-dom') || id.includes('react-router')) return 'vendor';
+          }
+        },
+      },
     },
   },
 }));

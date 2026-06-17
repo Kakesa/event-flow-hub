@@ -116,7 +116,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Analyses',
     title: 'Statistiques & analyses',
     shortDescription: 'Visualisez l\'engagement de vos invités avec des tableaux de bord clairs.',
-    cardImage: '/images/services/analytics-hero.jpg',
+    cardImage: '/images/services/analytics-card.jpg',
     intro: 'Taux de confirmation, préférences boissons, présence le jour J, performance des e-mails : toutes vos données réunies dans des graphiques élégants et faciles à comprendre.',
     features: [
       { title: 'Vue d\'ensemble', description: 'Statistiques globales par événement en un coup d\'œil.' },

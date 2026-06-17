@@ -28,7 +28,15 @@ export function useTrackVisit() {
   const location = useLocation();
 
   useEffect(() => {
-    trackPageVisit(location.pathname);
+    const schedule = () => trackPageVisit(location.pathname);
+
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(schedule, { timeout: 5000 });
+      return () => window.cancelIdleCallback(id);
+    }
+
+    const timer = window.setTimeout(schedule, 3000);
+    return () => window.clearTimeout(timer);
   }, [location.pathname]);
 }
 
