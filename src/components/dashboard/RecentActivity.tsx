@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, Clock, Mail, MessageSquare, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { activitiesApi, type Activity } from '@/services/api';
@@ -37,7 +37,7 @@ const getActivityText = (activity: Activity) => {
 
 const formatTime = (dateString: string | undefined) => {
   if (!dateString) return '';
-  
+
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -50,59 +50,80 @@ const formatTime = (dateString: string | undefined) => {
   if (diffHours < 24) return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
   if (diffDays === 1) return 'Hier';
   if (diffDays < 7) return `Il y a ${diffDays} jours`;
-  
+
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
 
 interface RecentActivityProps {
-  eventId?: string; // Si fourni, affiche les activités de cet événement seulement
+  eventId?: string;
 }
 
 const RecentActivity = ({ eventId }: RecentActivityProps) => {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchActivities = async () => {
-    setLoading(true);
-    setError(null);
-    
+  const fetchActivities = useCallback(async (silent = false) => {
+    if (silent) {
+      setIsRefreshing(true);
+    } else {
+      setInitialLoading(true);
+      setError(null);
+    }
+
     try {
-      let res;
-      
-      // Si eventId est fourni, récupérer les activités de cet événement uniquement
-      if (eventId) {
-        res = await activitiesApi.getByEvent(eventId);
-      } else {
-        // Sinon, récupérer les activités récentes de l'utilisateur (le backend doit filtrer)
-        res = await activitiesApi.getRecent(10);
-      }
-      
+      const res = eventId
+        ? await activitiesApi.getByEvent(eventId)
+        : await activitiesApi.getRecent(10);
+
       if (res.success) {
         setActivities(res.data);
-      } else {
+        setError(null);
+      } else if (!silent) {
         setError('Impossible de charger les activités');
       }
     } catch (err) {
       console.error('Erreur lors du chargement des activités:', err);
-      setError('Erreur de connexion au serveur');
+      if (!silent) {
+        setError('Erreur de connexion au serveur');
+      }
     } finally {
-      setLoading(false);
+      if (silent) {
+        setIsRefreshing(false);
+      } else {
+        setInitialLoading(false);
+      }
     }
-  };
+  }, [eventId]);
 
   useEffect(() => {
-    fetchActivities();
-    
-    // Rafraîchir les activités toutes les 30 secondes
-    const interval = setInterval(fetchActivities, 30000);
+    fetchActivities(false);
+    const interval = setInterval(() => fetchActivities(true), 30000);
     return () => clearInterval(interval);
-  }, [eventId]); // Redépendance si eventId change
+  }, [fetchActivities]);
 
-  if (loading) {
-    return (
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <h3 className="font-display text-lg font-semibold mb-4">Activité récente</h3>
+  return (
+    <div className="rounded-xl border bg-card p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-display text-lg font-semibold flex items-center gap-2">
+          Activité récente
+          {isRefreshing && (
+            <span className="inline-block h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          )}
+        </h3>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => fetchActivities(true)}
+          title="Actualiser"
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+        </Button>
+      </div>
+
+      {initialLoading ? (
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-start gap-3">
@@ -114,35 +135,15 @@ const RecentActivity = ({ eventId }: RecentActivityProps) => {
             </div>
           ))}
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <h3 className="font-display text-lg font-semibold mb-4">Activité récente</h3>
+      ) : error ? (
         <div className="text-center py-8">
           <p className="text-muted-foreground mb-4">{error}</p>
-          <Button variant="outline" size="sm" onClick={fetchActivities}>
+          <Button variant="outline" size="sm" onClick={() => fetchActivities(false)}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Réessayer
           </Button>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-xl border bg-card p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-lg font-semibold">Activité récente</h3>
-        <Button variant="ghost" size="icon" onClick={fetchActivities} title="Actualiser">
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      {activities.length === 0 ? (
+      ) : activities.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
           Aucune activité récente
         </p>
@@ -150,12 +151,11 @@ const RecentActivity = ({ eventId }: RecentActivityProps) => {
         <div className="space-y-4">
           {activities.map((activity, index) => (
             <div
-              key={activity.id}
+              key={activity.id || `activity-${index}`}
               className={cn(
-                'flex items-start gap-3 animate-slide-up',
-                index !== activities.length - 1 && 'pb-4 border-b'
+                'flex items-start gap-3',
+                index !== activities.length - 1 && 'pb-4 border-b',
               )}
-              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="mt-0.5 rounded-full bg-muted p-2">
                 {getActivityIcon(activity.type)}

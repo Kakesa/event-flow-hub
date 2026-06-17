@@ -15,16 +15,29 @@ import {
 } from '@/components/ui/select';
 import { guestbookApi, eventsApi } from '@/services/api';
 import type { GuestbookMessage, Event } from '@/types/models';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+
+const formatSafe = (dateStr: string | undefined, fmt: string) => {
+  if (!dateStr) return '—';
+  try {
+    const d = parseISO(dateStr);
+    if (!isValid(d)) return '—';
+    return format(d, fmt, { locale: fr });
+  } catch {
+    return '—';
+  }
+};
 
 const Guestbook = () => {
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -37,33 +50,40 @@ const Guestbook = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        setLoading(true);
+        setEventsLoading(true);
         const eventsRes = await eventsApi.getAll();
         setEvents(eventsRes.data);
         if (eventsRes.data.length > 0) {
           setSelectedEvent(eventsRes.data[0]._id || eventsRes.data[0].id);
+        } else {
+          setInitialLoading(false);
         }
       } catch (error) {
         console.error('Erreur:', error);
+        setInitialLoading(false);
       } finally {
-        setLoading(false);
+        setEventsLoading(false);
       }
     };
     fetchEvents();
   }, []);
 
-  const fetchMessages = useCallback(async (showNotification = false) => {
+  const fetchMessages = useCallback(async (silent = false) => {
     if (!selectedEvent) return;
     try {
-      setLoading(true);
+      if (silent) {
+        setIsRefreshing(true);
+      } else {
+        setInitialLoading(true);
+      }
       const res = await guestbookApi.getByEvent(selectedEvent);
       const newMessages = res.data || [];
 
-      if (showNotification && notificationsEnabled && previousMessageCountRef.current > 0) {
+      if (silent && notificationsEnabled && previousMessageCountRef.current > 0) {
         const diff = newMessages.length - previousMessageCountRef.current;
         if (diff > 0) {
           setNewMessageCount(prev => prev + diff);
-          const latestNew = newMessages[newMessages.length - 1];
+          const latestNew = newMessages[0];
           toast({
             title: '💬 Nouveau message !',
             description: `${latestNew?.name || 'Un invité'} a laissé un message dans le livre d'or.`,
@@ -75,13 +95,19 @@ const Guestbook = () => {
       setMessages(newMessages);
     } catch (error) {
       console.error('Erreur:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les messages',
-        variant: 'destructive',
-      });
+      if (!silent) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de charger les messages',
+          variant: 'destructive',
+        });
+      }
     } finally {
-      setLoading(false);
+      if (silent) {
+        setIsRefreshing(false);
+      } else {
+        setInitialLoading(false);
+      }
     }
   }, [selectedEvent, notificationsEnabled, toast]);
 
@@ -98,10 +124,10 @@ const Guestbook = () => {
     return () => clearInterval(interval);
   }, [selectedEvent, fetchMessages]);
 
-  // Auto-scroll vers le bas
   useEffect(() => {
+    if (!selectedEvent || initialLoading) return;
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, initialLoading]);
 
   const handleDownload = async () => {
     try {
@@ -150,8 +176,11 @@ const Guestbook = () => {
                   </Badge>
                 )}
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 flex items-center gap-2">
                 Conversations avec vos invités en temps réel
+                {isRefreshing && (
+                  <span className="inline-block h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                )}
               </p>
             </div>
           </div>
@@ -195,7 +224,7 @@ const Guestbook = () => {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{selectedEventData.title}</p>
               <p className="text-xs text-muted-foreground">
-                {format(parseISO(selectedEventData.date), 'd MMMM yyyy', { locale: fr })}
+                {formatSafe(selectedEventData.date, 'd MMMM yyyy')}
               </p>
             </div>
             <Badge variant="secondary">{messages.length} message{messages.length !== 1 ? 's' : ''}</Badge>
@@ -203,16 +232,16 @@ const Guestbook = () => {
         )}
 
         {/* Chat area */}
-        {loading ? (
+        {initialLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : messages.length > 0 ? (
-          <Card className="flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1 p-4">
+          <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <ScrollArea className="h-full max-h-[calc(100vh-16rem)] p-4">
               <div className="space-y-4 pb-2">
-                {messages.map((message) => (
-                  <div key={message.id} className="space-y-2">
+                {messages.map((message, index) => (
+                  <div key={message.id || `msg-${index}`} className="space-y-2">
                     {/* Message de l'invité (gauche) */}
                     <div className="flex items-start gap-3 max-w-[85%]">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground text-sm font-semibold">
@@ -222,7 +251,7 @@ const Guestbook = () => {
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium">{message.name || 'Anonyme'}</span>
                           <span className="text-xs text-muted-foreground">
-                            {format(parseISO(message.createdAt), 'd MMM yyyy · HH:mm', { locale: fr })}
+                            {formatSafe(message.createdAt, 'd MMM yyyy · HH:mm')}
                           </span>
                         </div>
                         <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-2.5">
@@ -267,7 +296,7 @@ const Guestbook = () => {
                         <div className="text-right">
                           <div className="flex items-center gap-2 mb-1 justify-end">
                             <span className="text-xs text-muted-foreground">
-                              {message.repliedAt && format(parseISO(message.repliedAt), 'd MMM · HH:mm', { locale: fr })}
+                              {formatSafe(message.repliedAt, 'd MMM · HH:mm')}
                             </span>
                             <span className="text-sm font-medium">Vous</span>
                           </div>

@@ -23,6 +23,9 @@ import { Separator } from '@/components/ui/separator';
 import UserAuthorizationNotice from '@/components/common/UserAuthorizationNotice';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import InstallAppPrompt from '@/components/pwa/InstallAppPrompt';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
+import NotificationsDrawer from '@/components/notifications/NotificationsDrawer';
+import MobileHeaderNotifications from '@/components/notifications/MobileHeaderNotifications';
 import { usePwaInstall } from '@/hooks/usePwaInstall';
 import logoWhite from '@/assets/white.png';
 
@@ -89,6 +92,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     : 'U';
 
   return (
+    <NotificationsProvider>
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
@@ -224,6 +228,13 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="flex-1" />
 
           <div className="flex items-center gap-3">
+            {user?.role !== 'user' && (
+              <>
+                <MobileHeaderNotifications />
+                <NotificationsDrawer />
+              </>
+            )}
+
             <div className="hidden sm:block text-right">
               <p className="text-sm font-medium">{user?.name || 'Utilisateur'}</p>
               <p className="text-xs text-muted-foreground capitalize">{user?.subscriptionType || 'Free'}</p>
@@ -252,6 +263,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         }}
       />
     </div>
+    </NotificationsProvider>
   );
 };
 

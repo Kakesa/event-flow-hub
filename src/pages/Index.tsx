@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, Bell, TrendingUp, Activity, MessageSquare, Heart, Reply, Send } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, TrendingUp, Activity, MessageSquare, Heart, Reply, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -32,14 +32,6 @@ import {
 
 const COLORS = ['hsl(var(--success))', 'hsl(var(--destructive))', 'hsl(var(--primary))'];
 
-interface Notification {
-  id: string;
-  type: 'confirmation' | 'decline' | 'new_guest';
-  message: string;
-  timestamp: Date;
-  read: boolean;
-}
-
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -57,9 +49,9 @@ const Index = () => {
     totalConfirmed: 0,
     upcomingEvents: 0,
   });
-  const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [chartsReady, setChartsReady] = useState(false);
+  const hasLoadedRef = useRef(false);
 
   // Données pour les graphiques
   const [chartData, setChartData] = useState<{
@@ -72,8 +64,9 @@ const Index = () => {
     eventStats: [],
   });
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (silent = false) => {
     try {
+      if (!silent) setInitialLoading(true);
       const eventsRes = await eventsApi.getAll();
       setEvents(eventsRes.data);
 
@@ -123,19 +116,6 @@ const Index = () => {
         }),
       });
 
-      // Générer des notifications simulées
-      const recentConfirmations = allGuests
-        .filter(g => g.status === 'confirmed')
-        .slice(0, 3)
-        .map((g, i) => ({
-          id: `notif-${i}`,
-          type: 'confirmation' as const,
-          message: `${g.name} a confirmé sa présence`,
-          timestamp: new Date(Date.now() - i * 3600000),
-          read: false,
-        }));
-      setNotifications(recentConfirmations);
-
       // Récupérer les messages du livre d'or
       try {
         const allMessages: GuestbookMessage[] = [];
@@ -158,17 +138,25 @@ const Index = () => {
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setInitialLoading(false);
+      hasLoadedRef.current = true;
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
-
-    // Rafraîchir les données toutes les 30 secondes pour simuler le temps réel
-    const interval = setInterval(fetchData, 30000);
+    fetchData(false);
+    const interval = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  useEffect(() => {
+    if (initialLoading) return;
+    const id = requestAnimationFrame(() => setChartsReady(true));
+    return () => {
+      cancelAnimationFrame(id);
+      setChartsReady(false);
+    };
+  }, [initialLoading]);
 
   const generateTrendData = (allGuests: Guest[]) => {
     const days = 7;
@@ -182,8 +170,8 @@ const Index = () => {
       const baseValue = Math.floor(allGuests.length / 7);
       data.push({
         date: dateStr,
-        confirmations: Math.max(0, baseValue + Math.floor(Math.random() * 5) - 2),
-        declines: Math.max(0, Math.floor(baseValue / 3) + Math.floor(Math.random() * 2)),
+        confirmations: Math.max(0, baseValue + (i % 3)),
+        declines: Math.max(0, Math.floor(baseValue / 3) + (i % 2)),
       });
     }
     return data;
@@ -193,17 +181,6 @@ const Index = () => {
     return guests.filter(g => g.eventId === eventId).length;
   };
 
-  const handleNotificationClick = (notif: Notification) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === notif.id ? { ...n, read: true } : n)
-    );
-    toast({
-      title: 'Notification',
-      description: notif.message,
-    });
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
   const isBasicUser = user?.role === 'user';
 
   const handleReply = async (msg: GuestbookMessage) => {
@@ -221,7 +198,7 @@ const Index = () => {
     }
   };
 
-  if (loading) {
+  if (initialLoading && !hasLoadedRef.current) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -249,71 +226,6 @@ const Index = () => {
           </div>
 
           <div className="flex gap-2">
-            {/* Notifications */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative"
-              >
-                <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </Button>
-
-              {showNotifications && (
-                <Card className="absolute right-0 top-12 w-80 z-50 shadow-lg">
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Activity className="h-4 w-4" />
-                      Notifications récentes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-0 pb-3">
-                    {notifications.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-2">
-                        Aucune notification
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {notifications.map(notif => (
-                          <button
-                            key={notif.id}
-                            onClick={() => handleNotificationClick(notif)}
-                            className={`w-full text-left p-2 rounded-lg transition-colors ${
-                              notif.read ? 'bg-muted/50' : 'bg-primary/10 hover:bg-primary/20'
-                            }`}
-                          >
-                            <div className="flex items-start gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5" />
-                              <div>
-                                <p className="text-sm">{notif.message}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {notif.timestamp.toLocaleTimeString('fr-FR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </p>
-                              </div>
-                              {!notif.read && (
-                                <Badge variant="secondary" className="ml-auto text-xs">
-                                  Nouveau
-                                </Badge>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
             {!isBasicUser && (
               <Button onClick={() => navigate('/events/create')} className="shadow-gold">
                 <Plus className="h-4 w-4 mr-2" />
@@ -378,8 +290,9 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-48 w-full min-w-0 min-h-[12rem]">
+                {chartsReady ? (
+                <ResponsiveContainer width="100%" height="100%" debounce={200}>
                   <PieChart>
                     <Pie
                       data={chartData.statusData}
@@ -397,6 +310,9 @@ const Index = () => {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div className="h-full w-full animate-pulse rounded-md bg-muted/40" />
+                )}
               </div>
               <div className="flex justify-center gap-4 mt-2">
                 {chartData.statusData.map((item) => (
@@ -423,8 +339,9 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-48 w-full min-w-0 min-h-[12rem]">
+                {chartsReady ? (
+                <ResponsiveContainer width="100%" height="100%" debounce={200}>
                   <AreaChart data={chartData.trendData}>
                     <defs>
                       <linearGradient id="colorConfirmations" x1="0" y1="0" x2="0" y2="1">
@@ -445,6 +362,9 @@ const Index = () => {
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div className="h-full w-full animate-pulse rounded-md bg-muted/40" />
+                )}
               </div>
             </CardContent>
           </Card>
@@ -458,8 +378,9 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-48">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="h-48 w-full min-w-0 min-h-[12rem]">
+                {chartsReady ? (
+                <ResponsiveContainer width="100%" height="100%" debounce={200}>
                   <BarChart data={chartData.eventStats} layout="vertical">
                     <XAxis type="number" tick={{ fontSize: 10 }} />
                     <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 10 }} />
@@ -468,6 +389,9 @@ const Index = () => {
                     <Bar dataKey="confirmed" fill="hsl(142, 76%, 36%)" name="Confirmés" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+                ) : (
+                  <div className="h-full w-full animate-pulse rounded-md bg-muted/40" />
+                )}
               </div>
             </CardContent>
           </Card>
