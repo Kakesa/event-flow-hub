@@ -53,13 +53,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.hkeventscd.com" crossorigin />
 
-    <link
-      rel="preload"
-      as="image"
-      href="/images/hero/landing-1280.webp"
-      type="image/webp"
-      fetchpriority="high"
-    />
+    <script>
+      (function () {
+        var path = location.pathname.replace(/\/+$/, "") || "/";
+        if (path !== "/") return;
+        var link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = "/images/hero/landing-1280.webp";
+        link.type = "image/webp";
+        link.fetchPriority = "high";
+        document.head.appendChild(link);
+      })();
+    </script>
 
     <link
       rel="stylesheet"
