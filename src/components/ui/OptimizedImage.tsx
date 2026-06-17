@@ -41,8 +41,6 @@ const OptimizedImage = ({
         alt={alt}
         className={className}
         loading={priority ? 'eager' : 'lazy'}
-        // React 18 attend l'attribut DOM en minuscules
-        {...({ fetchpriority: priority ? 'high' : 'auto' } as ImgHTMLAttributes<HTMLImageElement>)}
         decoding="async"
         {...rest}
       />

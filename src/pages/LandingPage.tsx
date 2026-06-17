@@ -70,6 +70,26 @@ const SectionTitle = ({ script, title, subtitle }: { script: string; title: stri
   </motion.div>
 );
 
+const LandingHeroImage = () => {
+  const [src, setSrc] = useState(WEDDING_IMAGES.heroWebp);
+  const useWebp = src === WEDDING_IMAGES.heroWebp;
+
+  return (
+    <img
+      src={src}
+      srcSet={useWebp ? WEDDING_IMAGES.heroWebpSrcSet : undefined}
+      sizes={useWebp ? '100vw' : undefined}
+      alt="Couple en cérémonie — HK Event"
+      loading="eager"
+      decoding="async"
+      onError={() => {
+        if (useWebp) setSrc(WEDDING_IMAGES.hero);
+      }}
+      className="w-full h-full object-cover object-[center_30%]"
+    />
+  );
+};
+
 const LandingPage = () => {
   const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sending, setSending] = useState(false);
@@ -97,15 +117,8 @@ const LandingPage = () => {
       {/* Hero */}
       <section id="accueil" className="relative min-h-screen flex items-center justify-center">
         <div className="absolute inset-0">
-          <OptimizedImage
-            src={WEDDING_IMAGES.hero}
-            webpSrcSet={WEDDING_IMAGES.heroWebpSrcSet}
-            sizes="100vw"
-            alt="Couple en cérémonie — HK Event"
-            priority
-            className="w-full h-full object-cover object-[center_30%] grayscale contrast-[1.08] brightness-[0.78]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-[#faf8f5]" />
+          <LandingHeroImage />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-[#faf8f5]" />
         </div>
 
         <div className="relative z-10 text-center px-4 pt-20 pb-32 max-w-4xl mx-auto text-white">

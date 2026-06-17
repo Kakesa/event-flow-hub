@@ -2,6 +2,7 @@
 
 export const WEDDING_IMAGES = {
   hero: '/images/gallery/gallery-couple-road.png',
+  heroWebp: '/images/hero/landing-1280.webp',
   heroWebpSrcSet:
     '/images/hero/landing-768.webp 768w, /images/hero/landing-1280.webp 1280w, /images/hero/landing-1920.webp 1920w',
   story: '/images/services/invitations-personnalise.png',

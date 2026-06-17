@@ -21,6 +21,10 @@ export default defineConfig(({ mode }) => ({
         "pwa-icon-512.png",
         "pwa-icon-512-maskable.png",
         "images/logo-white.png",
+        "images/hero/landing-768.webp",
+        "images/hero/landing-1280.webp",
+        "images/hero/landing-1920.webp",
+        "images/gallery/gallery-couple-road.png",
       ],
       manifest: {
         id: "/",
