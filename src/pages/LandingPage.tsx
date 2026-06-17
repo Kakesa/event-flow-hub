@@ -101,11 +101,11 @@ const LandingPage = () => {
             src={WEDDING_IMAGES.hero}
             webpSrcSet={WEDDING_IMAGES.heroWebpSrcSet}
             sizes="100vw"
-            alt=""
+            alt="Couple en cérémonie — HK Event"
             priority
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-[center_30%] grayscale contrast-[1.08] brightness-[0.78]"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-[#faf8f5]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-[#faf8f5]" />
         </div>
 
         <div className="relative z-10 text-center px-4 pt-20 pb-32 max-w-4xl mx-auto text-white">
@@ -120,7 +120,7 @@ const LandingPage = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="font-display text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.08em] uppercase"
+            className="font-display text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.08em] uppercase drop-shadow-[0_2px_12px_rgba(0,0,0,0.55)]"
           >
             Gestion d&apos;événements &amp; mariages
           </motion.h1>
@@ -134,7 +134,7 @@ const LandingPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
-            className="text-lg md:text-xl font-light tracking-wide text-white/90 max-w-lg mx-auto"
+            className="text-lg md:text-xl font-light tracking-wide text-white/95 max-w-lg mx-auto drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]"
           >
             La plateforme élégante pour vos mariages, galas et célébrations inoubliables
           </motion.p>

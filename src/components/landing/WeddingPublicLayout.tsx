@@ -103,7 +103,13 @@ export const WeddingFooter = () => (
     <div className="max-w-6xl mx-auto text-center">
       <div className="flex items-center justify-center gap-2 mb-4">
         <div className="h-8 w-8 rounded-full border border-[#b8956c] p-0.5 bg-white overflow-hidden">
-          <img src={logoBlack} alt="" className="h-full w-full object-contain" />
+          <img
+            src="/pwa-icon-192.png"
+            alt="HK Event"
+            width={32}
+            height={32}
+            className="h-full w-full object-contain"
+          />
         </div>
         <span className="font-display text-lg text-[#faf8f5] tracking-widest">HK Event</span>
       </div>

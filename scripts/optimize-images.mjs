@@ -58,4 +58,20 @@ async function optimize(file) {
 
 const files = await walk(imagesRoot);
 await Promise.all(files.map((file) => optimize(file)));
+
+/** Hero landing — photo mariage N&B responsive */
+const landingHeroSrc = path.join(imagesRoot, 'gallery/gallery-couple-road.png');
+const landingHeroOut = path.join(imagesRoot, 'hero');
+await import('node:fs/promises').then(({ mkdir }) => mkdir(landingHeroOut, { recursive: true }));
+
+for (const width of [768, 1280, 1920]) {
+  await sharp(landingHeroSrc)
+    .resize(width, null, { withoutEnlargement: true })
+    .grayscale()
+    .modulate({ brightness: 0.92, saturation: 0 })
+    .webp({ quality: 82 })
+    .toFile(path.join(landingHeroOut, `landing-${width}.webp`));
+}
+console.log('✓ hero/landing → webp N&B (768/1280/1920)');
+
 console.log(`Optimized ${files.length} images.`);

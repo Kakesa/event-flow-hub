@@ -1,9 +1,9 @@
 /** Contenu FR — style template mariage Renderforest (Outdoor / Elegant Wedding) */
 
 export const WEDDING_IMAGES = {
-  hero: '/images/services/planification-hero.jpg',
+  hero: '/images/gallery/gallery-couple-road.png',
   heroWebpSrcSet:
-    '/images/services/planification-hero-768.webp 768w, /images/services/planification-hero-1280.webp 1280w, /images/services/planification-hero-1920.webp 1920w',
+    '/images/hero/landing-768.webp 768w, /images/hero/landing-1280.webp 1280w, /images/hero/landing-1920.webp 1920w',
   story: '/images/services/invitations-personnalise.png',
   storyAlt: '/images/gallery/gallery-intimate-moment.png',
   gallery: [
