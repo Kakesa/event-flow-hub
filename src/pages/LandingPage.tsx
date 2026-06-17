@@ -236,19 +236,13 @@ const LandingPage = () => {
                 transition={{ delay: i * 0.06 }}
               >
                 <Link to={`/services/${service.slug}`} className="group block h-full">
-                  <div className={`overflow-hidden aspect-[4/3] relative ${service.isIllustration ? 'bg-[#faf8f5]' : ''}`}>
+                  <div className="overflow-hidden aspect-[4/3] relative">
                     <img
                       src={service.cardImage}
                       alt={service.title}
-                      className={
-                        service.isIllustration
-                          ? 'w-full h-full object-contain p-6 group-hover:scale-105 transition-transform duration-500'
-                          : 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
-                      }
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                     />
-                    {!service.isIllustration && (
-                      <div className="absolute inset-0 bg-[#4a5a44]/0 group-hover:bg-[#4a5a44]/25 transition-colors duration-500" />
-                    )}
+                    <div className="absolute inset-0 bg-[#4a5a44]/0 group-hover:bg-[#4a5a44]/25 transition-colors duration-500" />
                   </div>
                   <div className="pt-6 text-center border-b border-[#e8e0d8] pb-6 group-hover:border-[#b8956c] transition-colors">
                     <p className="wedding-script text-3xl text-[#b8956c]">{service.script}</p>

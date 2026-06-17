@@ -3,10 +3,7 @@ export interface ServiceItem {
   script: string;
   title: string;
   shortDescription: string;
-  heroImage: string;
   cardImage: string;
-  /** Illustration (PNG) — affichage contain au lieu de cover */
-  isIllustration?: boolean;
   intro: string;
   features: { title: string; description: string }[];
   steps: { title: string; description: string }[];
@@ -19,9 +16,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Organisation',
     title: 'Planification d\'événements',
     shortDescription: 'Créez et configurez votre mariage, gala ou cérémonie en quelques clics.',
-    heroImage: '/images/services/planification-hero.jpg',
     cardImage: '/images/services/planification-dashboard.png',
-    isIllustration: true,
     intro: 'De la première idée au jour J, HK Event vous accompagne avec une interface claire et élégante. Définissez la date, le lieu, le type d\'événement et invitez votre équipe en toute simplicité.',
     features: [
       { title: 'Tableau de bord intuitif', description: 'Visualisez tous vos événements, statistiques et activités récentes en un coup d\'œil.' },
@@ -41,9 +36,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Invitations',
     title: 'Invitations personnalisées',
     shortDescription: 'Des invitations élégantes par e-mail ou WhatsApp, à votre image.',
-    heroImage: '/images/gallery/gallery-bride-portrait.png',
     cardImage: '/images/services/invitations-personnalise.png',
-    isIllustration: true,
     intro: 'Choisissez parmi nos modèles raffinés ou personnalisez chaque détail : couleurs, textes, photos. Envoyez vos invitations en masse et suivez leur livraison.',
     features: [
       { title: 'Modèles élégants', description: 'Des designs inspirés des plus belles cérémonies, prêts à personnaliser.' },
@@ -63,9 +56,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Confirmations',
     title: 'RSVP en ligne',
     shortDescription: 'Suivez les réponses de vos invités en temps réel, sans relances interminables.',
-    heroImage: '/images/gallery/gallery-couple-road.png',
     cardImage: '/images/services/rsvp-save-the-date.png',
-    isIllustration: true,
     intro: 'Vos invités confirment ou déclinent directement depuis leur invitation. Vous recevez les réponses instantanément et visualisez les statistiques mises à jour en direct.',
     features: [
       { title: 'Lien RSVP unique', description: 'Chaque invité reçoit un lien personnel sécurisé.' },
@@ -85,9 +76,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Accueil',
     title: 'Scanner QR Code',
     shortDescription: 'Accueillez vos invités avec élégance grâce au scan à l\'entrée.',
-    heroImage: '/images/services/accueil-qr-hero.jpg',
     cardImage: '/images/services/scanner-qr.png',
-    isIllustration: true,
     intro: 'Chaque invité possède un QR code unique. Le jour de l\'événement, scannez-le à l\'entrée pour valider la présence en un instant et éviter les files d\'attente.',
     features: [
       { title: 'QR unique par invité', description: 'Code généré automatiquement avec chaque invitation.' },
@@ -107,9 +96,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Souvenirs',
     title: 'Livre d\'or digital',
     shortDescription: 'Recueillez les vœux et messages de vos invités en temps réel.',
-    heroImage: '/images/gallery/gallery-garden-embrace.png',
     cardImage: '/images/services/livre-dor-card.png',
-    isIllustration: true,
     intro: 'Vos invités laissent leurs messages, vœux et anecdotes directement depuis leur invitation. Vous modérez, répondez et conservez ces souvenirs précieux pour toujours.',
     features: [
       { title: 'Messages en direct', description: 'Les vœux apparaissent sur votre espace en temps réel.' },
@@ -129,8 +116,7 @@ export const SERVICES: ServiceItem[] = [
     script: 'Analyses',
     title: 'Statistiques & analyses',
     shortDescription: 'Visualisez l\'engagement de vos invités avec des tableaux de bord clairs.',
-    heroImage: '/images/services/analytics-hero.jpg',
-    cardImage: '/images/services/analytics-card.jpg',
+    cardImage: '/images/services/analytics-hero.jpg',
     intro: 'Taux de confirmation, préférences boissons, présence le jour J, performance des e-mails : toutes vos données réunies dans des graphiques élégants et faciles à comprendre.',
     features: [
       { title: 'Vue d\'ensemble', description: 'Statistiques globales par événement en un coup d\'œil.' },

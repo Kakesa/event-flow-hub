@@ -276,3 +276,89 @@
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(4px);
 }
+
+/* ─── Page RSVP invité ─── */
+.rsvp-page {
+  --rsvp-sage: #4a5a44;
+  --rsvp-sage-light: #7a8b72;
+  --rsvp-gold: #b8956c;
+  --rsvp-gold-light: #d4bc94;
+  --rsvp-cream: #faf8f5;
+  --rsvp-blush: #f5ebe6;
+  background-color: var(--rsvp-cream);
+  color: var(--rsvp-sage);
+  font-family: 'Roboto', sans-serif;
+}
+
+.rsvp-page .rsvp-glass {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 224, 216, 0.8);
+  box-shadow: 0 4px 24px rgba(74, 90, 68, 0.08);
+}
+
+.rsvp-page .rsvp-choice {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rsvp-page .rsvp-choice-selected {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(74, 90, 68, 0.15);
+}
+
+.rsvp-page .rsvp-drink-chip {
+  transition: all 0.25s ease;
+}
+
+.rsvp-page .rsvp-ticket {
+  background: linear-gradient(135deg, #fff 0%, var(--rsvp-blush) 100%);
+  border: 2px dashed var(--rsvp-gold-light);
+}
+
+.rsvp-page .animate-float-heart {
+  color: var(--rsvp-gold);
+}
+
+.rsvp-page .animate-fall-petal {
+  filter: saturate(0.85);
+}
+
+.rsvp-page .rsvp-frame-deco {
+  animation: rsvpFrameSway 5s ease-in-out infinite;
+}
+
+/* ─── Invitation RSVP (style carte papier) ─── */
+.rsvp-invitation-panel--wedding {
+  background-color: #faf6f2;
+  background-image:
+    radial-gradient(ellipse 90% 70% at 8% 95%, rgba(255, 195, 185, 0.45), transparent 55%),
+    radial-gradient(ellipse 85% 65% at 92% 92%, rgba(255, 180, 175, 0.4), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 210, 200, 0.2), transparent 60%);
+}
+
+.rsvp-invitation-panel--birthday {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 90%, rgba(255, 220, 150, 0.35), transparent),
+    radial-gradient(ellipse 80% 60% at 90% 90%, rgba(255, 200, 100, 0.3), transparent);
+}
+
+.rsvp-invitation-panel--baby {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 12% 92%, rgba(180, 230, 190, 0.4), transparent),
+    radial-gradient(ellipse 80% 60% at 88% 90%, rgba(160, 220, 180, 0.35), transparent);
+}
+
+.rsvp-invitation-panel--default {
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 95%, rgba(184, 149, 108, 0.12), transparent),
+    radial-gradient(ellipse 70% 50% at 85% 95%, rgba(184, 149, 108, 0.1), transparent);
+}
+
+@keyframes rsvpFrameSway {
+  0%, 100% {
+    transform: rotate(var(--rsvp-rotate, 0deg)) translateY(0);
+  }
+  50% {
+    transform: rotate(calc(var(--rsvp-rotate, 0deg) + 4deg)) translateY(-4px);
+  }
+}

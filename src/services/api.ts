@@ -261,7 +261,7 @@ export const rsvpApi = {
   getStatus: async (
     eventId: string,
     guestId: string,
-  ): Promise<ApiResponse<Guest>> => {
+  ): Promise<ApiResponse<Guest & { eventMeta?: Partial<Event> }>> => {
     const res = await fetch(
       `${API_BASE_URL}/public/rsvp/${eventId}/${guestId}`,
       {
@@ -274,20 +274,20 @@ export const rsvpApi = {
     const result = await handleResponse<{
       success: boolean;
       data: {
-        event: any;
+        event: Partial<Event> & { id?: string; _id?: string };
         guest: Guest & { _id?: string };
       };
     }>(res);
 
-    // The backend matches the format: data: { event: {...}, guest: { id: ..., name: ... } }
-    // We already have 'id' in result.data.guest, but we ensure it's prioritized.
     const guestData = result.data.guest;
+    const eventMeta = result.data.event;
 
     return {
       success: result.success ?? true,
       data: {
         ...guestData,
         id: guestData.id || guestData._id || "",
+        eventMeta,
       },
     };
   },

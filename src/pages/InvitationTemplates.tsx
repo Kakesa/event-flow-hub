@@ -19,6 +19,7 @@ import {
 import { guestsApi, eventsApi, emailsApi, invitationsApi, BASE_URL } from '@/services/api';
 import { getWhatsAppDigits } from '@/utils/phoneUtils';
 import type { Guest, Event } from '@/types/models';
+import { getEventTypeWithArticle } from '@/lib/eventTypePhrases';
 import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 
 interface Template {
@@ -192,20 +193,6 @@ const InvitationTemplates = () => {
       console.error(error);
     } finally {
       setIsSending(false);
-    }
-  };
-
-  const getEventTypeWithArticle = (eventType?: string) => {
-    if (!eventType?.trim()) return 'à notre événement';
-    switch (eventType.trim()) {
-      case 'Mariage': return 'à notre mariage';
-      case 'Anniversaire': return 'à mon anniversaire';
-      case 'Baby Shower': return 'à notre baby shower';
-      case 'Remise de diplôme': return 'à ma remise de diplôme';
-      case 'Événement corporate': return 'à notre événement corporate';
-      case 'Fête': return 'à notre fête';
-      case 'Autre': return 'à notre événement';
-      default: return `à notre ${eventType.toLowerCase()}`;
     }
   };
 

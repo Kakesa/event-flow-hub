@@ -10,16 +10,10 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-const serviceImageClass = (service: ServiceItem, variant: 'card' | 'thumb') => {
-  if (!service.isIllustration) {
-    return variant === 'card'
-      ? 'w-full aspect-[4/5] object-cover shadow-xl'
-      : 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-700';
-  }
-  return variant === 'card'
-    ? 'w-full aspect-square object-contain p-8 md:p-12 bg-[#faf8f5] border border-[#e8e0d8] shadow-xl'
-    : 'w-full h-full object-contain p-6 bg-[#faf8f5] group-hover:scale-105 transition-transform duration-500';
-};
+const serviceImageClass = (_service: ServiceItem, variant: 'card' | 'thumb') =>
+  variant === 'card'
+    ? 'w-full aspect-[4/5] object-cover shadow-xl'
+    : 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-700';
 
 const ServicePage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -32,24 +26,10 @@ const ServicePage = () => {
   return (
     <WeddingPublicLayout>
       {/* Hero */}
-      <section className={`relative min-h-[70vh] flex items-end pt-20 ${service.isIllustration ? 'bg-[#faf8f5]' : ''}`}>
+      <section className="relative min-h-[70vh] flex items-end pt-20">
         <div className="absolute inset-0">
-          {service.isIllustration ? (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-b from-[#f5ebe6] to-[#faf8f5]" />
-              <img
-                src={service.cardImage}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain object-center p-12 md:p-20 max-h-[55vh] mx-auto opacity-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#4a5a44]/90 via-[#4a5a44]/40 to-transparent" />
-            </>
-          ) : (
-            <>
-              <img src={service.heroImage} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#4a5a44] via-[#4a5a44]/50 to-black/30" />
-            </>
-          )}
+          <img src={service.cardImage} alt="" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#4a5a44]/90 via-[#4a5a44]/40 to-black/20" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto px-4 pb-16 pt-32 text-center text-white w-full">
           <motion.p

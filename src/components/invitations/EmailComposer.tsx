@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { emailsApi, BASE_URL } from '@/services/api';
 import type { Guest, Event } from '@/types/models';
+import { getEventTypeWithArticle } from '@/lib/eventTypePhrases';
 import { useToast } from '@/hooks/use-toast';
 
 interface EmailTemplate {
@@ -217,40 +218,6 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
   }, [selectedTemplate]);
 
  // 🔹 Gestion intelligente de l'article français
-  const getEventTypeWithArticle = (eventType?: string) => {
-    //console.log("TYPE EVENT:", event?.type);
-    if (!eventType || eventType.trim() === '') {
-      return "à notre événement";
-    }
-
-    const type = eventType.trim();
-
-    switch (type) {
-      case 'Mariage':
-        return 'à notre mariage';
-
-      case 'Anniversaire':
-        return 'à mon anniversaire';
-
-      case 'Baby Shower':
-        return 'à notre baby shower';
-
-      case 'Remise de diplôme':
-        return 'à ma remise de diplôme';
-
-      case 'Événement corporate':
-        return 'à notre événement corporate';
-
-      case 'Fête':
-        return 'à notre fête';
-
-      case 'Autre':
-        return 'à notre événement';
-
-      default:
-        return `à notre ${type.toLowerCase()}`;
-    }
-  };
   const replaceVariables = (text: string, guest?: Guest) => {
   if (!event) return text;
 
