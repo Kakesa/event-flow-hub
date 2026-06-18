@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { PaymentDialog } from '@/components/settings/PaymentDialog';
 import { paymentsApi } from '@/services/api';
 import {
   SUBSCRIPTION_PLANS,
