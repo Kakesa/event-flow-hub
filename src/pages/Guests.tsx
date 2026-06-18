@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
+import GuestBillingCard from '@/components/subscription/GuestBillingCard';
 import { formatPlanLimit } from '@/config/subscriptionPlans';
 import { exportGuestsToCSV, exportGuestsToExcel } from '@/utils/exportUtils';
 
@@ -373,6 +374,14 @@ const Guests = () => {
             </DialogContent>
           </Dialog>
         </div>
+
+        {limits?.billing && (
+          <GuestBillingCard
+            billing={eventFilter && limits.eventBilling ? limits.eventBilling : limits.billing}
+            pricePerGuestFc={limits.pricePerGuestFc}
+            compact={!eventFilter}
+          />
+        )}
 
         {limits && limits.canAddGuest === false && eventFilter && (
           <PlanLimitAlert

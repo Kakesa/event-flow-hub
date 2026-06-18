@@ -25,6 +25,7 @@ const Invitations = lazy(() => import("./pages/Invitations"));
 const InvitationTemplates = lazy(() => import("./pages/InvitationTemplates"));
 const Scanner = lazy(() => import("./pages/Scanner"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Tarification = lazy(() => import("./pages/Tarification"));
 const CreateEvent = lazy(() => import("./pages/CreateEvent"));
 const EditEvent = lazy(() => import("./pages/EditEvent"));
 const Users = lazy(() => import("./pages/Users"));
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/invitations/templates" element={<ProtectedRoute><InvitationTemplates /></ProtectedRoute>} />
               <Route path="/scanner" element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/tarification" element={<ProtectedRoute><Tarification /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
               <Route path="/superadmin" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />

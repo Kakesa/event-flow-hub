@@ -10,6 +10,7 @@ import {
   BookOpen,
   BarChart3,
   QrCode,
+  Coins,
   Settings,
   Menu,
   X,
@@ -52,6 +53,7 @@ const navigation = [
   { name: 'Message', href: '/guestbook', icon: BookOpen, organizerOnly: true },
   { name: 'Analytics', href: '/analytics', icon: BarChart3, organizerOnly: true },
   { name: 'Scanner QR', href: '/scanner', icon: QrCode, organizerOnly: true },
+  { name: 'Tarification', href: '/tarification', icon: Coins, adminSpace: true },
   { name: 'Gestion Utilisateurs', href: '/users', icon: Users, superAdminOnly: true },
 ];
 
@@ -137,12 +139,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   if (user?.role === 'superadmin') {
                     if ('organizerOnly' in item && item.organizerOnly) return false;
                     if ('superAdminOnly' in item && item.superAdminOnly) return true;
+                    if ('adminSpace' in item && item.adminSpace) return true;
                     return item.href === '/dashboard';
                   }
                   if ('superAdminOnly' in item && item.superAdminOnly) {
                     return false;
                   }
                   if ('adminOnly' in item && item.adminOnly) {
+                    return user?.role === 'admin';
+                  }
+                  if ('adminSpace' in item && item.adminSpace) {
                     return user?.role === 'admin';
                   }
                   return true;

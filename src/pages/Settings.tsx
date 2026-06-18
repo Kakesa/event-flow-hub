@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { paymentsApi } from '@/services/api';
-import { PaymentDialog } from '@/components/settings/PaymentDialog';
 import {
   SUBSCRIPTION_PLANS,
   SELLABLE_PLANS,

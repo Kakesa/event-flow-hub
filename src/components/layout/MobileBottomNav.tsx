@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Plus, User, Bell, Users } from 'lucide-react';
+import { Home, Plus, User, Bell, Users, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +57,12 @@ const MobileBottomNav = () => {
           label: 'Utilisateurs',
           href: '/users',
           icon: Users,
+          onClick: undefined,
+        },
+        {
+          label: 'Tarification',
+          href: '/tarification',
+          icon: Coins,
           onClick: undefined,
         },
         {

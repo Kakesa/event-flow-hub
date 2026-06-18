@@ -762,6 +762,11 @@ const SuperAdminDashboard = () => {
                                 Limites débloquées
                               </Badge>
                             )}
+                            {(user.subscriptionType === 'premium' || user.subscriptionType === 'free' || user.subscriptionType === 'enterprise') && (
+                              <Badge variant="secondary" className="w-fit">
+                                {(user.guestPriceFc ?? 1500).toLocaleString('fr-FR')} FC / invité
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

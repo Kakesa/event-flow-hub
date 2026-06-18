@@ -97,6 +97,29 @@ export const authApi = {
   },
 };
 
+// ==================== PLATFORM / TARIFICATION ====================
+export const platformApi = {
+  getSettings: async (): Promise<ApiResponse<import('@/types/models').PlatformPricingSettings>> => {
+    const res = await fetch(`${API_BASE_URL}/platform/settings`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  updateSettings: async (
+    data: { defaultGuestPriceFc: number },
+  ): Promise<ApiResponse<import('@/types/models').PlatformPricingSettings>> => {
+    const res = await fetch(`${API_BASE_URL}/platform/settings`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+};
+
 // ==================== ÉVÉNEMENTS ====================
 export const eventsApi = {
   getAll: async (): Promise<ApiResponse<Event[]>> => {

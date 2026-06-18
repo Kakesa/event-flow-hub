@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CreditCard, Users, TrendingUp, Crown, Search,
   ChevronUp, ChevronDown, DollarSign, Calendar,
@@ -54,9 +54,10 @@ import {
   getPlanPrice,
   calculateSubscriptionMRR,
 } from '@/config/subscriptionPlans';
-import { usersApi } from '@/services/api';
+import { usersApi, platformApi } from '@/services/api';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { NEGOTIATED_GUEST_PRICES_FC } from '@/config/guestPricing';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -79,8 +80,18 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [newPlan, setNewPlan] = useState<SubscriptionType>('free');
   const [bypassLimits, setBypassLimits] = useState(false);
+  const [guestPriceChoice, setGuestPriceChoice] = useState<string>('default');
+  const [defaultGuestPriceFc, setDefaultGuestPriceFc] = useState(1500);
   const [updating, setUpdating] = useState(false);
   const [togglingBypassUserId, setTogglingBypassUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    platformApi.getSettings().then((res) => {
+      if (res.success) {
+        setDefaultGuestPriceFc(res.data.defaultGuestPriceFc);
+      }
+    });
+  }, []);
 
   // Calculer les statistiques
   const subscriptionCounts = {
@@ -130,8 +141,19 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
     setSelectedUser(user);
     setNewPlan(user.subscriptionType || 'free');
     setBypassLimits(user.planLimitsBypass === true);
+    setGuestPriceChoice(
+      user.guestPriceFc ? String(user.guestPriceFc) : 'default'
+    );
     setShowUpgradeDialog(true);
   };
+
+  const resolveGuestPriceFc = (choice: string): number | null => {
+    if (choice === 'default') return null;
+    return Number(choice);
+  };
+
+  const getDisplayGuestPrice = (user: User) =>
+    user.guestPriceFc ?? defaultGuestPriceFc;
 
   const handleToggleBypass = async (user: User, checked: boolean) => {
     const userId = user._id || user.id || '';
@@ -163,6 +185,11 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
     try {
       const userId = selectedUser._id || selectedUser.id || '';
       await onUpdateSubscription(userId, newPlan);
+      const nextGuestPrice = resolveGuestPriceFc(guestPriceChoice);
+      const currentGuestPrice = selectedUser.guestPriceFc ?? null;
+      if (nextGuestPrice !== currentGuestPrice) {
+        await usersApi.update(userId, { guestPriceFc: nextGuestPrice });
+      }
       if (bypassLimits !== (selectedUser.planLimitsBypass === true)) {
         await usersApi.update(userId, { planLimitsBypass: bypassLimits });
       }
@@ -367,6 +394,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Plan actuel</TableHead>
                   <TableHead>Prix</TableHead>
+                  <TableHead>Tarif / invité</TableHead>
                   <TableHead>Limites</TableHead>
                   <TableHead>Inscrit le</TableHead>
                   <TableHead>Statut</TableHead>
@@ -390,6 +418,12 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
                       <TableCell>{getPlanBadge(user.subscriptionType)}</TableCell>
                       <TableCell className="font-medium">
                         {getPlanPrice(plan) === 0 ? 'Gratuit' : `$${getPlanPrice(plan)}/mois`}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {getDisplayGuestPrice(user).toLocaleString('fr-FR')} FC
+                        {!user.guestPriceFc && (
+                          <span className="block text-xs text-muted-foreground">défaut</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -502,6 +536,28 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tarif par invité (FC)</Label>
+              <Select value={guestPriceChoice} onValueChange={setGuestPriceChoice}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">
+                    Défaut plateforme ({defaultGuestPriceFc.toLocaleString('fr-FR')} FC)
+                  </SelectItem>
+                  {NEGOTIATED_GUEST_PRICES_FC.map((price) => (
+                    <SelectItem key={price} value={String(price)}>
+                      {price.toLocaleString('fr-FR')} FC / invité
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                L&apos;admin utilisera ce tarif pour facturer cet organisateur.
+              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-3">

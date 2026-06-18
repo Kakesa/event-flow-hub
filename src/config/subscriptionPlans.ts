@@ -50,10 +50,11 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionType, PlanDefinition> = {
     label: 'Premium',
     price: 79,
     maxEvents: 1,
-    maxGuests: 200,
+    maxGuests: null,
     features: [
       '1 événement',
-      '200 invités',
+      'Invités facturés à l\'unité',
+      'Accès fonctionnalités admin',
       'Templates personnalisés',
       'Analytics avancés',
       'Support email',

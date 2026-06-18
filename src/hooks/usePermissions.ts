@@ -7,8 +7,11 @@ export const usePermissions = () => {
   const hasPermission = (module: ModuleName, action: PermissionAction): boolean => {
     if (!user) return false;
     
-    // Admin a tous les droits
-    if (user.role === 'admin') return true;
+    if (user.role === 'admin' || user.role === 'superadmin') return true;
+
+    if (user.subscriptionType === 'premium' || user.subscriptionType === 'enterprise') {
+      return true;
+    }
     
     const permissions = user.permissions;
     if (!permissions) return false;
@@ -24,7 +27,8 @@ export const usePermissions = () => {
   const canUpdate = (module: ModuleName) => hasPermission(module, 'update');
   const canDelete = (module: ModuleName) => hasPermission(module, 'delete');
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin'
+    || user?.subscriptionType === 'premium' || user?.subscriptionType === 'enterprise';
 
   return {
     hasPermission,

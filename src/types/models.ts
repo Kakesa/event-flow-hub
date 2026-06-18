@@ -35,6 +35,7 @@ export interface User {
 
   subscriptionType?: SubscriptionType;
   planLimitsBypass?: boolean;
+  guestPriceFc?: number | null;
   permissions?: ModulePermission[];
   createdAt?: string;
   updatedAt?: string;
@@ -43,6 +44,7 @@ export interface User {
 export interface SubscriptionLimitsStatus {
   plan: SubscriptionType;
   planLimitsBypass: boolean;
+  hasPremiumAdminAccess?: boolean;
   maxEvents: number | null;
   maxGuests: number | null;
   eventCount: number;
@@ -51,6 +53,29 @@ export interface SubscriptionLimitsStatus {
   advancedAnalytics: boolean;
   guestCount?: number;
   canAddGuest?: boolean;
+  pricePerGuestFc?: number;
+  defaultGuestPriceFc?: number;
+  negotiatedPricesFc?: number[];
+  billing?: GuestBillingStatus;
+  eventBilling?: GuestBillingStatus;
+}
+
+export interface GuestBillingStatus {
+  guestCount: number;
+  pricePerGuestFc: number;
+  totalFc: number;
+  billingBlockSize: number;
+  completedBlocks: number;
+  blockTotalFc: number;
+  guestsInCurrentBlock: number;
+  nextBlockAt: number;
+  displayLabel: string;
+  blockProgressLabel: string;
+}
+
+export interface PlatformPricingSettings {
+  defaultGuestPriceFc: number;
+  negotiatedPricesFc: number[];
 }
 
 // ===================== EVENT =====================
