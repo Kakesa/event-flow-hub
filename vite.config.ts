@@ -83,12 +83,18 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('recharts') || id.includes('d3-')) return 'charts';
-            if (id.includes('html5-qrcode') || id.includes('qrcode')) return 'qr';
-            if (id.includes('framer-motion')) return 'motion';
-            if (id.includes('@radix-ui')) return 'radix';
-            if (id.includes('react-dom') || id.includes('react-router')) return 'vendor';
+          if (!id.includes('node_modules')) return;
+          if (id.includes('recharts') || id.includes('d3-')) return 'charts';
+          if (id.includes('html5-qrcode') || id.includes('qrcode')) return 'qr';
+          if (id.includes('framer-motion')) return 'motion';
+          // React + Radix dans le même chunk pour éviter la dépendance circulaire vendor ↔ radix
+          if (
+            id.includes('react-dom') ||
+            id.includes('react-router') ||
+            id.includes('@radix-ui') ||
+            /node_modules[/\\]react[/\\]/.test(id)
+          ) {
+            return 'vendor';
           }
         },
       },

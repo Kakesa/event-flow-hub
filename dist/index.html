@@ -53,13 +53,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.hkeventscd.com" crossorigin />
 
-    <link
-      rel="preload"
-      as="image"
-      href="/images/hero/landing-1280.webp"
-      type="image/webp"
-      fetchpriority="high"
-    />
+    <script>
+      (function () {
+        var path = location.pathname.replace(/\/+$/, "") || "/";
+        if (path !== "/") return;
+        var link = document.createElement("link");
+        link.rel = "preload";
+        link.as = "image";
+        link.href = "/images/hero/landing-1280.webp";
+        link.type = "image/webp";
+        link.fetchPriority = "high";
+        document.head.appendChild(link);
+      })();
+    </script>
 
     <link
       rel="stylesheet"
@@ -78,12 +84,11 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon-512.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
-    <script type="module" crossorigin src="/assets/index-CsN0wdmd.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-TC3O95I0.js">
-    <link rel="modulepreload" crossorigin href="/assets/radix-BvDZSezA.js">
-    <link rel="modulepreload" crossorigin href="/assets/charts-Bc9_jkSW.js">
-    <link rel="modulepreload" crossorigin href="/assets/motion-aV9DCY47.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-q6oVEPYM.css">
+    <script type="module" crossorigin src="/assets/index-DJwiTWdp.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-DbFNTLrh.js">
+    <link rel="modulepreload" crossorigin href="/assets/charts-CG-eE4oK.js">
+    <link rel="modulepreload" crossorigin href="/assets/motion-CnGbxf1k.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-I6WqjsTa.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>
   <body>
     <div id="root"></div>

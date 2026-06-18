@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PwaInstallProvider } from "@/contexts/PwaInstallContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
 import VisitTracker from "@/hooks/useTrackVisit";
@@ -43,6 +44,7 @@ const PageFallback = () => (
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <PwaInstallProvider>
       <AuthProvider>
@@ -91,6 +93,7 @@ const App = () => (
       </AuthProvider>
     </PwaInstallProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
