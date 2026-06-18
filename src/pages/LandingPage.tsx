@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, CheckCircle2, User, MessageSquare, ChevronDown, ArrowRight } from 'lucide-react';
@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 import WeddingPublicLayout from '@/components/landing/WeddingPublicLayout';
 import OptimizedImage from '@/components/ui/OptimizedImage';
+import { useCountdown } from '@/hooks/useCountdown';
 
 import teamEspoir from '@/assets/team-espoir.jpg';
 import teamDan from '@/assets/team-dan.jpg';
@@ -40,26 +41,6 @@ const fadeUp = {
     transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
   },
 } satisfies Variants;
-
-function useCountdown(target: Date) {
-  const calc = useCallback(() => {
-    const diff = target.getTime() - Date.now();
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    return {
-      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((diff / (1000 * 60)) % 60),
-      seconds: Math.floor((diff / 1000) % 60),
-    };
-  }, [target]);
-
-  const [time, setTime] = useState(calc);
-  useEffect(() => {
-    const id = setInterval(() => setTime(calc()), 1000);
-    return () => clearInterval(id);
-  }, [calc]);
-  return time;
-}
 
 const SectionTitle = ({ script, title, subtitle }: { script: string; title: string; subtitle?: string }) => (
   <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }} className="text-center mb-14">

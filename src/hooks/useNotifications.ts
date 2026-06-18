@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { eventsApi, guestsApi, guestbookApi } from '@/services/api';
 import type { Guest, GuestbookMessage } from '@/types/models';
+import {
+  COUNTDOWN_MILESTONES,
+  getCalendarDaysUntil,
+  getCountdownTargetForEvent,
+  getNextUpcomingEvent,
+  isMilestoneActive,
+} from '@/utils/eventCountdown';
 
-export type NotificationType = 'confirmation' | 'decline' | 'new_guest' | 'message';
+export type NotificationType = 'confirmation' | 'decline' | 'new_guest' | 'message' | 'countdown';
 
 export interface AppNotification {
   id: string;
@@ -106,6 +113,24 @@ export function useNotifications(enabled = true, userId?: string) {
           }
         }),
       );
+
+      const upcoming = getNextUpcomingEvent(eventsRes.data);
+      if (upcoming) {
+        const upcomingId = upcoming._id || upcoming.id;
+        const daysLeft = getCalendarDaysUntil(getCountdownTargetForEvent(upcoming));
+        for (const milestone of COUNTDOWN_MILESTONES) {
+          if (!isMilestoneActive(daysLeft, milestone.days)) continue;
+          const id = `countdown-${upcomingId}-${milestone.suffix}`;
+          items.push({
+            id,
+            type: 'countdown',
+            message: milestone.message(upcoming.title),
+            timestamp: new Date(),
+            read: read.has(id),
+            href: '/dashboard',
+          });
+        }
+      }
 
       items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
       const unreadOnly = items.filter((item) => !item.read);

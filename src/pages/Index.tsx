@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, TrendingUp, Activity, MessageSquare, Heart, Reply, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -6,6 +6,9 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import EventCard from '@/components/dashboard/EventCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import EventCountdownCard from '@/components/dashboard/EventCountdownCard';
+import DayJCelebration from '@/components/dashboard/DayJCelebration';
+import { getCalendarDaysUntil, getCountdownTargetForEvent, getNextUpcomingEvent } from '@/utils/eventCountdown';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -198,6 +201,12 @@ const Index = () => {
     }
   };
 
+  const upcomingEvent = useMemo(() => getNextUpcomingEvent(events), [events]);
+  const isDayJ = useMemo(() => {
+    if (!upcomingEvent) return false;
+    return getCalendarDaysUntil(getCountdownTargetForEvent(upcomingEvent)) === 0;
+  }, [upcomingEvent]);
+
   if (initialLoading && !hasLoadedRef.current) {
     return (
       <DashboardLayout>
@@ -210,6 +219,11 @@ const Index = () => {
 
   return (
     <DashboardLayout>
+      <DayJCelebration
+        event={upcomingEvent}
+        userId={user?.id ?? user?._id}
+        isDayJ={isDayJ}
+      />
       <div className="space-y-8">
 
         {/* Header */}
@@ -252,6 +266,8 @@ const Index = () => {
           </Card>
         ) : (
           <>
+        <EventCountdownCard upcomingEvent={upcomingEvent} />
+
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

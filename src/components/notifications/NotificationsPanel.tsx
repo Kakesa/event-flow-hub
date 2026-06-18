@@ -1,6 +1,7 @@
 import {
   Activity,
   CheckCircle2,
+  Clock,
   MessageSquare,
   UserPlus,
   XCircle,
@@ -20,6 +21,8 @@ const iconForType = (type: NotificationType) => {
       return <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />;
     case 'message':
       return <MessageSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" />;
+    case 'countdown':
+      return <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />;
     default:
       return <UserPlus className="h-4 w-4 text-primary shrink-0 mt-0.5" />;
   }
