@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, Users, CheckCircle2, XCircle, Clock, Wine } from 'lucide-react';
+import { TrendingUp, Users, CheckCircle2, XCircle, Clock, Wine, Beer, GlassWater } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/dashboard/StatCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { analyticsApi, eventsApi } from '@/services/api';
 import type { Analytics as AnalyticsType, Event } from '@/types/models';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
+import { buildDrinksChartData } from '@/config/drinks';
 import {
   PieChart,
   Pie,
@@ -24,10 +25,25 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
 } from 'recharts';
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const DrinkTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: { name: string; value: number; categoryLabel: string } }>;
+}) => {
+  if (!active || !payload?.length) return null;
+  const item = payload[0].payload;
+  return (
+    <div className="rounded-lg border bg-background px-3 py-2 shadow-md text-sm">
+      <p className="font-medium">{item.name}</p>
+      <p className="text-muted-foreground">{item.categoryLabel}</p>
+      <p className="font-semibold mt-1">{item.value} choix</p>
+    </div>
+  );
+};
 
 const Analytics = () => {
   const [analytics, setAnalytics] = useState<AnalyticsType | null>(null);
@@ -77,10 +93,19 @@ const Analytics = () => {
     { name: 'En attente', value: analytics.totalPending, color: 'hsl(var(--primary))' },
   ] : [];
 
-  const drinksData = analytics ? Object.entries(analytics.preferredDrinksStats).map(([name, value]) => ({
-    name,
-    value,
-  })) : [];
+  const drinksData = analytics
+    ? buildDrinksChartData(analytics.preferredDrinksStats || {})
+    : [];
+
+  const alcoholicDrinksList = analytics?.alcoholicDrinksStats
+    ? Object.entries(analytics.alcoholicDrinksStats).sort((a, b) => b[1] - a[1])
+    : [];
+
+  const softDrinksList = analytics?.softDrinksStats
+    ? Object.entries(analytics.softDrinksStats).sort((a, b) => b[1] - a[1])
+    : [];
+
+  const totalDrinkChoices = analytics?.drinkCategoryStats?.totalChoices ?? 0;
 
   const confirmationRate = analytics && analytics.totalInvitationsSent > 0
     ? Math.round((analytics.totalConfirmed / analytics.totalInvitationsSent) * 100)
@@ -209,27 +234,117 @@ const Analytics = () => {
                 </CardContent>
               </Card>
 
-              {/* Drinks Chart */}
+              {/* Boissons — barres multicolores */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Wine className="h-5 w-5 text-primary" />
-                    Préférences de boissons
+                    Boissons — alcool / sans alcool
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={drinksData} layout="vertical">
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" width={100} />
-                      <Tooltip />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                        {drinksData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {drinksData.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-16">
+                      Aucune préférence de boisson enregistrée pour le moment.
+                    </p>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={Math.max(220, drinksData.length * 40)}>
+                        <BarChart data={drinksData} layout="vertical" margin={{ left: 8, right: 16 }}>
+                          <XAxis type="number" allowDecimals={false} />
+                          <YAxis
+                            dataKey="name"
+                            type="category"
+                            width={100}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip content={<DrinkTooltip />} />
+                          <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={22}>
+                            {drinksData.map((entry) => (
+                              <Cell key={entry.name} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+
+                      <div className="flex flex-wrap justify-center gap-4 mt-4 pt-4 border-t">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="h-3 w-6 rounded-sm bg-[#b45309]" />
+                          <span className="text-muted-foreground">Avec alcool</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="h-3 w-6 rounded-sm bg-[#2563eb]" />
+                          <span className="text-muted-foreground">Sans alcool</span>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <Beer className="h-4 w-4 text-[hsl(var(--chart-4))]" />
+                            Avec alcool
+                          </div>
+                          <p className="text-3xl font-bold">
+                            {analytics.drinkCategoryStats?.alcoholic ?? 0}
+                          </p>
+                          {alcoholicDrinksList.length > 0 && (
+                            <ul className="text-xs text-muted-foreground space-y-1">
+                              {alcoholicDrinksList.map(([name, count]) => (
+                                <li key={name} className="flex justify-between gap-2">
+                                  <span>{name}</span>
+                                  <span className="font-medium text-foreground">{count}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+
+                        <div className="rounded-lg border p-4 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <GlassWater className="h-4 w-4 text-[hsl(var(--chart-3))]" />
+                            Sans alcool
+                          </div>
+                          <p className="text-3xl font-bold">
+                            {analytics.drinkCategoryStats?.soft ?? 0}
+                          </p>
+                          {softDrinksList.length > 0 && (
+                            <ul className="text-xs text-muted-foreground space-y-1">
+                              {softDrinksList.map(([name, count]) => (
+                                <li key={name} className="flex justify-between gap-2">
+                                  <span>{name}</span>
+                                  <span className="font-medium text-foreground">{count}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-3 mt-4 pt-4 border-t text-center">
+                        <div>
+                          <p className="text-2xl font-bold">{totalDrinkChoices}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Total choix boissons</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">
+                            {analytics.drinkCategoryStats?.guestsWithDrinks ?? 0}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Invités avec préférence</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">
+                            {totalDrinkChoices > 0
+                              ? Math.round(
+                                  ((analytics.drinkCategoryStats?.alcoholic ?? 0) / totalDrinkChoices) * 100,
+                                )
+                              : 0}
+                            %
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Part avec alcool</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>

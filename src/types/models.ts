@@ -186,6 +186,14 @@ export interface QRCode {
 }
 
 // ===================== ANALYTICS =====================
+export interface DrinkCategoryStats {
+  alcoholic: number;
+  soft: number;
+  other: number;
+  totalChoices: number;
+  guestsWithDrinks: number;
+}
+
 export interface Analytics {
   id: string;
   eventId: string;
@@ -196,6 +204,9 @@ export interface Analytics {
   totalPending: number;
 
   preferredDrinksStats: Record<string, number>;
+  alcoholicDrinksStats?: Record<string, number>;
+  softDrinksStats?: Record<string, number>;
+  drinkCategoryStats?: DrinkCategoryStats;
   lastUpdated?: string;
 }
 

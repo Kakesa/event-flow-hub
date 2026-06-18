@@ -33,17 +33,9 @@ import { getEventTypePhraseParts, getEventTypeWithArticle } from "@/lib/eventTyp
 import RsvpInvitationHero from "@/components/rsvp/RsvpInvitationHero";
 import { downloadQrCodePng } from "@/utils/downloadQrCode";
 import { getGuestCheckInUrl } from "@/utils/qrCode";
+import { ALCOHOLIC_DRINKS, SOFT_DRINKS } from "@/config/drinks";
 
 type RsvpChoice = "confirmed" | "declined" | "pending" | "";
-
-const ALCOHOLIC_DRINKS = [
-  "Castel", "Beaufort", "Primus", "Tembo", "Turbo King",
-  "Mutzig", "Heineken", "Nkoyi", "Likofi",
-];
-
-const SOFT_DRINKS = [
-  "Coca", "Fanta", "Vitalo", "Maltina", "Sprite", "Energy Malt", "Eau",
-];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
