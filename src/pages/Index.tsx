@@ -232,27 +232,39 @@ const Index = () => {
       />
       <div className="space-y-8">
 
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight">
-              Bonjour {user?.name || 'Utilisateur'} !
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isBasicUser
-                ? 'Votre espace sera disponible après validation par le super admin'
-                : 'Voici un aperçu de vos événements'}
-            </p>
+        {/* Header + compte à rebours */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+          <div className="flex flex-1 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between min-w-0">
+            <div>
+              <h1 className="font-display text-3xl font-bold tracking-tight">
+                Bonjour {user?.name || 'Utilisateur'} !
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {isBasicUser
+                  ? 'Votre espace sera disponible après validation par le super admin'
+                  : 'Voici un aperçu de vos événements'}
+              </p>
+            </div>
+
+            <div className="flex gap-2 sm:shrink-0">
+              {!isBasicUser && (
+                <Button onClick={() => navigate('/events/create')} className="shadow-gold">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouvel événement
+                </Button>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            {!isBasicUser && (
-              <Button onClick={() => navigate('/events/create')} className="shadow-gold">
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvel événement
-              </Button>
-            )}
-          </div>
+          {!isBasicUser && (
+            <div className="flex justify-center lg:justify-end shrink-0">
+              <EventCountdownCard
+                upcomingEvent={upcomingEvent}
+                variant="compact"
+                className="w-full max-w-[17rem]"
+              />
+            </div>
+          )}
         </div>
 
         {isBasicUser ? (
@@ -272,8 +284,6 @@ const Index = () => {
           </Card>
         ) : (
           <>
-        <EventCountdownCard upcomingEvent={upcomingEvent} />
-
         {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
