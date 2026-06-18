@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotificationsPanel } from '@/contexts/NotificationsContext';
 import type { NotificationType } from '@/hooks/useNotifications';
-import { cn } from '@/lib/utils';
 
 const iconForType = (type: NotificationType) => {
   switch (type) {
@@ -60,7 +59,7 @@ export const NotificationsList = () => {
         ) : notifications.length === 0 ? (
           <div className="py-10 text-center text-muted-foreground">
             <Bell className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Aucune notification pour le moment</p>
+            <p className="text-sm">Aucune nouvelle notification</p>
           </div>
         ) : (
           <div className="space-y-2 pr-3">
@@ -69,12 +68,7 @@ export const NotificationsList = () => {
                 key={notif.id}
                 type="button"
                 onClick={() => handleNotificationClick(notif)}
-                className={cn(
-                  'w-full text-left p-3 rounded-lg transition-colors border',
-                  notif.read
-                    ? 'bg-muted/30 border-transparent'
-                    : 'bg-primary/5 border-primary/20 hover:bg-primary/10',
-                )}
+                className="w-full text-left p-3 rounded-lg transition-colors border bg-primary/5 border-primary/20 hover:bg-primary/10"
               >
                 <div className="flex items-start gap-2">
                   {iconForType(notif.type)}
@@ -89,11 +83,9 @@ export const NotificationsList = () => {
                       })}
                     </p>
                   </div>
-                  {!notif.read && (
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
-                      Nouveau
-                    </Badge>
-                  )}
+                  <Badge variant="secondary" className="text-[10px] shrink-0">
+                    Nouveau
+                  </Badge>
                 </div>
               </button>
             ))}

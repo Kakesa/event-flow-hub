@@ -13,31 +13,34 @@ export interface AppNotification {
   href?: string;
 }
 
-const READ_KEY = 'hk_notifications_read';
+const READ_KEY_PREFIX = 'hk_notifications_read';
 
-const loadReadIds = (): Set<string> => {
+const getReadKey = (userId?: string) =>
+  userId ? `${READ_KEY_PREFIX}_${userId}` : READ_KEY_PREFIX;
+
+const loadReadIds = (userId?: string): Set<string> => {
   try {
-    const raw = localStorage.getItem(READ_KEY);
+    const raw = localStorage.getItem(getReadKey(userId));
     return new Set(raw ? (JSON.parse(raw) as string[]) : []);
   } catch {
     return new Set();
   }
 };
 
-const saveReadIds = (ids: Set<string>) => {
-  localStorage.setItem(READ_KEY, JSON.stringify([...ids]));
+const saveReadIds = (ids: Set<string>, userId?: string) => {
+  localStorage.setItem(getReadKey(userId), JSON.stringify([...ids]));
 };
 
-export function useNotifications(enabled = true) {
+export function useNotifications(enabled = true, userId?: string) {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
-  const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds());
+  const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds(userId));
 
   const fetchNotifications = useCallback(async () => {
     if (!enabled) return;
     setLoading(true);
     try {
-      const read = loadReadIds();
+      const read = loadReadIds(userId);
       const eventsRes = await eventsApi.getAll();
       const items: AppNotification[] = [];
 
@@ -105,14 +108,19 @@ export function useNotifications(enabled = true) {
       );
 
       items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-      setNotifications(items.slice(0, 25));
+      const unreadOnly = items.filter((item) => !item.read);
+      setNotifications(unreadOnly.slice(0, 25));
       setReadIds(read);
     } catch {
       setNotifications([]);
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [enabled, userId]);
+
+  useEffect(() => {
+    setReadIds(loadReadIds(userId));
+  }, [userId]);
 
   useEffect(() => {
     fetchNotifications();
@@ -124,25 +132,23 @@ export function useNotifications(enabled = true) {
     setReadIds((prev) => {
       const next = new Set(prev);
       next.add(id);
-      saveReadIds(next);
+      saveReadIds(next, userId);
       return next;
     });
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }, []);
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, [userId]);
 
   const markAllAsRead = useCallback(() => {
     setNotifications((prev) => {
       const next = new Set(readIds);
       prev.forEach((n) => next.add(n.id));
-      saveReadIds(next);
+      saveReadIds(next, userId);
       setReadIds(next);
-      return prev.map((n) => ({ ...n, read: true }));
+      return [];
     });
-  }, [readIds]);
+  }, [readIds, userId]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.length;
 
   return {
     notifications,

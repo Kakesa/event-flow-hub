@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications, type AppNotification } from '@/hooks/useNotifications';
@@ -21,7 +21,9 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const wasOpenRef = useRef(false);
   const enabled = user?.role !== 'user';
+  const userId = user?.id ?? user?._id;
 
   const {
     notifications,
@@ -29,7 +31,14 @@ export const NotificationsProvider = ({ children }: { children: ReactNode }) => 
     loading,
     markAsRead,
     markAllAsRead,
-  } = useNotifications(enabled);
+  } = useNotifications(enabled, userId);
+
+  useEffect(() => {
+    if (wasOpenRef.current && !open && notifications.length > 0) {
+      markAllAsRead();
+    }
+    wasOpenRef.current = open;
+  }, [open, markAllAsRead, notifications.length]);
 
   const openPanel = () => setOpen(true);
 
