@@ -1034,16 +1034,36 @@ export const qrCodeApi = {
    */
   scan: async (
     code: string,
-  ): Promise<ApiResponse<{ guest: Guest; isValid: boolean; message?: string }>> => {
+  ): Promise<ApiResponse<{ guest: Guest; isValid: boolean; message?: string; alreadyCheckedIn?: boolean }>> => {
     const token = encodeURIComponent(parseScanToken(code));
     const res = await fetch(`${API_BASE_URL}/public/checkin/${token}`, {
       method: "GET",
       headers: getHeaders(),
     });
 
-    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    const text = await res.text();
+    let result: { success?: boolean; message?: string; data?: any } = {};
+    try {
+      result = text ? JSON.parse(text) : {};
+    } catch {
+      result = { message: text || "Erreur serveur" };
+    }
 
-    // isValid = true si succès et que le check-in a été effectué
+    if (!res.ok) {
+      if (result.data?.alreadyCheckedIn && result.data?.guest) {
+        return {
+          success: false,
+          data: {
+            guest: result.data.guest,
+            isValid: false,
+            message: result.message,
+            alreadyCheckedIn: true,
+          },
+        };
+      }
+      throw new Error(result.message || "Une erreur est survenue");
+    }
+
     const isValid = result.success === true;
 
     return {
@@ -1051,7 +1071,7 @@ export const qrCodeApi = {
       data: {
         guest: result.data?.guest,
         isValid,
-        message: (result as { message?: string }).message,
+        message: result.message,
       },
     };
   },

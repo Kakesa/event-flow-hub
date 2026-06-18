@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { QrCode, CheckCircle2, XCircle, User, Wine, Keyboard, LayoutPanelLeft } from 'lucide-react';
+import { QrCode, CheckCircle2, XCircle, User, Wine, Keyboard } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CameraScanner from '@/components/scanner/CameraScanner';
+import GuestWelcomeMessage from '@/components/scanner/GuestWelcomeMessage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,12 @@ import { cn } from '@/lib/utils';
 const Scanner = () => {
   const [code, setCode] = useState('');
   const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<{ guest: Guest; isValid: boolean } | null>(null);
+  const [result, setResult] = useState<{
+    guest: Guest;
+    isValid: boolean;
+    alreadyCheckedIn?: boolean;
+    message?: string;
+  } | null>(null);
   const { toast } = useToast();
 
   // ------------------- SCAN -------------------
@@ -35,7 +41,13 @@ const Scanner = () => {
       setCode(codeToScan);
 
       if (res.data.isValid) {
-        toast({ title: 'Succès', description: 'QR Code valide - Accès autorisé' });
+        toast({ title: 'Bienvenue !', description: `${res.data.guest?.name} — check-in enregistré` });
+      } else if (res.data.alreadyCheckedIn) {
+        toast({
+          title: 'Déjà enregistré',
+          description: res.data.message || 'Cet invité est déjà passé',
+          variant: 'destructive',
+        });
       } else {
         toast({ title: 'Erreur', description: 'QR Code invalide - Accès refusé', variant: 'destructive' });
       }
@@ -125,57 +137,82 @@ const Scanner = () => {
           <Card
             className={cn(
               'animate-scale-in overflow-hidden',
-              result.isValid ? 'border-success' : 'border-destructive'
+              result.isValid
+                ? 'border-success'
+                : result.alreadyCheckedIn
+                  ? 'border-warning'
+                  : 'border-destructive',
             )}
           >
             <div
               className={cn(
                 'h-2',
-                result.isValid ? 'bg-success' : 'bg-destructive'
+                result.isValid
+                  ? 'bg-success'
+                  : result.alreadyCheckedIn
+                    ? 'bg-warning'
+                    : 'bg-destructive',
               )}
             />
             <CardContent className="pt-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div
-                  className={cn(
-                    'flex h-16 w-16 items-center justify-center rounded-full',
-                    result.isValid ? 'bg-success/10' : 'bg-destructive/10'
-                  )}
-                >
-                  {result.isValid ? (
-                    <CheckCircle2 className="h-8 w-8 text-success" />
-                  ) : (
-                    <XCircle className="h-8 w-8 text-destructive" />
-                  )}
+              {result.isValid && result.guest?.name ? (
+                <div className="space-y-6">
+                  <div className="flex justify-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                      <CheckCircle2 className="h-8 w-8 text-success" />
+                    </div>
+                  </div>
+                  <GuestWelcomeMessage
+                    name={result.guest.name}
+                    table={result.guest.table}
+                    variant="staff"
+                  />
                 </div>
-                <div>
-                  <h3 className="font-display text-xl font-semibold">
-                    {result.isValid ? 'Accès autorisé' : 'Accès refusé'}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {result.isValid
-                      ? "L'invité peut entrer"
-                      : "Ce code n'est pas valide"}
-                  </p>
+              ) : (
+                <div className="flex items-center gap-4 mb-6">
+                  <div
+                    className={cn(
+                      'flex h-16 w-16 items-center justify-center rounded-full',
+                      result.alreadyCheckedIn ? 'bg-warning/10' : 'bg-destructive/10',
+                    )}
+                  >
+                    {result.alreadyCheckedIn ? (
+                      <User className="h-8 w-8 text-warning" />
+                    ) : (
+                      <XCircle className="h-8 w-8 text-destructive" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl font-semibold">
+                      {result.alreadyCheckedIn ? 'Déjà enregistré' : 'Accès refusé'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {result.message || "Ce code n'est pas valide"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Infos invité */}
+              {result.alreadyCheckedIn && result.guest?.name && (
+                <div className="mt-4">
+                  <GuestWelcomeMessage
+                    name={result.guest.name}
+                    table={result.guest.table}
+                    variant="staff"
+                  />
+                </div>
+              )}
+
+              {/* Infos complémentaires */}
               {result.isValid && (
-                <div className="space-y-4 p-4 rounded-lg bg-muted/50">
-                  {['name', 'table', 'drinkPreference', 'dietaryRestrictions'].map((key) => (
+                <div className="space-y-4 p-4 rounded-lg bg-muted/50 mt-4">
+                  {['drinkPreference', 'dietaryRestrictions'].map((key) => (
                     result.guest[key as keyof Guest] && (
                       <div key={key} className="flex items-center gap-3">
-                        {key === 'name' && <User className="h-5 w-5 text-primary" />}
-                        {key === 'table' && <LayoutPanelLeft className="h-5 w-5 text-primary" />}
                         {key === 'drinkPreference' && <Wine className="h-5 w-5 text-primary" />}
                         <div>
                           <p className="text-sm text-muted-foreground">
-                            {key === 'name'
-                              ? 'Nom'
-                              : key === 'table'
-                              ? 'Table assignée'
-                              : key === 'drinkPreference'
+                            {key === 'drinkPreference'
                               ? 'Boisson préférée'
                               : 'Restrictions alimentaires'}
                           </p>

@@ -3,10 +3,11 @@ import { useParams } from 'react-router-dom';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { qrCodeApi } from '@/services/api';
 import { parseScanToken } from '@/utils/qrCode';
+import GuestWelcomeMessage from '@/components/scanner/GuestWelcomeMessage';
 
 type CheckInState =
   | { status: 'loading' }
-  | { status: 'success'; guestName: string; message?: string }
+  | { status: 'success'; guestName: string; table?: string | null }
   | { status: 'error'; message: string };
 
 const CheckIn = () => {
@@ -31,7 +32,7 @@ const CheckIn = () => {
           setState({
             status: 'success',
             guestName: res.data.guest.name,
-            message: res.data.message,
+            table: res.data.guest.table,
           });
         } else {
           setState({
@@ -66,17 +67,12 @@ const CheckIn = () => {
         )}
 
         {state.status === 'success' && (
-          <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-in fade-in duration-300">
             <div className="mx-auto w-20 h-20 rounded-full bg-[#4a5a44]/10 flex items-center justify-center">
               <CheckCircle2 className="w-10 h-10 text-[#4a5a44]" />
             </div>
-            <div>
-              <h1 className="font-display text-2xl text-[#2d3a28]">Bienvenue !</h1>
-              <p className="mt-2 text-lg text-[#4a5a44]">{state.guestName}</p>
-              <p className="mt-3 text-sm text-[#7a8b72]">
-                {state.message || 'Présence enregistrée avec succès'}
-              </p>
-            </div>
+            <GuestWelcomeMessage name={state.guestName} table={state.table} />
+            <p className="text-sm text-[#7a8b72]">Présence enregistrée avec succès</p>
           </div>
         )}
 
