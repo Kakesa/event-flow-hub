@@ -14,7 +14,6 @@ import {
   Menu,
   X,
   LogOut,
-  Plus,
   Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -129,22 +128,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </div>
 
           <Separator className="bg-sidebar-border" />
-
-          {/* Quick Action */}
-          {user?.role !== 'user' && (
-            <div className="px-4 py-4">
-              <Button 
-                onClick={() => {
-                  navigate('/events/create');
-                  setSidebarOpen(false);
-                }}
-                className="w-full justify-start gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Nouvel événement
-              </Button>
-            </div>
-          )}
 
           {/* Navigation */}
           <ScrollArea className="flex-1 px-4">
