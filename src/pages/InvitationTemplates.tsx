@@ -17,6 +17,8 @@ import {
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
 import { guestsApi, eventsApi, emailsApi, invitationsApi, BASE_URL } from '@/services/api';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
 import { getWhatsAppDigits } from '@/utils/phoneUtils';
 import type { Guest, Event } from '@/types/models';
 import { getEventTypeWithArticle } from '@/lib/eventTypePhrases';
@@ -47,6 +49,7 @@ const templates: Template[] = [
 
 const InvitationTemplates = () => {
   const navigate = useNavigate();
+  const { limits, loading: limitsLoading } = useSubscriptionLimits();
   const [searchParams] = useSearchParams();
   const eventIdFromUrl = searchParams.get('eventId');
 
@@ -310,6 +313,14 @@ const InvitationTemplates = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {!limitsLoading && limits && !limits.customizableTemplates && (
+          <PlanLimitAlert
+            title="Templates personnalisés"
+            description="La personnalisation avancée des invitations est incluse dans les plans Premium et Enterprise."
+            bypassed={limits.planLimitsBypass}
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

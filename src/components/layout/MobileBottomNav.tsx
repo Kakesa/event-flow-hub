@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Plus, User, Bell } from 'lucide-react';
+import { Home, Plus, User, Bell, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ const MobileBottomNav = () => {
     return location.pathname.startsWith(path);
   };
 
+  const isSuperAdmin = user?.role === 'superadmin';
+
   const handleCreateEvent = () => {
     if (user?.role === 'user') {
       toast({
@@ -32,7 +34,39 @@ const MobileBottomNav = () => {
     navigate('/events/create');
   };
 
-  const navItems = [
+  const navItems = isSuperAdmin
+    ? [
+        {
+          label: 'Home',
+          href: '/dashboard',
+          icon: Home,
+          onClick: undefined,
+        },
+        ...(notifications
+          ? [
+              {
+                label: 'Alertes',
+                href: '#notifications',
+                icon: Bell,
+                onClick: () => notifications.openPanel(),
+                badge: notifications.unreadCount,
+              } as const,
+            ]
+          : []),
+        {
+          label: 'Utilisateurs',
+          href: '/users',
+          icon: Users,
+          onClick: undefined,
+        },
+        {
+          label: 'Profil',
+          href: '/settings',
+          icon: User,
+          onClick: undefined,
+        },
+      ]
+    : [
     {
       label: 'Home',
       href: '/dashboard',

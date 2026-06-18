@@ -34,9 +34,23 @@ export interface User {
   isActive?: boolean;
 
   subscriptionType?: SubscriptionType;
+  planLimitsBypass?: boolean;
   permissions?: ModulePermission[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface SubscriptionLimitsStatus {
+  plan: SubscriptionType;
+  planLimitsBypass: boolean;
+  maxEvents: number | null;
+  maxGuests: number | null;
+  eventCount: number;
+  canCreateEvent: boolean;
+  customizableTemplates: boolean;
+  advancedAnalytics: boolean;
+  guestCount?: number;
+  canAddGuest?: boolean;
 }
 
 // ===================== EVENT =====================

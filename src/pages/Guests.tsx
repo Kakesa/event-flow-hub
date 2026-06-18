@@ -39,6 +39,9 @@ import {
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
+import { formatPlanLimit } from '@/config/subscriptionPlans';
 import { exportGuestsToCSV, exportGuestsToExcel } from '@/utils/exportUtils';
 
 const Guests = () => {
@@ -68,6 +71,7 @@ const Guests = () => {
 
   const { toast } = useToast();
   const { canDelete } = usePermissions();
+  const { limits, refresh: refreshLimits } = useSubscriptionLimits(eventFilter || undefined);
 
   /* =========================
      INITIAL LOAD
@@ -169,6 +173,15 @@ const Guests = () => {
 
     const proceedWithCreation = async () => {
       try {
+        if (limits && limits.canAddGuest === false) {
+          toast({
+            title: 'Limite atteinte',
+            description: `Votre plan autorise ${formatPlanLimit(limits.maxGuests)} invité(s) par événement.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+
         await guestsApi.create(guestPayload.eventId, guestPayload);
 
         toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
@@ -179,10 +192,11 @@ const Guests = () => {
         setEventFilter(newGuest.eventId);
         const res = await guestsApi.getByEvent(newGuest.eventId);
         setGuests(res.data);
-      } catch {
+        refreshLimits();
+      } catch (error) {
         toast({
           title: 'Erreur',
-          description: "Impossible d'ajouter l'invité",
+          description: error instanceof Error ? error.message : "Impossible d'ajouter l'invité",
           variant: 'destructive',
         });
       }
@@ -275,7 +289,11 @@ const Guests = () => {
           <h1 className="text-3xl font-bold">Invités</h1>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <PermissionButton module="guests" action="create">
+              <PermissionButton
+                module="guests"
+                action="create"
+                disabled={limits?.canAddGuest === false}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Ajouter
               </PermissionButton>
@@ -345,11 +363,28 @@ const Guests = () => {
               </div>
 
               <DialogFooter>
-                <Button onClick={handleAddGuest}>Ajouter</Button>
+                <Button
+                  onClick={handleAddGuest}
+                  disabled={limits?.canAddGuest === false}
+                >
+                  Ajouter
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
+
+        {limits && limits.canAddGuest === false && eventFilter && (
+          <PlanLimitAlert
+            title="Limite d'invités atteinte"
+            description={
+              limits.planLimitsBypass
+                ? 'Déblocage actif — actualisez la page si le bouton reste grisé.'
+                : `Votre plan ${limits.plan} autorise ${formatPlanLimit(limits.maxGuests)} invité(s) par événement (${limits.guestCount ?? guests.length} utilisés).`
+            }
+            bypassed={limits.planLimitsBypass}
+          />
+        )}
 
         {/* TABLE */}
         {loading ? (

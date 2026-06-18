@@ -34,6 +34,9 @@ import {
   Baby,
 } from 'lucide-react';
 import { eventsApi } from '@/services/api';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
+import { formatPlanLimit } from '@/config/subscriptionPlans';
 
 type FormDataType = {
   title: string;
@@ -68,6 +71,7 @@ const eventTypes = [
 
 const CreateEvent: React.FC = () => {
   const navigate = useNavigate();
+  const { limits, loading: limitsLoading } = useSubscriptionLimits();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -107,6 +111,11 @@ const CreateEvent: React.FC = () => {
       return;
     }
 
+    if (limits && !limits.canCreateEvent) {
+      toast.error('Limite d\'événements atteinte pour votre plan');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -130,9 +139,10 @@ const CreateEvent: React.FC = () => {
       } else {
         toast.error('Erreur lors de la création de l\'événement');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.response?.data?.message || error.message || 'Erreur serveur');
+      const message = error instanceof Error ? error.message : 'Erreur serveur';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -162,6 +172,18 @@ const CreateEvent: React.FC = () => {
           <h1 className="text-3xl font-bold">Créer un événement</h1>
           <p className="text-muted-foreground">Configurez votre événement en quelques étapes</p>
         </div>
+
+        {!limitsLoading && limits && !limits.canCreateEvent && (
+          <PlanLimitAlert
+            title="Limite d'événements atteinte"
+            description={
+              limits.planLimitsBypass
+                ? 'Les limites devraient être débloquées. Actualisez la page ou contactez le support.'
+                : `Votre plan ${limits.plan} autorise ${formatPlanLimit(limits.maxEvents)} événement(s). Vous en avez déjà ${limits.eventCount}.`
+            }
+            bypassed={limits.planLimitsBypass}
+          />
+        )}
 
         {/* Progress Steps */}
         <div className="flex items-center justify-between mb-8">
@@ -271,7 +293,10 @@ const CreateEvent: React.FC = () => {
                   Suivant <ArrowRight size={16} className="ml-2" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} disabled={isLoading}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isLoading || (limits !== null && !limits.canCreateEvent)}
+                >
                   {isLoading ? 'Création...' : "Créer l'événement"}
                 </Button>
               )}

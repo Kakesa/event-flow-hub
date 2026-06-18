@@ -84,6 +84,17 @@ export const authApi = {
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
+
+  getSubscriptionLimits: async (
+    eventId?: string,
+  ): Promise<ApiResponse<import("@/types/models").SubscriptionLimitsStatus>> => {
+    const query = eventId ? `?eventId=${encodeURIComponent(eventId)}` : "";
+    const res = await fetch(`${API_BASE_URL}/auth/subscription-limits${query}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
 };
 
 // ==================== ÉVÉNEMENTS ====================
@@ -875,6 +886,7 @@ export const analyticsApi = {
 
   getOverview: async (): Promise<
     ApiResponse<{
+      [x: string]: number;
       totalUsers: number;
       totalEvents: number;
       totalGuests: number;

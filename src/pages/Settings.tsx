@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Bell, Palette, Shield, CreditCard, Save } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { User, Bell, Palette, Shield, CreditCard, Save, CheckCircle2 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { paymentsApi } from '@/services/api';
 import { PaymentDialog } from '@/components/settings/PaymentDialog';
+import {
+  SUBSCRIPTION_PLANS,
+  SELLABLE_PLANS,
+  getPlanDefinition,
+  formatPlanLimit,
+} from '@/config/subscriptionPlans';
+import type { SubscriptionType } from '@/types/models';
 
 const Settings = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') === 'subscription' ? 'subscription' : 'profile';
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -55,13 +65,16 @@ const Settings = () => {
     toast({ title: 'Succès', description: 'Préférences de notifications mises à jour' });
   };
 
-  const handleUpgrade = (plan: 'premium' | 'enterprise', amount: number) => {
+  const handleUpgrade = (plan: SubscriptionType) => {
+    const planDef = getPlanDefinition(plan);
     setPaymentModal({
       isOpen: true,
       plan,
-      amount,
+      amount: planDef.price,
     });
   };
+
+  const currentPlan = getPlanDefinition(user?.subscriptionType);
 
   const handlePaymentSuccess = async () => {
     // Dans une vraie app, on attendrait le webhook. 
@@ -88,7 +101,7 @@ const Settings = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
@@ -247,7 +260,7 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle>Mon abonnement</CardTitle>
                 <CardDescription>
-                  Gérez votre plan d'abonnement
+                  Choisissez le plan adapté à votre événement
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -258,62 +271,82 @@ const Settings = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-semibold capitalize">
-                          Plan {user?.subscriptionType || 'Gratuit'}
+                        <h4 className="font-semibold">
+                          Plan {currentPlan.label}
                         </h4>
                         <Badge className="bg-primary text-primary-foreground">Actif</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {user?.subscriptionType === 'premium' || user?.subscriptionType === 'enterprise' 
-                          ? 'Accès illimité à toutes les fonctionnalités'
-                          : 'Accès limité aux fonctionnalités de base'}
+                        {currentPlan.features.join(' · ')}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold">
-                      {user?.subscriptionType === 'premium' ? '19€' : user?.subscriptionType === 'enterprise' ? '49€' : '0€'}
+                      {currentPlan.price === 0 ? 'Gratuit' : `$${currentPlan.price}`}
                     </p>
-                    <p className="text-sm text-muted-foreground">/mois</p>
+                    {currentPlan.price > 0 && (
+                      <p className="text-sm text-muted-foreground">/mois</p>
+                    )}
                   </div>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="p-4 rounded-lg border">
-                    <p className="text-2xl font-bold">∞</p>
+                    <p className="text-2xl font-bold">{formatPlanLimit(currentPlan.maxEvents)}</p>
                     <p className="text-sm text-muted-foreground">Événements</p>
                   </div>
                   <div className="p-4 rounded-lg border">
-                    <p className="text-2xl font-bold">∞</p>
+                    <p className="text-2xl font-bold">{formatPlanLimit(currentPlan.maxGuests)}</p>
                     <p className="text-sm text-muted-foreground">Invités</p>
                   </div>
-                  <div className="p-4 rounded-lg border">
-                    <p className="text-2xl font-bold">∞</p>
-                    <p className="text-sm text-muted-foreground">Invitations/mois</p>
-                  </div>
                 </div>
-                <div className="flex gap-2">
-                  {user?.subscriptionType !== 'premium' && (
-                    <Button 
-                      onClick={() => handleUpgrade('premium', 19)} 
-                      disabled={loadingPayment}
-                      className="bg-primary text-primary-foreground"
-                    >
-                      Passer au Premium (19€)
-                    </Button>
-                  )}
-                  {user?.subscriptionType !== 'enterprise' && (
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleUpgrade('enterprise', 49)} 
-                      disabled={loadingPayment}
-                    >
-                      Plan Enterprise (49€)
-                    </Button>
-                  )}
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {SELLABLE_PLANS.map((planId) => {
+                    const plan = SUBSCRIPTION_PLANS[planId];
+                    const isCurrent = (user?.subscriptionType || 'free') === planId;
+                    return (
+                      <div
+                        key={planId}
+                        className={`rounded-lg border p-4 space-y-3 ${isCurrent ? 'border-primary bg-primary/5' : ''}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-semibold">{plan.label}</h4>
+                          {isCurrent && <Badge variant="secondary">Actuel</Badge>}
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {plan.price === 0 ? 'Gratuit' : `$${plan.price}`}
+                          {plan.price > 0 && <span className="text-sm font-normal text-muted-foreground">/mois</span>}
+                        </p>
+                        <ul className="space-y-1.5 text-sm text-muted-foreground">
+                          {plan.features.map((feature) => (
+                            <li key={feature} className="flex items-start gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        {!isCurrent && plan.price > 0 && (
+                          <Button
+                            className="w-full"
+                            variant={planId === 'premium' ? 'default' : 'outline'}
+                            onClick={() => handleUpgrade(planId)}
+                            disabled={loadingPayment}
+                          >
+                            Choisir {plan.label}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {user?.subscriptionType && user.subscriptionType !== 'free' && (
                   <Button variant="outline" className="text-destructive hover:text-destructive">
                     Annuler l'abonnement
                   </Button>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

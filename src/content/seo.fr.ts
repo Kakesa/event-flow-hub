@@ -29,7 +29,6 @@ const PRIVATE_PREFIXES = [
   '/scanner',
   '/settings',
   '/users',
-  '/admin',
   '/superadmin',
   '/rsvp',
   '/invite',

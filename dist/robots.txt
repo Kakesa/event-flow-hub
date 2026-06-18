@@ -13,7 +13,6 @@ Disallow: /invitations
 Disallow: /scanner
 Disallow: /settings
 Disallow: /users
-Disallow: /admin
 Disallow: /superadmin
 Disallow: /auth
 Disallow: /rsvp/

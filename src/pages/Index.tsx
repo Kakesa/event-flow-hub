@@ -14,11 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
-import { eventsApi, analyticsApi, guestsApi, guestbookApi } from '@/services/api';
+import { eventsApi, guestsApi, guestbookApi } from '@/services/api';
 import { SUPER_ADMIN_NAME, SUPER_ADMIN_PHONES } from '@/components/common/UserAuthorizationNotice';
 import type { Event, Guest, GuestbookMessage } from '@/types/models';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import SuperAdminDashboard from '@/pages/SuperAdminDashboard';
 import {
   PieChart,
   Pie,
@@ -147,10 +148,11 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    if (user?.role === 'superadmin') return;
     fetchData(false);
     const interval = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, user?.role]);
 
   useEffect(() => {
     if (initialLoading) return;
@@ -206,6 +208,10 @@ const Index = () => {
     if (!upcomingEvent) return false;
     return getCalendarDaysUntil(getCountdownTargetForEvent(upcomingEvent)) === 0;
   }, [upcomingEvent]);
+
+  if (user?.role === 'superadmin') {
+    return <SuperAdminDashboard />;
+  }
 
   if (initialLoading && !hasLoadedRef.current) {
     return (
@@ -447,9 +453,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Activity */}
           <div className="space-y-4">
-            <h2 className="font-display text-xl font-semibold">Activité</h2>
             <RecentActivity />
 
             {/* Derniers messages du livre d'or */}

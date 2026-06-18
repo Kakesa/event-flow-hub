@@ -52,7 +52,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: 'HK Event est-il gratuit ?',
-    a: 'Oui, un plan gratuit permet de gérer jusqu\'à 10 invités par événement. Des formules Premium sont disponibles pour les grandes célébrations.',
+    a: 'Le plan Free permet 1 événement et jusqu\'à 10 invités. Le Premium (79 $/mois) offre 1 événement et 200 invités avec templates personnalisés et analytics avancés. L\'Enterprise (149 $/mois) inclut événements et invités illimités avec support prioritaire.',
   },
   {
     q: 'Comment fonctionne le scanner QR ?',

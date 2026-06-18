@@ -47,6 +47,16 @@ import {
 } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 import type { User, SubscriptionType } from '@/types/models';
+import {
+  SUBSCRIPTION_PLANS,
+  SELLABLE_PLANS,
+  getPlanDefinition,
+  getPlanPrice,
+  calculateSubscriptionMRR,
+} from '@/config/subscriptionPlans';
+import { usersApi } from '@/services/api';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -54,26 +64,13 @@ import { cn } from '@/lib/utils';
 interface SubscriptionManagerProps {
   users: User[];
   onUpdateSubscription: (userId: string, newPlan: SubscriptionType) => Promise<void>;
+  onRefresh?: () => void;
   className?: string;
 }
 
-const PLAN_PRICES: Record<SubscriptionType, number> = {
-  free: 0,
-  basic: 29,
-  premium: 79,
-  enterprise: 199,
-};
-
-const PLAN_FEATURES: Record<SubscriptionType, string[]> = {
-  free: ['1 événement', '50 invités', 'Emails basiques'],
-  basic: ['5 événements', '200 invités', 'Templates personnalisés', 'Support email'],
-  premium: ['Événements illimités', 'Invités illimités', 'Analytics avancés', 'Support prioritaire'],
-  enterprise: ['Tout Premium', 'API access', 'SSO', 'Account manager dédié'],
-};
-
 const COLORS = ['hsl(var(--muted))', 'hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--primary))'];
 
-const SubscriptionManager = ({ users, onUpdateSubscription, className }: SubscriptionManagerProps) => {
+const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className }: SubscriptionManagerProps) => {
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +78,9 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [newPlan, setNewPlan] = useState<SubscriptionType>('free');
+  const [bypassLimits, setBypassLimits] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [togglingBypassUserId, setTogglingBypassUserId] = useState<string | null>(null);
 
   // Calculer les statistiques
   const subscriptionCounts = {
@@ -91,17 +90,16 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
     enterprise: users.filter(u => u.subscriptionType === 'enterprise').length,
   };
 
-  const totalRevenue = 
-    subscriptionCounts.basic * PLAN_PRICES.basic +
-    subscriptionCounts.premium * PLAN_PRICES.premium +
-    subscriptionCounts.enterprise * PLAN_PRICES.enterprise;
+  const totalRevenue = calculateSubscriptionMRR(subscriptionCounts);
 
   const mrr = totalRevenue; // Monthly Recurring Revenue
   const arr = mrr * 12; // Annual Recurring Revenue
 
   const pieData = [
     { name: 'Free', value: subscriptionCounts.free, color: COLORS[0] },
-    { name: 'Basic', value: subscriptionCounts.basic, color: COLORS[1] },
+    ...(subscriptionCounts.basic > 0
+      ? [{ name: 'Basic (legacy)', value: subscriptionCounts.basic, color: COLORS[1] }]
+      : []),
     { name: 'Premium', value: subscriptionCounts.premium, color: COLORS[2] },
     { name: 'Enterprise', value: subscriptionCounts.enterprise, color: COLORS[3] },
   ];
@@ -131,7 +129,31 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
   const handleOpenUpgradeDialog = (user: User) => {
     setSelectedUser(user);
     setNewPlan(user.subscriptionType || 'free');
+    setBypassLimits(user.planLimitsBypass === true);
     setShowUpgradeDialog(true);
+  };
+
+  const handleToggleBypass = async (user: User, checked: boolean) => {
+    const userId = user._id || user.id || '';
+    if (!userId) return;
+
+    setTogglingBypassUserId(userId);
+    try {
+      await usersApi.update(userId, { planLimitsBypass: checked });
+      toast({
+        title: checked ? 'Limites débloquées' : 'Limites réactivées',
+        description: `${user.name} — les quotas du plan ${checked ? 'ne s\'appliquent plus' : 's\'appliquent à nouveau'}.`,
+      });
+      onRefresh?.();
+    } catch {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de modifier le déblocage',
+        variant: 'destructive',
+      });
+    } finally {
+      setTogglingBypassUserId(null);
+    }
   };
 
   const handleConfirmUpgrade = async () => {
@@ -139,7 +161,11 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
 
     setUpdating(true);
     try {
-      await onUpdateSubscription(selectedUser._id || selectedUser.id || '', newPlan);
+      const userId = selectedUser._id || selectedUser.id || '';
+      await onUpdateSubscription(userId, newPlan);
+      if (bypassLimits !== (selectedUser.planLimitsBypass === true)) {
+        await usersApi.update(userId, { planLimitsBypass: bypassLimits });
+      }
       toast({
         title: 'Abonnement mis à jour',
         description: `${selectedUser.name} est maintenant sur le plan ${newPlan}`,
@@ -183,7 +209,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mrr.toLocaleString()}€</div>
+            <div className="text-2xl font-bold">${mrr.toLocaleString()}</div>
             <div className="flex items-center text-xs text-green-600">
               <ChevronUp className="h-3 w-3" />
               +12% vs mois dernier
@@ -196,7 +222,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{arr.toLocaleString()}€</div>
+            <div className="text-2xl font-bold">${arr.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Revenu annuel récurrent</p>
           </CardContent>
         </Card>
@@ -221,7 +247,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {users.length > 0 ? (mrr / users.length).toFixed(2) : 0}€
+              {users.length > 0 ? `$${(mrr / users.length).toFixed(2)}` : '$0'}
             </div>
             <p className="text-xs text-muted-foreground">Revenu moyen par utilisateur</p>
           </CardContent>
@@ -241,7 +267,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip 
-                  formatter={(value: number) => [`${value}€`, 'Revenu']}
+                  formatter={(value: number) => [`$${value}`, 'Revenu']}
                 />
                 <Area 
                   type="monotone" 
@@ -325,9 +351,11 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
               <SelectContent>
                 <SelectItem value="all">Tous les plans</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
                 <SelectItem value="premium">Premium</SelectItem>
                 <SelectItem value="enterprise">Enterprise</SelectItem>
+                {subscriptionCounts.basic > 0 && (
+                  <SelectItem value="basic">Basic (legacy)</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -339,6 +367,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Plan actuel</TableHead>
                   <TableHead>Prix</TableHead>
+                  <TableHead>Limites</TableHead>
                   <TableHead>Inscrit le</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -360,7 +389,19 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
                       </TableCell>
                       <TableCell>{getPlanBadge(user.subscriptionType)}</TableCell>
                       <TableCell className="font-medium">
-                        {PLAN_PRICES[plan]}€/mois
+                        {getPlanPrice(plan) === 0 ? 'Gratuit' : `$${getPlanPrice(plan)}/mois`}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={user.planLimitsBypass === true}
+                            disabled={togglingBypassUserId === (user._id || user.id)}
+                            onCheckedChange={(checked) => handleToggleBypass(user, checked)}
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {user.planLimitsBypass ? 'Débloqué' : 'Plan actif'}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {user.createdAt 
@@ -449,11 +490,13 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(['free', 'basic', 'premium', 'enterprise'] as SubscriptionType[]).map((plan) => (
+                  {[...SELLABLE_PLANS, ...(selectedUser?.subscriptionType === 'basic' ? (['basic'] as SubscriptionType[]) : [])].map((plan) => (
                     <SelectItem key={plan} value={plan}>
                       <div className="flex items-center justify-between w-full gap-4">
-                        <span className="capitalize">{plan}</span>
-                        <span className="text-muted-foreground">{PLAN_PRICES[plan]}€/mois</span>
+                        <span>{SUBSCRIPTION_PLANS[plan].label}</span>
+                        <span className="text-muted-foreground">
+                          {getPlanPrice(plan) === 0 ? 'Gratuit' : `$${getPlanPrice(plan)}/mois`}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
@@ -461,10 +504,24 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
               </Select>
             </div>
 
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="space-y-1">
+                <Label htmlFor="plan-bypass">Débloquer les limites du plan</Label>
+                <p className="text-xs text-muted-foreground">
+                  Ignore événements / invités / fonctionnalités liées au plan (utile après changement manuel).
+                </p>
+              </div>
+              <Switch
+                id="plan-bypass"
+                checked={bypassLimits}
+                onCheckedChange={setBypassLimits}
+              />
+            </div>
+
             <div className="p-3 rounded bg-muted/50 space-y-1">
-              <p className="text-sm font-medium">Fonctionnalités du plan {newPlan}:</p>
+              <p className="text-sm font-medium">Fonctionnalités du plan {getPlanDefinition(newPlan).label}:</p>
               <ul className="text-sm text-muted-foreground space-y-1">
-                {PLAN_FEATURES[newPlan].map((feature, i) => (
+                {getPlanDefinition(newPlan).features.map((feature, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <CheckCircle2 className="h-3 w-3 text-green-500" />
                     {feature}
@@ -476,22 +533,22 @@ const SubscriptionManager = ({ users, onUpdateSubscription, className }: Subscri
             {newPlan !== (selectedUser?.subscriptionType || 'free') && (
               <div className={cn(
                 'p-3 rounded flex items-start gap-2',
-                PLAN_PRICES[newPlan] > PLAN_PRICES[selectedUser?.subscriptionType || 'free']
+                getPlanPrice(newPlan) > getPlanPrice(selectedUser?.subscriptionType)
                   ? 'bg-green-500/10 text-green-700'
                   : 'bg-amber-500/10 text-amber-700'
               )}>
-                {PLAN_PRICES[newPlan] > PLAN_PRICES[selectedUser?.subscriptionType || 'free'] ? (
+                {getPlanPrice(newPlan) > getPlanPrice(selectedUser?.subscriptionType) ? (
                   <>
                     <ChevronUp className="h-4 w-4 mt-0.5" />
                     <span className="text-sm">
-                      Upgrade: +{PLAN_PRICES[newPlan] - PLAN_PRICES[selectedUser?.subscriptionType || 'free']}€/mois
+                      Upgrade: +${getPlanPrice(newPlan) - getPlanPrice(selectedUser?.subscriptionType)}/mois
                     </span>
                   </>
                 ) : (
                   <>
                     <ChevronDown className="h-4 w-4 mt-0.5" />
                     <span className="text-sm">
-                      Downgrade: -{PLAN_PRICES[selectedUser?.subscriptionType || 'free'] - PLAN_PRICES[newPlan]}€/mois
+                      Downgrade: -${getPlanPrice(selectedUser?.subscriptionType) - getPlanPrice(newPlan)}/mois
                     </span>
                   </>
                 )}

@@ -2,9 +2,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { 
   Users, Calendar, CreditCard, TrendingUp, Crown, 
-  UserCheck, UserX, DollarSign, Activity, Shield,
+  UserCheck, UserX, DollarSign, Shield, Activity,
   Eye, Mail, Send, Clock, AlertTriangle, CheckCircle2,
-  Globe, Server, Database, Zap, RefreshCw, Search,
+  Globe, Server, Database, RefreshCw, Search,
   MoreVertical, Ban, Edit, Trash2, ExternalLink, FileText, Key
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -38,19 +38,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { usersApi, analyticsApi, eventsApi, emailHistoryApi, auditApi } from '@/services/api';
+import { usersApi, analyticsApi, eventsApi, paymentsApi } from '@/services/api';
 import type { User, Event, SubscriptionType } from '@/types/models';
-import type { EmailLog, EmailAnalytics } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { calculateSubscriptionMRR } from '@/config/subscriptionPlans';
 import AuditLogsPanel from '@/components/superadmin/AuditLogsPanel';
 import UserImpersonation from '@/components/superadmin/UserImpersonation';
 import SubscriptionManager from '@/components/superadmin/SubscriptionManager';
@@ -72,17 +71,20 @@ interface PlatformStats {
   };
 }
 
-interface ActivityLog {
-  id: string;
-  type: 'user_login' | 'event_created' | 'invitation_sent' | 'rsvp_confirmed' | 'user_registered' | 'subscription_changed';
-  userId: string;
-  userName: string;
-  description: string;
-  metadata?: Record<string, unknown>;
-  timestamp: string;
-}
-
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
+
+interface Transaction {
+  id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  amount: number;
+  plan: string;
+  status: 'pending' | 'successful' | 'failed' | 'canceled';
+  createdAt: string;
+}
 
 const SuperAdminDashboard = () => {
   const { toast } = useToast();
@@ -101,9 +103,6 @@ const SuperAdminDashboard = () => {
   });
   const [users, setUsers] = useState<User[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
-  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
-  const [emailAnalytics, setEmailAnalytics] = useState<EmailAnalytics | null>(null);
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [admins, setAdmins] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,6 +111,7 @@ const SuperAdminDashboard = () => {
   const [adminFilter, setAdminFilter] = useState<string>('all'); // ✨ Filtre par admin
   const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<User | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Données graphiques
   const revenueData = [
@@ -134,47 +134,21 @@ const SuperAdminDashboard = () => {
     try {
       setLoading(true);
       
-      const [usersRes, analyticsRes, eventsRes, emailLogsRes, emailAnalyticsRes, auditRes, adminsRes] = await Promise.all([
+      const [usersRes, analyticsRes, eventsRes, adminsRes, paymentsRes] = await Promise.all([
         usersApi.getAll({ limit: 500 }),
         analyticsApi.getOverview(),
         eventsApi.getAllFromAllAdmins(),
-        emailHistoryApi.getLogs(),
-        emailHistoryApi.getAnalytics(),
-        auditApi.getLogs({ limit: 20 }),
         usersApi.getAdmins(),
+        paymentsApi.getAll(),
       ]);
 
       const usersList = usersRes.data || [];
+      const eventsList = eventsRes.data || [];
       setUsers(usersList);
       const adminsData = adminsRes.data || [];
       setAdmins(adminsData);
-      console.log('Admins fetched:', adminsData.length, adminsData);
-      setEvents(eventsRes.data || []);
-      console.log('Events fetched:', (eventsRes.data || []).length);
-      setEmailLogs(emailLogsRes.data || []);
-      setEmailAnalytics(emailAnalyticsRes.data || null);
-      
-      const realLogs: ActivityLog[] = (auditRes.data || []).map((audit: { 
-        _id?: string; 
-        id?: string; 
-        action: string; 
-        userId?: string; 
-        userName?: string; 
-        details?: { reason?: string }; 
-        timestamp?: string; 
-        createdAt?: string; 
-      }) => ({
-        id: audit._id || audit.id || '',
-        type: (audit.action.toLowerCase().includes('login') ? 'user_login' : 
-               audit.action.toLowerCase().includes('event') ? 'event_created' :
-               audit.action.toLowerCase().includes('subscription') ? 'subscription_changed' : 'activity') as any,
-        userId: audit.userId || '',
-        userName: audit.userName || 'Système',
-        description: audit.details?.reason || audit.action,
-        timestamp: audit.timestamp || audit.createdAt || new Date().toISOString(),
-      }));
-
-      setActivityLogs(realLogs);
+      setEvents(eventsList);
+      setTransactions(paymentsRes.data || []);
       
       const subscriptionCounts = {
         free: usersList.filter(u => !u.subscriptionType || u.subscriptionType === 'free').length,
@@ -183,14 +157,16 @@ const SuperAdminDashboard = () => {
         enterprise: usersList.filter(u => u.subscriptionType === 'enterprise').length,
       };
 
+      const calculatedRevenue = calculateSubscriptionMRR(subscriptionCounts);
+
       setStats({
         totalUsers: analyticsRes.data?.totalUsers || usersList.length,
         activeUsers: usersList.filter(u => u.isActive !== false).length,
-        totalEvents: analyticsRes.data?.totalEvents || eventsRes.data?.length || 0,
+        totalEvents: analyticsRes.data?.totalEvents || eventsList.length,
         totalGuests: analyticsRes.data?.totalGuests || 0,
         totalConfirmed: analyticsRes.data?.totalConfirmed || 0,
         upcomingEvents: analyticsRes.data?.upcomingEvents || 0,
-        revenue: (subscriptionCounts.basic * 29 + subscriptionCounts.premium * 79 + subscriptionCounts.enterprise * 199),
+        revenue: analyticsRes.data?.monthlyRevenue ?? calculatedRevenue,
         subscriptions: subscriptionCounts,
       });
 
@@ -209,7 +185,7 @@ const SuperAdminDashboard = () => {
         description: 'Vous devez être super administrateur pour accéder à cette page',
         variant: 'destructive',
       });
-      navigate('/admin');
+      navigate('/dashboard');
       return;
     }
     fetchAllData();
@@ -281,16 +257,20 @@ const SuperAdminDashboard = () => {
     return matchesSearch && matchesAdmin;
   });
 
-  const getActivityIcon = (type: ActivityLog['type']) => {
-    switch (type) {
-      case 'user_login': return <Users className="h-4 w-4 text-blue-500" />;
-      case 'event_created': return <Calendar className="h-4 w-4 text-green-500" />;
-      case 'invitation_sent': return <Send className="h-4 w-4 text-purple-500" />;
-      case 'rsvp_confirmed': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-      case 'user_registered': return <UserCheck className="h-4 w-4 text-cyan-500" />;
-      case 'subscription_changed': return <Crown className="h-4 w-4 text-amber-500" />;
-      default: return <Activity className="h-4 w-4" />;
-    }
+  const getPlanBadge = (plan: string) => {
+    const variants: Record<string, { variant: 'default' | 'secondary' | 'outline'; icon: React.ReactNode }> = {
+      free: { variant: 'outline', icon: null },
+      basic: { variant: 'secondary', icon: null },
+      premium: { variant: 'default', icon: <Crown className="h-3 w-3 mr-1" /> },
+      enterprise: { variant: 'default', icon: <Shield className="h-3 w-3 mr-1" /> },
+    };
+    const config = variants[plan] || variants.free;
+    return (
+      <Badge variant={config.variant} className="capitalize">
+        {config.icon}
+        {plan}
+      </Badge>
+    );
   };
 
   const getRoleBadge = (role?: string) => {
@@ -322,10 +302,10 @@ const SuperAdminDashboard = () => {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Shield className="h-8 w-8 text-red-500" />
-              Super Administration
+              Dashboard
             </h1>
             <p className="text-muted-foreground">
-              Vue complète de toute la plateforme
+              Administration de la plateforme — statistiques et gestion globale
             </p>
           </div>
           <div className="flex gap-2">
@@ -391,7 +371,7 @@ const SuperAdminDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Utilisateurs totaux</CardTitle>
+              <CardTitle className="text-sm font-medium">Utilisateurs</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -419,7 +399,7 @@ const SuperAdminDashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.revenue.toLocaleString()}€</div>
+              <div className="text-2xl font-bold">{(stats.revenue || 0).toLocaleString()}€</div>
               <p className="text-xs text-muted-foreground">
                 {stats.subscriptions.premium + stats.subscriptions.enterprise} abonnés premium
               </p>
@@ -427,24 +407,32 @@ const SuperAdminDashboard = () => {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Emails envoyés</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Taux Confirmation</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{emailAnalytics?.totalSent || 0}</div>
+              <div className="text-2xl font-bold">
+                {stats.totalGuests > 0
+                  ? Math.round((stats.totalConfirmed / stats.totalGuests) * 100)
+                  : 0}%
+              </div>
               <p className="text-xs text-muted-foreground">
-                {emailAnalytics?.openRate?.toFixed(0) || 0}% taux d'ouverture
+                {stats.totalConfirmed}/{stats.totalGuests} invités
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="activity" className="space-y-4">
+        <Tabs defaultValue="overview" className="space-y-4">
           <div className="overflow-x-auto pb-2 -mx-1 px-1">
             <TabsList className="inline-flex w-max min-w-full flex-wrap gap-1 mb-4 h-auto p-1">
-            <TabsTrigger value="activity" className="gap-1">
-              <Activity className="h-4 w-4" />
-              Activité
+            <TabsTrigger value="overview" className="gap-1">
+              <TrendingUp className="h-4 w-4" />
+              Vue d'ensemble
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="gap-1">
+              <CreditCard className="h-4 w-4" />
+              Transactions
             </TabsTrigger>
             <TabsTrigger value="visitors" className="gap-1">
               <Globe className="h-4 w-4" />
@@ -470,14 +458,6 @@ const SuperAdminDashboard = () => {
               <Calendar className="h-4 w-4" />
               Événements
             </TabsTrigger>
-            <TabsTrigger value="emails" className="gap-1">
-              <Mail className="h-4 w-4" />
-              Emails
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-1">
-              <TrendingUp className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
             <TabsTrigger value="impersonation" className="gap-1">
               <Eye className="h-4 w-4" />
               Usurpation
@@ -485,88 +465,185 @@ const SuperAdminDashboard = () => {
           </TabsList>
           </div>
 
-          {/* Activity Tab */}
-          <TabsContent value="activity" className="space-y-4">
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Live Activity Feed */}
-              <Card className="lg:col-span-2">
+          {/* Vue d'ensemble */}
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-amber-500" />
-                    Activité en temps réel
-                  </CardTitle>
+                  <CardTitle>Revenus & Croissance</CardTitle>
+                  <CardDescription>Évolution sur les 6 derniers mois</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[400px]">
-                    <div className="space-y-4">
-                      {activityLogs.map((log) => (
-                        <div key={log.id} className="flex items-start gap-4 p-3 rounded-lg bg-muted/50">
-                          <div className="mt-1">{getActivityIcon(log.type)}</div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium">{log.description}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true, locale: fr })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={revenueData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value, name) => [
+                          name === 'revenue' ? `${value}€` : value,
+                          name === 'revenue' ? 'Revenus' : 'Utilisateurs',
+                        ]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="hsl(var(--primary))"
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </CardContent>
               </Card>
 
-              {/* Quick Stats */}
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Répartition des rôles</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {[
-                      { role: 'superadmin', count: users.filter(u => u.role === 'superadmin').length, color: 'bg-red-500' },
-                      { role: 'admin', count: users.filter(u => u.role === 'admin').length, color: 'bg-orange-500' },
-                      { role: 'organizer', count: users.filter(u => u.role === 'organizer').length, color: 'bg-blue-500' },
-                      { role: 'user', count: users.filter(u => !u.role || u.role === 'user').length, color: 'bg-gray-500' },
-                    ].map(({ role, count, color }) => (
-                      <div key={role} className="flex items-center gap-3">
-                        <div className={cn('w-3 h-3 rounded-full', color)} />
-                        <span className="flex-1 text-sm capitalize">{role}</span>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Performance emails</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>Livraison</span>
-                        <span>{emailAnalytics?.deliveryRate?.toFixed(0) || 0}%</span>
-                      </div>
-                      <Progress value={emailAnalytics?.deliveryRate || 0} className="h-2" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>Ouverture</span>
-                        <span>{emailAnalytics?.openRate?.toFixed(0) || 0}%</span>
-                      </div>
-                      <Progress value={emailAnalytics?.openRate || 0} className="h-2" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span>Clic</span>
-                        <span>{emailAnalytics?.clickRate?.toFixed(0) || 0}%</span>
-                      </div>
-                      <Progress value={emailAnalytics?.clickRate || 0} className="h-2" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Répartition des Abonnements</CardTitle>
+                  <CardDescription>Par type de plan</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={subscriptionData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {subscriptionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
             </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-full">
+                      <Crown className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats.subscriptions.premium + stats.subscriptions.enterprise}</p>
+                      <p className="text-sm text-muted-foreground">Comptes Premium</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
+                      <UserCheck className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats.activeUsers}</p>
+                      <p className="text-sm text-muted-foreground">Utilisateurs actifs</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
+                      <Activity className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats.totalGuests}</p>
+                      <p className="text-sm text-muted-foreground">Invités gérés</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-full">
+                      <CreditCard className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">
+                        {stats.subscriptions.basic + stats.subscriptions.premium + stats.subscriptions.enterprise}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Abonnements payants</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Transactions */}
+          <TabsContent value="transactions" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Historique des Transactions</CardTitle>
+                <CardDescription>Liste de tous les paiements effectués sur la plateforme</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Utilisateur</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Montant</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead>ID Transaction</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((tx) => (
+                      <TableRow key={tx.id || (tx as { _id?: string })._id}>
+                        <TableCell className="text-sm font-medium">
+                          {tx.createdAt ? format(new Date(tx.createdAt), 'dd MMM yyyy HH:mm', { locale: fr }) : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{tx.userId?.name || 'N/A'}</p>
+                            <p className="text-xs text-muted-foreground">{tx.userId?.email || 'N/A'}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getPlanBadge(tx.plan)}</TableCell>
+                        <TableCell className="font-bold">{tx.amount}€</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={tx.status === 'successful' ? 'default' : tx.status === 'pending' ? 'outline' : 'destructive'}
+                            className={cn(
+                              tx.status === 'successful' && 'bg-green-100 text-green-800 hover:bg-green-100',
+                              tx.status === 'pending' && 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+                            )}
+                          >
+                            {tx.status === 'successful' ? 'Réussi' : tx.status === 'pending' ? 'En attente' : 'Échoué'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono text-muted-foreground uppercase">
+                          {(tx.id || (tx as { _id?: string })._id || '').slice(-8)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {transactions.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                          Aucune transaction trouvée
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Audit Logs Tab */}
@@ -592,6 +669,7 @@ const SuperAdminDashboard = () => {
             </div>
             <SubscriptionManager 
               users={users} 
+              onRefresh={fetchAllData}
               onUpdateSubscription={async (userId, newPlan) => {
                 const res = await usersApi.update(userId, { subscriptionType: newPlan });
                 if (res.success) {
@@ -675,9 +753,16 @@ const SuperAdminDashboard = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="capitalize">
-                            {user.subscriptionType || 'free'}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="outline" className="capitalize w-fit">
+                              {user.subscriptionType || 'free'}
+                            </Badge>
+                            {user.planLimitsBypass && (
+                              <Badge className="w-fit bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
+                                Limites débloquées
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           {user.isActive !== false ? (
@@ -933,101 +1018,6 @@ const SuperAdminDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Emails Tab */}
-          <TabsContent value="emails" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Historique global des emails</CardTitle>
-                <CardDescription>{emailLogs.length} emails envoyés</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Destinataire</TableHead>
-                      <TableHead>Sujet</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead>Envoyé le</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {emailLogs.slice(0, 20).map((email) => (
-                      <TableRow key={email.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{email.recipientName || 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">{email.recipientEmail}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">{email.subject}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            email.status === 'delivered' || email.status === 'opened' ? 'default' :
-                            email.status === 'failed' || email.status === 'bounced' ? 'destructive' : 'secondary'
-                          }>
-                            {email.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {email.sentAt ? format(new Date(email.sentAt), 'dd/MM HH:mm', { locale: fr }) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenus & Croissance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={revenueData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Répartition des abonnements</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={subscriptionData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, value }) => `${name}: ${value}`}
-                      >
-                        {subscriptionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
 
           {/* Visitors Tab */}

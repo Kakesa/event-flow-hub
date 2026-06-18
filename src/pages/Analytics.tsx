@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select';
 import { analyticsApi, eventsApi } from '@/services/api';
 import type { Analytics as AnalyticsType, Event } from '@/types/models';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
 import {
   PieChart,
   Pie,
@@ -32,6 +34,8 @@ const Analytics = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const { limits } = useSubscriptionLimits();
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -58,10 +62,12 @@ const Analytics = () => {
 
   const fetchAnalytics = async () => {
     try {
+      setAnalyticsError(null);
       const res = await analyticsApi.getByEvent(selectedEvent);
       setAnalytics(res.data);
     } catch (error) {
-      console.error('Erreur:', error);
+      setAnalytics(null);
+      setAnalyticsError(error instanceof Error ? error.message : 'Accès refusé');
     }
   };
 
@@ -104,6 +110,18 @@ const Analytics = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {(limits && !limits.advancedAnalytics) || analyticsError ? (
+          <PlanLimitAlert
+            title="Analytics avancés"
+            description={
+              analyticsError ||
+              'Les statistiques détaillées sont disponibles avec le plan Premium ou Enterprise.'
+            }
+            bypassed={limits?.planLimitsBypass}
+          />
+        ) : (
+          <>
 
         {loading || !analytics ? (
           <div className="flex items-center justify-center h-64">
@@ -237,6 +255,8 @@ const Analytics = () => {
                 </div>
               </CardContent>
             </Card>
+          </>
+        )}
           </>
         )}
       </div>

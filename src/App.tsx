@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PwaInstallProvider } from "@/contexts/PwaInstallContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -28,8 +28,6 @@ const Settings = lazy(() => import("./pages/Settings"));
 const CreateEvent = lazy(() => import("./pages/CreateEvent"));
 const EditEvent = lazy(() => import("./pages/EditEvent"));
 const Users = lazy(() => import("./pages/Users"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const GalleryPage = lazy(() => import("./pages/GalleryPage"));
 const ServicesIndexPage = lazy(() => import("./pages/ServicesIndexPage"));
 const ServicePage = lazy(() => import("./pages/ServicePage"));
@@ -82,8 +80,8 @@ const App = () => (
               <Route path="/scanner" element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/superadmin" element={<ProtectedRoute><SuperAdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+              <Route path="/superadmin" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

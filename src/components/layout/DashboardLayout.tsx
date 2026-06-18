@@ -14,7 +14,6 @@ import {
   Menu,
   X,
   LogOut,
-  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -47,15 +46,13 @@ interface DashboardLayoutProps {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Événements', href: '/events', icon: Calendar },
-  { name: 'Invités', href: '/guests', icon: Users },
-  { name: 'Invitations', href: '/invitations', icon: Mail },
-  { name: 'Message', href: '/guestbook', icon: BookOpen },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Scanner QR', href: '/scanner', icon: QrCode },
+  { name: 'Événements', href: '/events', icon: Calendar, organizerOnly: true },
+  { name: 'Invités', href: '/guests', icon: Users, organizerOnly: true },
+  { name: 'Invitations', href: '/invitations', icon: Mail, organizerOnly: true },
+  { name: 'Message', href: '/guestbook', icon: BookOpen, organizerOnly: true },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, organizerOnly: true },
+  { name: 'Scanner QR', href: '/scanner', icon: QrCode, organizerOnly: true },
   { name: 'Gestion Utilisateurs', href: '/users', icon: Users, superAdminOnly: true },
-  { name: 'Administration', href: '/admin', icon: Shield, superAdminOnly: true },
-  { name: 'Super Admin', href: '/superadmin', icon: Shield, superAdminOnly: true },
 ];
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -137,13 +134,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   if (user?.role === 'user') {
                     return item.name === 'Scanner QR';
                   }
-                  // Masquer Super Admin si l'utilisateur n'est pas superadmin
-                  if ('superAdminOnly' in item && item.superAdminOnly) {
-                    return user?.role === 'superadmin';
+                  if (user?.role === 'superadmin') {
+                    if ('organizerOnly' in item && item.organizerOnly) return false;
+                    if ('superAdminOnly' in item && item.superAdminOnly) return true;
+                    return item.href === '/dashboard';
                   }
-                  // Masquer les éléments admin si l'utilisateur n'est pas admin (ou superadmin)
+                  if ('superAdminOnly' in item && item.superAdminOnly) {
+                    return false;
+                  }
                   if ('adminOnly' in item && item.adminOnly) {
-                    return user?.role === 'admin' || user?.role === 'superadmin';
+                    return user?.role === 'admin';
                   }
                   return true;
                 })
