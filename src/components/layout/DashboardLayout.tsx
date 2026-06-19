@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import UserAuthorizationNotice from '@/components/common/UserAuthorizationNotice';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import InstallAppPrompt from '@/components/pwa/InstallAppPrompt';
@@ -229,9 +230,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <p className="text-xs text-muted-foreground capitalize">{user?.subscriptionType || 'Free'}</p>
             </div>
 
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-semibold text-primary">{userInitials}</span>
-            </div>
+            <Avatar className="h-10 w-10">
+              {user?.avatarUrl ? (
+                <AvatarImage src={user.avatarUrl} alt={user.name || 'Profil'} />
+              ) : null}
+              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
           </div>
         </header>
 

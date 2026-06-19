@@ -120,6 +120,27 @@ export const authApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
+  updateProfile: async (data: {
+    name: string;
+    email: string;
+    phone?: string;
+    avatar?: File;
+  }): Promise<ApiResponse<User>> => {
+    const formData = new FormData();
+    formData.append("name", data.name.trim());
+    formData.append("email", data.email.trim().toLowerCase());
+    if (data.phone !== undefined) formData.append("phone", data.phone);
+    if (data.avatar) formData.append("avatar", data.avatar);
+
+    const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: "PATCH",
+      headers: getHeaders(false),
+      body: formData,
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
   getSubscriptionLimits: async (
     eventId?: string,
   ): Promise<ApiResponse<import("@/types/models").SubscriptionLimitsStatus>> => {

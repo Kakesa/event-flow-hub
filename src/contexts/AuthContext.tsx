@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string; user?: User }>;
   loginWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  updateUser: (data: UpdateProfileData) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
 
@@ -18,6 +19,13 @@ interface RegisterData {
   email: string;
   phone?: string;
   password: string;
+}
+
+interface UpdateProfileData {
+  name: string;
+  email: string;
+  phone?: string;
+  avatar?: File;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -130,8 +138,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('eventflow_user');
   };
 
+  const updateUser = async (data: UpdateProfileData) => {
+    try {
+      const res = await authApi.updateProfile(data);
+      if (res.success) {
+        setUser(res.data);
+        localStorage.setItem('eventflow_user', JSON.stringify(res.data));
+        return { success: true, user: res.data };
+      }
+      return { success: false, error: 'Échec de la mise à jour du profil' };
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : 'Erreur inconnue';
+      return { success: false, error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, loginWithGoogle, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
