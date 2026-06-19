@@ -30,6 +30,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+  avatarUrl?: string;
   role?: UserRole;
   isActive?: boolean;
 

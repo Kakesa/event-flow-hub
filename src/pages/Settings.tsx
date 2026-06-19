@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { User, Bell, Palette, Shield, CreditCard, Save, CheckCircle2 } from 'lucide-react';
+import { User, Bell, Shield, CreditCard, Save, CheckCircle2, Phone, Loader2, Camera } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,10 +10,10 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { PaymentDialog } from '@/components/settings/PaymentDialog';
-import { paymentsApi } from '@/services/api';
 import {
   SUBSCRIPTION_PLANS,
   SELLABLE_PLANS,
@@ -22,8 +22,26 @@ import {
 } from '@/config/subscriptionPlans';
 import type { SubscriptionType } from '@/types/models';
 
+const formatPhoneForInput = (phone?: string) => {
+  if (!phone) return '';
+  let cleaned = phone.replace(/\D/g, '');
+  if (cleaned.startsWith('243')) cleaned = cleaned.substring(3);
+  if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+  return cleaned.slice(0, 9);
+};
+
+const getInitials = (name: string) =>
+  name
+    ? name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : '??';
+
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') === 'subscription' ? 'subscription' : 'profile';
   const [profile, setProfile] = useState({
@@ -31,16 +49,26 @@ const Settings = () => {
     email: '',
     phone: '',
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
       setProfile({
         name: user.name || '',
         email: user.email || '',
-        phone: user.phone || '',
+        phone: formatPhoneForInput(user.phone),
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
 
   const [notifications, setNotifications] = useState({
     email: true,
@@ -57,9 +85,93 @@ const Settings = () => {
   });
   const { toast } = useToast();
 
-  const handleSaveProfile = () => {
-    toast({ title: 'Succès', description: 'Profil mis à jour' });
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez sélectionner une image (JPG, PNG, etc.)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Erreur',
+        description: 'L\'image ne doit pas dépasser 5 Mo',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAvatarFile(file);
+    if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    setAvatarPreview(URL.createObjectURL(file));
+    e.target.value = '';
   };
+
+  const handleSaveProfile = async () => {
+    if (!profile.name.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'Le nom est obligatoire',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!profile.email.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'L\'email est obligatoire',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    let phoneForBackend = '';
+    if (profile.phone) {
+      let cleaned = profile.phone.replace(/\D/g, '');
+      if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+      if (cleaned.length !== 9) {
+        toast({
+          title: 'Erreur',
+          description: 'Numéro de téléphone invalide (9 chiffres après +243)',
+          variant: 'destructive',
+        });
+        return;
+      }
+      phoneForBackend = cleaned;
+    }
+
+    setSavingProfile(true);
+    try {
+      const result = await updateUser({
+        name: profile.name,
+        email: profile.email,
+        phone: phoneForBackend,
+        avatar: avatarFile || undefined,
+      });
+
+      if (result.success) {
+        setAvatarFile(null);
+        toast({ title: 'Succès', description: 'Profil mis à jour' });
+      } else {
+        toast({
+          title: 'Erreur',
+          description: result.error || 'Impossible de mettre à jour le profil',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const displayAvatar = avatarPreview || user?.avatarUrl || '';
 
   const handleSaveNotifications = () => {
     toast({ title: 'Succès', description: 'Préférences de notifications mises à jour' });
@@ -132,12 +244,32 @@ const Settings = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
-                  <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">
-                      {profile.name ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
-                    </span>
+                  <Avatar className="h-20 w-20">
+                    {displayAvatar ? (
+                      <AvatarImage src={displayAvatar} alt={profile.name || 'Photo de profil'} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-2xl font-bold text-primary">
+                      {getInitials(profile.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Changer la photo
+                    </Button>
+                    <p className="text-xs text-muted-foreground">JPG ou PNG, max. 5 Mo</p>
                   </div>
-                  <Button variant="outline">Changer la photo</Button>
                 </div>
                 <Separator />
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -160,15 +292,33 @@ const Settings = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Téléphone</Label>
-                    <Input
-                      id="phone"
-                      value={profile.phone}
-                      onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    />
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                      <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
+                        <span className="text-sm text-muted-foreground font-medium">+243</span>
+                      </div>
+                      <Input
+                        id="phone"
+                        className="pl-24"
+                        type="tel"
+                        placeholder="81 234 5678"
+                        value={profile.phone}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, '');
+                          if (val.startsWith('0')) val = val.substring(1);
+                          if (val.length > 9) return;
+                          setProfile({ ...profile, phone: val });
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <Button onClick={handleSaveProfile}>
-                  <Save className="h-4 w-4 mr-2" />
+                <Button onClick={handleSaveProfile} disabled={savingProfile}>
+                  {savingProfile ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
                   Enregistrer
                 </Button>
               </CardContent>
