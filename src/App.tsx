@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,8 +13,10 @@ import LandingPage from "./pages/LandingPage";
 import VisitTracker from "@/hooks/useTrackVisit";
 import ScrollToTop from "@/components/ScrollToTop";
 import RouteSEO from "@/components/RouteSEO";
+import { GOOGLE_CLIENT_ID } from "@/config/env";
 
 const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const RSVP = lazy(() => import("./pages/RSVP"));
 const CheckIn = lazy(() => import("./pages/CheckIn"));
 const Index = lazy(() => import("./pages/Index"));
@@ -42,11 +45,20 @@ const PageFallback = () => (
 
 const queryClient = new QueryClient();
 
+const AppShell = ({ children }: { children: ReactNode }) => (
+  GOOGLE_CLIENT_ID ? (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>{children}</GoogleOAuthProvider>
+  ) : (
+    <>{children}</>
+  )
+);
+
 const App = () => (
   <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <PwaInstallProvider>
       <AuthProvider>
+      <AppShell>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -60,6 +72,7 @@ const App = () => (
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/auth/register" element={<Auth />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/checkin/:token" element={<CheckIn />} />
               <Route path="/rsvp/:eventId/:guestId" element={<RSVP />} />
               <Route path="/rsvp/:eventId" element={<RSVP />} />
@@ -90,6 +103,7 @@ const App = () => (
           </Suspense>
         </BrowserRouter>
       </TooltipProvider>
+      </AppShell>
       </AuthProvider>
     </PwaInstallProvider>
   </QueryClientProvider>

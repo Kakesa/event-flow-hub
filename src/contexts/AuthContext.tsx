@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string; user?: User }>;
+  loginWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
 
@@ -103,6 +104,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithGoogle = async (credential: string) => {
+    if (isLoading) return { success: false, error: 'Déjà en cours...' };
+    setIsLoading(true);
+    try {
+      const res = await authApi.googleLogin(credential);
+      if (res.success) {
+        setUser(res.data.user);
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('eventflow_user', JSON.stringify(res.data.user));
+        return { success: true, user: res.data.user };
+      }
+      return { success: false, error: 'Connexion Google échouée' };
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : 'Erreur inconnue';
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
@@ -110,7 +131,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

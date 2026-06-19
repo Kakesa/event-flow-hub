@@ -85,6 +85,41 @@ export const authApi = {
     return { success: result.success ?? true, data: result.data };
   },
 
+  forgotPassword: async (email: string): Promise<ApiResponse<{ message?: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+    const result = await handleResponse<{ success: boolean; message?: string }>(res);
+    return { success: result.success ?? true, data: { message: result.message } };
+  },
+
+  resetPassword: async (
+    token: string,
+    password: string,
+  ): Promise<ApiResponse<{ token: string; user: User }>> => {
+    const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ token, password }),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  googleLogin: async (
+    credential: string,
+  ): Promise<ApiResponse<{ token: string; user: User }>> => {
+    const res = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ credential }),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
   getSubscriptionLimits: async (
     eventId?: string,
   ): Promise<ApiResponse<import("@/types/models").SubscriptionLimitsStatus>> => {
