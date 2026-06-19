@@ -8,8 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react';
 import { showUserAuthorizationToast } from '@/components/common/UserAuthorizationNotice';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import { authApi } from '@/services/api';
 import logoBlack from '@/assets/black.png';
 
 interface RegisterData {
@@ -20,11 +22,22 @@ interface RegisterData {
   confirmPassword?: string;
 }
 
+const AuthDivider = () => (
+  <div className="relative my-4">
+    <div className="absolute inset-0 flex items-center">
+      <span className="w-full border-t border-[#e8e0d8]" />
+    </div>
+    <div className="relative flex justify-center text-xs uppercase">
+      <span className="bg-white px-2 text-[#7a8b72]">ou</span>
+    </div>
+  </div>
+);
+
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { login, register } = useAuth();
+  const { login, register, loginWithGoogle } = useAuth();
   const redirectTo =
     (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/dashboard';
 
@@ -33,6 +46,9 @@ const Auth = () => {
       ? 'register'
       : 'login';
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [loadingForgot, setLoadingForgot] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -45,8 +61,33 @@ const Auth = () => {
   });
   const [loadingLogin, setLoadingLogin] = useState(false);
   const [loadingRegister, setLoadingRegister] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
 
-  // ------------------- LOGIN -------------------
+  const finishAuth = (user?: { role?: string }) => {
+    if (user?.role === 'user') {
+      showUserAuthorizationToast(toast);
+    }
+    navigate(redirectTo, { replace: true });
+  };
+
+  const handleGoogleAuth = async (credential: string) => {
+    setLoadingGoogle(true);
+    try {
+      const result = await loginWithGoogle(credential);
+      if (result.success) {
+        toast.success('Connexion réussie !');
+        if (activeTab === 'register') {
+          sessionStorage.setItem('hk_event_show_install', '1');
+        }
+        finishAuth(result.user);
+      } else {
+        toast.error(result.error || 'Connexion Google échouée');
+      }
+    } finally {
+      setLoadingGoogle(false);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginData.email || !loginData.password) {
@@ -59,10 +100,7 @@ const Auth = () => {
       const result = await login(loginData.email.trim(), loginData.password);
       if (result.success) {
         toast.success('Connexion réussie !');
-        if (result.user?.role === 'user') {
-          showUserAuthorizationToast(toast);
-        }
-        navigate(redirectTo, { replace: true });
+        finishAuth(result.user);
       } else {
         toast.error(result.error || 'Erreur de connexion');
       }
@@ -73,7 +111,26 @@ const Auth = () => {
     }
   };
 
-  // ------------------- REGISTER -------------------
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error('Indiquez votre adresse email');
+      return;
+    }
+
+    setLoadingForgot(true);
+    try {
+      const res = await authApi.forgotPassword(forgotEmail.trim());
+      toast.success(res.data.message || 'Email envoyé si le compte existe');
+      setShowForgotPassword(false);
+      setForgotEmail('');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de l\'envoi');
+    } finally {
+      setLoadingForgot(false);
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, email, phone, password, confirmPassword } = registerData;
@@ -93,7 +150,6 @@ const Auth = () => {
       return;
     }
 
-    // Format pour le backend : uniquement 9 chiffres
     let phoneForBackend: string | undefined;
     if (phone) {
       let cleaned = phone.replace(/\D/g, '');
@@ -116,11 +172,8 @@ const Auth = () => {
 
       if (result.success) {
         toast.success("Inscription réussie ! Bienvenue !");
-        if (result.user?.role === 'user') {
-          showUserAuthorizationToast(toast);
-        }
         sessionStorage.setItem('hk_event_show_install', '1');
-        navigate(redirectTo, { replace: true });
+        finishAuth(result.user);
       } else {
         toast.error(result.error || "Erreur lors de l'inscription");
       }
@@ -131,11 +184,12 @@ const Auth = () => {
     }
   };
 
-  // ------------------- RENDER -------------------
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     return () => document.documentElement.classList.add('dark');
   }, []);
+
+  const authBusy = loadingLogin || loadingRegister || loadingGoogle;
 
   return (
     <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center p-4">
@@ -152,6 +206,50 @@ const Auth = () => {
         </div>
 
         <Card className="border-[#e8e0d8] shadow-lg bg-white rounded-none">
+          {showForgotPassword ? (
+            <>
+              <CardHeader className="pb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(false)}
+                  className="flex items-center gap-2 text-sm text-[#7a8b72] hover:text-[#4a5a44]"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Retour
+                </button>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-[#4a5a44]">Mot de passe oublié</h2>
+                    <p className="text-sm text-[#7a8b72] mt-1">
+                      Entrez votre email pour recevoir un lien de réinitialisation.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        className="pl-10"
+                        type="email"
+                        placeholder="votre@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider"
+                    disabled={loadingForgot}
+                  >
+                    {loadingForgot ? 'Envoi...' : 'Envoyer le lien'}
+                  </Button>
+                </form>
+              </CardContent>
+            </>
+          ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <CardHeader className="pb-4">
               <TabsList className="grid w-full grid-cols-2 rounded-none bg-[#f5ebe6]">
@@ -161,7 +259,9 @@ const Auth = () => {
             </CardHeader>
 
             <CardContent>
-              {/* Login */}
+              <GoogleSignInButton onSuccess={handleGoogleAuth} disabled={authBusy} />
+              <AuthDivider />
+
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
@@ -179,7 +279,19 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Mot de passe</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Mot de passe</Label>
+                      <button
+                        type="button"
+                        className="text-xs text-[#b8956c] hover:underline"
+                        onClick={() => {
+                          setForgotEmail(loginData.email);
+                          setShowForgotPassword(true);
+                        }}
+                      >
+                        Mot de passe oublié ?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -199,13 +311,12 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider" disabled={loadingLogin}>
+                  <Button type="submit" className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider" disabled={authBusy}>
                     {loadingLogin ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </form>
               </TabsContent>
 
-              {/* Register */}
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
@@ -236,7 +347,6 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  {/* Input téléphone */}
                   <div className="space-y-2">
                     <Label>Téléphone</Label>
                     <div className="relative">
@@ -294,13 +404,14 @@ const Auth = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider" disabled={loadingRegister}>
+                  <Button type="submit" className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider" disabled={authBusy}>
                     {loadingRegister ? 'Inscription...' : "S'inscrire"}
                   </Button>
                 </form>
               </TabsContent>
             </CardContent>
           </Tabs>
+          )}
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">

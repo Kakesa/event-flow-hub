@@ -31,7 +31,7 @@ export const BASE_URL = trimSlash(
 
 export const APP_MODE = import.meta.env.MODE;
 export const IS_PRODUCTION = import.meta.env.PROD;
-export const IS_DEVELOPMENT = import.meta.env.DEV;
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || '';
 
 /** Construit une URL absolue pour un chemin relatif (/uploads/...) ou Cloudinary http(s) */
 export const resolveAssetUrl = (path?: string | null): string | undefined => {

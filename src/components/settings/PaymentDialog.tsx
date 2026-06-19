@@ -229,3 +229,5 @@ export function PaymentDialog({ isOpen, onClose, plan, amount, onSuccess }: Paym
     </Dialog>
   );
 }
+
+export default PaymentDialog;
