@@ -247,6 +247,43 @@ export const platformApi = {
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };
   },
+
+  getPurgePreview: async (): Promise<ApiResponse<{
+    events: number;
+    guests: number;
+    invitations: number;
+    analytics: number;
+    emails: number;
+    whatsappLogs: number;
+    guestbookMessages: number;
+    eventPhotos: number;
+    users: number;
+    userAvatars: number;
+    payments: number;
+    totalMessages: number;
+  }>> => {
+    const res = await fetch(`${API_BASE_URL}/platform/purge-preview`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  purgeTestData: async (confirmPhrase: string): Promise<ApiResponse<{
+    message?: string;
+    deleted?: Record<string, number>;
+  }>> => {
+    const res = await fetch(`${API_BASE_URL}/platform/purge-test-data`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ confirmPhrase }),
+    });
+    const result = await handleResponse<{ success: boolean; message?: string; data?: any }>(res);
+    return {
+      success: result.success ?? true,
+      data: { message: result.message, deleted: result.data?.deleted },
+    };
+  },
 };
 
 // ==================== ÉVÉNEMENTS ====================

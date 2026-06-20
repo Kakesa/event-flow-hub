@@ -54,6 +54,7 @@ import AuditLogsPanel from '@/components/superadmin/AuditLogsPanel';
 import UserImpersonation from '@/components/superadmin/UserImpersonation';
 import SubscriptionManager from '@/components/superadmin/SubscriptionManager';
 import VisitorsPanel from '@/components/superadmin/VisitorsPanel';
+import TestDataPurgePanel from '@/components/superadmin/TestDataPurgePanel';
 
 interface PlatformStats {
   totalUsers: number;
@@ -461,6 +462,10 @@ const SuperAdminDashboard = () => {
             <TabsTrigger value="impersonation" className="gap-1">
               <Eye className="h-4 w-4" />
               Usurpation
+            </TabsTrigger>
+            <TabsTrigger value="maintenance" className="gap-1">
+              <Database className="h-4 w-4" />
+              Maintenance
             </TabsTrigger>
           </TabsList>
           </div>
@@ -1028,6 +1033,11 @@ const SuperAdminDashboard = () => {
           {/* Visitors Tab */}
           <TabsContent value="visitors">
             <VisitorsPanel />
+          </TabsContent>
+
+          {/* Maintenance Tab */}
+          <TabsContent value="maintenance">
+            <TestDataPurgePanel onPurged={fetchAllData} />
           </TabsContent>
         </Tabs>
 
