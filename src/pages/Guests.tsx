@@ -35,7 +35,9 @@ import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
 import {
   formatPhoneInput,
   normalizePhoneToE164,
+  getWhatsAppDigits,
 } from '@/utils/phoneUtils';
+import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -69,6 +71,7 @@ const Guests = () => {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState('');
+  const [isAddingGuest, setIsAddingGuest] = useState(false);
 
   const { toast } = useToast();
   const { canDelete } = usePermissions();
@@ -137,6 +140,8 @@ const Guests = () => {
      ACTIONS
   ========================= */
   const handleAddGuest = async () => {
+    if (isAddingGuest) return;
+
     if (!newGuest.name || !newGuest.eventId) {
       toast({
         title: 'Erreur',
@@ -164,15 +169,21 @@ const Guests = () => {
       phone: normalizedPhone || '',
     };
 
-    const checkDuplicates = () => {
-      return guests.find(g =>
-        g.name.toLowerCase() === guestPayload.name.toLowerCase() ||
-        (guestPayload.email && g.email?.toLowerCase() === guestPayload.email.toLowerCase()) ||
-        (normalizedPhone && normalizePhoneToE164(g.phone) === normalizedPhone)
-      );
+    const checkContactDuplicates = () => {
+      return guests.find(g => {
+        const sameEmail =
+          guestPayload.email &&
+          g.email?.toLowerCase() === guestPayload.email.toLowerCase();
+        const samePhone =
+          normalizedPhone && normalizePhoneToE164(g.phone) === normalizedPhone;
+        return sameEmail || samePhone;
+      });
     };
 
     const proceedWithCreation = async () => {
+      if (isAddingGuest) return;
+
+      setIsAddingGuest(true);
       try {
         if (limits && limits.canAddGuest === false) {
           toast({
@@ -190,8 +201,8 @@ const Guests = () => {
         setIsDuplicateDialogOpen(false);
         setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
 
-        setEventFilter(newGuest.eventId);
-        const res = await guestsApi.getByEvent(newGuest.eventId);
+        setEventFilter(guestPayload.eventId);
+        const res = await guestsApi.getByEvent(guestPayload.eventId);
         setGuests(res.data);
         refreshLimits();
       } catch (error) {
@@ -200,22 +211,82 @@ const Guests = () => {
           description: error instanceof Error ? error.message : "Impossible d'ajouter l'invité",
           variant: 'destructive',
         });
+      } finally {
+        setIsAddingGuest(false);
       }
     };
 
-    const duplicate = checkDuplicates();
+    const duplicate = checkContactDuplicates();
     if (duplicate) {
-      const fields = [];
-      if (duplicate.name.toLowerCase() === newGuest.name.toLowerCase()) fields.push('nom');
-      if (newGuest.email && duplicate.email?.toLowerCase() === newGuest.email.toLowerCase()) fields.push('email');
-      if (normalizedPhone && normalizePhoneToE164(duplicate.phone) === normalizedPhone) fields.push('téléphone');
-      
-      setDuplicateMessage(`Un invité avec le même ${fields.join(', ')} a déjà été invité. Voulez-vous quand même l'ajouter ?`);
+      const fields: string[] = [];
+      if (newGuest.email && duplicate.email?.toLowerCase() === newGuest.email.toLowerCase()) {
+        fields.push('email');
+      }
+      if (normalizedPhone && normalizePhoneToE164(duplicate.phone) === normalizedPhone) {
+        fields.push('téléphone');
+      }
+
+      setDuplicateMessage(
+        `Un invité avec le même ${fields.join(' et ')} existe déjà (${duplicate.name}). Voulez-vous quand même l'ajouter ?`
+      );
       setIsDuplicateDialogOpen(true);
       return;
     }
 
     await proceedWithCreation();
+  };
+
+  const handleForceAddDuplicate = async () => {
+    if (isAddingGuest || !newGuest.name || !newGuest.eventId) return;
+
+    let normalizedPhone: string | undefined;
+    if (newGuest.phone.trim()) {
+      normalizedPhone = normalizePhoneToE164(newGuest.phone);
+      if (!normalizedPhone) {
+        toast({
+          title: 'Erreur',
+          description: 'Numéro invalide. Exemple : +243828863897',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    const guestPayload = {
+      ...newGuest,
+      email: newGuest.email.trim(),
+      phone: normalizedPhone || '',
+    };
+
+    setIsAddingGuest(true);
+    try {
+      if (limits && limits.canAddGuest === false) {
+        toast({
+          title: 'Limite atteinte',
+          description: `Votre plan autorise ${formatPlanLimit(limits.maxGuests)} invité(s) par événement.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      await guestsApi.create(guestPayload.eventId, guestPayload);
+      toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
+      setIsAddDialogOpen(false);
+      setIsDuplicateDialogOpen(false);
+      setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
+      setEventFilter(guestPayload.eventId);
+      const res = await guestsApi.getByEvent(guestPayload.eventId);
+      setGuests(res.data);
+      refreshLimits();
+    } catch {
+      toast({
+        title: 'Erreur',
+        description: "Impossible d'ajouter l'invité",
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAddingGuest(false);
+    }
   };
 
   const handleDelete = async (guestId: string) => {
@@ -247,13 +318,50 @@ const Guests = () => {
   ) => {
     const guest = guests.find(g => g.id === guestId);
     const eventId = guest?.eventId || eventFilter;
+    const event = events.find(e => e.id === eventId);
 
-    if (!eventId) {
+    if (!eventId || !guest) {
       toast({
         title: 'Erreur',
         description: 'Événement introuvable pour cet invité',
         variant: 'destructive',
       });
+      return;
+    }
+
+    if (method === 'whatsapp') {
+      if (!guest.phone) {
+        toast({
+          title: 'Erreur',
+          description: `${guest.name} n'a pas de numéro WhatsApp`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const rsvpLink = `${window.location.origin}/rsvp/${eventId}/${guest.id}`;
+      const message = encodeURIComponent(
+        `✨ *${(event?.title || 'Événement').toUpperCase()}* ✨\n\n` +
+        (event?.date ? `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` : '') +
+        (event?.location ? `📍 *Lieu:* ${event.location}\n\n` : '\n') +
+        `Bonjour *${guest.name}*,\n\n` +
+        `Vous êtes cordialement invité(e). Confirmez votre présence :\n${rsvpLink}\n\n` +
+        `_HK Events_`
+      );
+
+      window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
+
+      try {
+        await invitationsApi.send(guestId, eventId, 'whatsapp');
+        logWhatsAppAction(eventId, guest.id, guest.name, 'sent');
+        toast({ title: 'WhatsApp ouvert', description: `Discussion avec ${guest.name}` });
+      } catch {
+        toast({
+          title: 'Erreur',
+          description: "Impossible d'enregistrer l'envoi WhatsApp",
+          variant: 'destructive',
+        });
+      }
       return;
     }
 
@@ -267,6 +375,62 @@ const Guests = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleBulkWhatsApp = async (guestIds: string[]) => {
+    const event = events.find(e => e.id === eventFilter);
+    if (!eventFilter || !event) {
+      toast({
+        title: 'Erreur',
+        description: 'Sélectionnez un événement',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const selected = guests.filter(g => guestIds.includes(g.id));
+    const withPhone = selected.filter(g => g.phone);
+
+    if (withPhone.length === 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun invité sélectionné n\'a de numéro WhatsApp',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    for (let i = 0; i < withPhone.length; i++) {
+      const guest = withPhone[i];
+      const rsvpLink = `${window.location.origin}/rsvp/${eventFilter}/${guest.id}`;
+      const message = encodeURIComponent(
+        `✨ *${event.title.toUpperCase()}* ✨\n\n` +
+        `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
+        `📍 *Lieu:* ${event.location}\n\n` +
+        `Bonjour *${guest.name}*,\n\n` +
+        `Vous êtes cordialement invité(e). Confirmez votre présence :\n${rsvpLink}\n\n` +
+        `_HK Events_`
+      );
+
+      setTimeout(() => {
+        window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
+      }, i * 400);
+
+      try {
+        await invitationsApi.send(guest.id, eventFilter, 'whatsapp');
+        logWhatsAppAction(eventFilter, guest.id, guest.name, 'sent');
+      } catch {
+        // continue with next guest
+      }
+    }
+
+    toast({
+      title: 'WhatsApp ouvert',
+      description:
+        selected.length > withPhone.length
+          ? `${withPhone.length} conversation(s) ouverte(s). ${selected.length - withPhone.length} sans numéro ignoré(s).`
+          : `${withPhone.length} conversation(s) WhatsApp ouverte(s).`,
+    });
   };
 
   /* =========================
@@ -366,9 +530,9 @@ const Guests = () => {
               <DialogFooter>
                 <Button
                   onClick={handleAddGuest}
-                  disabled={limits?.canAddGuest === false}
+                  disabled={limits?.canAddGuest === false || isAddingGuest}
                 >
-                  Ajouter
+                  {isAddingGuest ? 'Ajout en cours…' : 'Ajouter'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -403,6 +567,7 @@ const Guests = () => {
             guests={filteredGuests}
             onDelete={handleDelete}
             onSendInvitation={handleSendInvitation}
+            onSendBulkWhatsApp={handleBulkWhatsApp}
             onGenerateQR={g =>
               setSelectedGuestForQR(guests.find(x => x.id === g) || null)
             }
@@ -432,23 +597,12 @@ const Guests = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDuplicateDialogOpen(false)}>Annuler</Button>
-            <Button onClick={async () => {
-              // On définit une petite fonction anonyme pour appeler manageGuestCreation directement
-              // mais handleAddGuest est asynchrone, on peut juste l'extraire.
-              // Refactoré handleAddGuest pour extraire proceedWithCreation
-              try {
-                await guestsApi.create(newGuest.eventId, newGuest);
-                toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
-                setIsAddDialogOpen(false);
-                setIsDuplicateDialogOpen(false);
-                setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
-                const res = await guestsApi.getByEvent(newGuest.eventId);
-                setGuests(res.data);
-              } catch {
-                toast({ title: 'Erreur', description: "Impossible d'ajouter l'invité", variant: 'destructive' });
-              }
-            }}>Ajouter quand même</Button>
+            <Button variant="outline" onClick={() => setIsDuplicateDialogOpen(false)} disabled={isAddingGuest}>
+              Annuler
+            </Button>
+            <Button onClick={handleForceAddDuplicate} disabled={isAddingGuest}>
+              {isAddingGuest ? 'Ajout en cours…' : 'Ajouter quand même'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

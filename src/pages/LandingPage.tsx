@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
-import { Mail, Phone, MapPin, Send, CheckCircle2, User, MessageSquare, ChevronDown, ArrowRight } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { toast } from 'sonner';
 import WeddingPublicLayout from '@/components/landing/WeddingPublicLayout';
+import WeddingContactSection from '@/components/landing/WeddingContactSection';
 import OptimizedImage from '@/components/ui/OptimizedImage';
 import { useCountdown } from '@/hooks/useCountdown';
 
@@ -72,26 +69,7 @@ const LandingHeroImage = () => {
 };
 
 const LandingPage = () => {
-  const [contactForm, setContactForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
   const countdown = useCountdown(COUNTDOWN_TARGET);
-
-  const handleContact = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
-      toast.error('Veuillez remplir tous les champs obligatoires.');
-      return;
-    }
-    setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      setSent(true);
-      toast.success('Message envoyé ! Nous vous répondrons bientôt.');
-      setContactForm({ name: '', email: '', subject: '', message: '' });
-      setTimeout(() => setSent(false), 3500);
-    }, 1200);
-  };
 
   return (
     <WeddingPublicLayout>
@@ -423,64 +401,7 @@ const LandingPage = () => {
         </motion.div>
       </section>
 
-      {/* Contact */}
-      <section id="contact" className="py-24 px-4">
-        <div className="max-w-5xl mx-auto">
-          <SectionTitle script="Contact" title="Écrivez-nous" subtitle="Une question ? Notre équipe vous répond avec plaisir." />
-          <div className="grid md:grid-cols-5 gap-10">
-            <div className="md:col-span-2 space-y-6">
-              {[
-                { icon: Mail, title: 'E-mail', info: 'contact@hkevent.com' },
-                { icon: Phone, title: 'Téléphone', info: '+243 828 863 897' },
-                { icon: MapPin, title: 'Adresse', info: 'Kinshasa, RDC' },
-              ].map((item) => (
-                <div key={item.title} className="flex items-center gap-4 p-5 bg-white border border-[#e8e0d8]">
-                  <div className="h-12 w-12 flex items-center justify-center text-[#b8956c]">
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-display font-semibold text-[#4a5a44]">{item.title}</p>
-                    <p className="text-sm text-[#7a8b72]">{item.info}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="md:col-span-3 bg-white border border-[#e8e0d8] p-6 md:p-8">
-              {sent ? (
-                <div className="py-12 text-center">
-                  <CheckCircle2 className="h-16 w-16 text-[#7a8b72] mx-auto mb-4" />
-                  <h3 className="font-display text-2xl text-[#4a5a44]">Message envoyé !</h3>
-                  <p className="text-[#7a8b72] mt-2">Nous vous répondrons très bientôt.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleContact} className="space-y-5">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-[#4a5a44] flex items-center gap-1"><User className="h-3.5 w-3.5" /> Nom *</Label>
-                      <Input id="name" value={contactForm.name} onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))} className="rounded-none border-[#e8e0d8]" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-[#4a5a44] flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> E-mail *</Label>
-                      <Input id="email" type="email" value={contactForm.email} onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))} className="rounded-none border-[#e8e0d8]" required />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="subject" className="text-[#4a5a44]">Sujet</Label>
-                    <Input id="subject" value={contactForm.subject} onChange={(e) => setContactForm((p) => ({ ...p, subject: e.target.value }))} className="rounded-none border-[#e8e0d8]" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="message" className="text-[#4a5a44] flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> Message *</Label>
-                    <Textarea id="message" rows={5} value={contactForm.message} onChange={(e) => setContactForm((p) => ({ ...p, message: e.target.value }))} className="rounded-none border-[#e8e0d8] resize-none" required />
-                  </div>
-                  <Button type="submit" disabled={sending} className="w-full wedding-btn-gold rounded-none uppercase tracking-widest h-12">
-                    {sending ? 'Envoi…' : <>Envoyer <Send className="ml-2 h-4 w-4" /></>}
-                  </Button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      <WeddingContactSection />
     </WeddingPublicLayout>
   );
 };

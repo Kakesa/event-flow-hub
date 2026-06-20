@@ -153,6 +153,42 @@ export const authApi = {
   },
 };
 
+// ==================== CONTACT (PUBLIC) ====================
+export const contactApi = {
+  send: async (data: {
+    name: string;
+    email: string;
+    subject?: string;
+    message: string;
+  }): Promise<ApiResponse<{ message?: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        subject: data.subject?.trim() || undefined,
+        message: data.message.trim(),
+      }),
+    });
+
+    const text = await res.text();
+    let parsed: { success?: boolean; message?: string; errors?: { msg: string }[] } = {};
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch {
+      parsed = { message: text || "Erreur serveur" };
+    }
+
+    if (!res.ok) {
+      const validationMsg = parsed.errors?.[0]?.msg;
+      throw new Error(validationMsg || parsed.message || "Impossible d'envoyer le message");
+    }
+
+    return { success: parsed.success ?? true, data: { message: parsed.message } };
+  },
+};
+
 // ==================== PLATFORM / TARIFICATION ====================
 export const platformApi = {
   getSettings: async (): Promise<ApiResponse<import('@/types/models').PlatformPricingSettings>> => {

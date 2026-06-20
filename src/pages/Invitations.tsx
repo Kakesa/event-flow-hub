@@ -22,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import EmailComposer from '@/components/invitations/EmailComposer';
 import EmailHistory from '@/components/invitations/EmailHistory';
-import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 import WhatsAppLog from '@/components/invitations/WhatsAppLog';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
 import { getWhatsAppDigits } from '@/utils/phoneUtils';
@@ -45,8 +44,6 @@ const Invitations = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
-  const [showWhatsAppSender, setShowWhatsAppSender] = useState(false);
-  const [whatsappGuests, setWhatsappGuests] = useState<Guest[]>([]);
 
   // 🔹 Charger les événements
   useEffect(() => {
@@ -114,44 +111,59 @@ const Invitations = () => {
     }
   };
 
-  // 🔹 Envoyer via WhatsApp (Action directe ou Unitaire)
   const handleWhatsAppSend = async (guestsToSend: Guest[]) => {
     const event = events.find(e => (e._id || e.id) === selectedEvent);
     if (!event) return;
 
-    for (const guest of guestsToSend) {
-      if (guest.phone) {
-        const rsvpLink = `${window.location.origin}/rsvp/${selectedEvent}/${guest.id}`;
-        
-        // Message premium style
-        const message = encodeURIComponent(
-          `✨ *${event.title.toUpperCase()}* ✨\n\n` +
-          `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
-          `📍 *Lieu:* ${event.location}\n\n` +
-          `Bonjour *${guest.name}*,\n\n` +
-          `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
-          `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
-          `Nous avons hâte de vous voir! 🥂\n\n` +
-          `_HK Events_`
-        );
+    const withPhone = guestsToSend.filter(g => g.phone);
+    const withoutPhone = guestsToSend.length - withPhone.length;
 
+    if (withPhone.length === 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun invité sélectionné n\'a de numéro WhatsApp',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    for (let i = 0; i < withPhone.length; i++) {
+      const guest = withPhone[i];
+      const rsvpLink = `${window.location.origin}/rsvp/${selectedEvent}/${guest.id}`;
+
+      const message = encodeURIComponent(
+        `✨ *${event.title.toUpperCase()}* ✨\n\n` +
+        `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
+        `📍 *Lieu:* ${event.location}\n\n` +
+        `Bonjour *${guest.name}*,\n\n` +
+        `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
+        `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
+        `Nous avons hâte de vous voir! 🥂\n\n` +
+        `_HK Events_`
+      );
+
+      setTimeout(() => {
         window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
-        
-        // Notifier le backend
-        try {
-          await invitationsApi.send(guest.id, selectedEvent, 'whatsapp');
-        } catch (error) {
-          console.error(`Erreur notification backend pour ${guest.name}:`, error);
-        }
-        logWhatsAppAction(selectedEvent, guest.id, guest.name, 'sent');
+      }, i * 400);
+
+      try {
+        await invitationsApi.send(guest.id, selectedEvent, 'whatsapp');
+      } catch (error) {
+        console.error(`Erreur notification backend pour ${guest.name}:`, error);
       }
+      logWhatsAppAction(selectedEvent, guest.id, guest.name, 'sent');
     }
-    
-    if (guestsToSend.length === 1) {
-       toast({ title: 'WhatsApp ouvert', description: `La discussion avec ${guestsToSend[0].name} a été ouverte.` });
-       setSelectedGuests([]);
-       refreshGuests();
-    }
+
+    toast({
+      title: 'WhatsApp ouvert',
+      description:
+        withoutPhone > 0
+          ? `${withPhone.length} conversation(s) ouverte(s). ${withoutPhone} invité(s) sans numéro ignoré(s).`
+          : `${withPhone.length} conversation(s) WhatsApp ouverte(s).`,
+    });
+
+    setSelectedGuests([]);
+    refreshGuests();
   };
 
   const handleSendInvitations = async () => {
@@ -171,14 +183,8 @@ const Invitations = () => {
     setSending(true);
     try {
       if (selectedMethod === 'whatsapp') {
-        if (selectedGuestObjects.length === 1) {
-          await handleWhatsAppSend(selectedGuestObjects);
-        } else {
-          setWhatsappGuests(selectedGuestObjects);
-          setShowWhatsAppSender(true);
-        }
-        setSending(false);
-        return; 
+        await handleWhatsAppSend(selectedGuestObjects);
+        return;
       } else if (selectedMethod === 'sms') {
         await invitationsApi.sendBulk(selectedGuests, selectedEvent, 'sms');
       }
@@ -404,20 +410,6 @@ const Invitations = () => {
           }}
         />
 
-        {/* WhatsApp Sender Modal */}
-        <WhatsAppSender
-          open={showWhatsAppSender}
-          onClose={() => {
-            setShowWhatsAppSender(false);
-            setSending(false);
-          }}
-          guests={whatsappGuests}
-          event={events.find(e => (e._id || e.id) === selectedEvent) || null}
-          onSuccess={() => {
-            setSelectedGuests([]);
-            refreshGuests();
-          }}
-        />
       </div>
     </DashboardLayout>
   );

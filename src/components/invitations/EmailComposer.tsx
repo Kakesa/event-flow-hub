@@ -246,7 +246,7 @@ const EmailComposer = ({ open, onClose, selectedGuests, event, onSuccess }: Emai
 };
 
   const getPreviewHtml = (forEmail = false) => {
-    const previewGuest = selectedGuests[0] || { name: 'Jean Dupont', email: 'jean@example.com' } as Guest;
+    const previewGuest = selectedGuests[0] || { name: 'Witness Kakesa', email: 'witness@example.com' } as Guest;
     
     const processedSubject = forEmail ? subject : replaceVariables(subject, previewGuest);
     const processedBody = forEmail ? body : replaceVariables(body, previewGuest);

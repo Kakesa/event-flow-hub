@@ -49,6 +49,7 @@ import { cn } from '@/lib/utils';
 interface GuestTableProps {
   guests: Guest[];
   onSendInvitation?: (guestId: string, method: 'email' | 'whatsapp' | 'sms') => void;
+  onSendBulkWhatsApp?: (guestIds: string[]) => void;
   onDelete?: (guestId: string) => void;
   onGenerateQR?: (guestId: string) => void;
 }
@@ -85,7 +86,7 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
-const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestTableProps) => {
+const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, onGenerateQR }: GuestTableProps) => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const deleteTargetGuest = guests.find(g => g.id === deleteTargetId);
@@ -129,7 +130,7 @@ const GuestTable = ({ guests, onSendInvitation, onDelete, onGenerateQR }: GuestT
               variant="outline" 
               size="sm" 
               className="h-8 text-xs"
-              onClick={() => selectedGuests.forEach(id => onSendInvitation?.(id, 'whatsapp'))}
+              onClick={() => onSendBulkWhatsApp?.(selectedGuests)}
             >
               <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
               WhatsApp

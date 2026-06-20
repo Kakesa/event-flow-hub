@@ -121,7 +121,7 @@ const generateMockAuditLogs = (): AuditLog[] => {
   ];
 
   const users = [
-    { id: '1', name: 'Jean Dupont', email: 'jean@example.com', role: 'admin' },
+    { id: '1', name: 'Witness Kakesa', email: 'witness@example.com', role: 'admin' },
     { id: '2', name: 'Marie Martin', email: 'marie@example.com', role: 'organizer' },
     { id: '3', name: 'Pierre Bernard', email: 'pierre@example.com', role: 'user' },
     { id: '4', name: 'Super Admin', email: 'super@admin.com', role: 'superadmin' },
