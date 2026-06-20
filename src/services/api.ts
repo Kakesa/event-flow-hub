@@ -153,7 +153,7 @@ export const authApi = {
   },
 };
 
-// ==================== CONTACT (PUBLIC) ====================
+// ==================== CONTACT / DEMO (PUBLIC) ====================
 export const contactApi = {
   send: async (data: {
     name: string;
@@ -165,6 +165,7 @@ export const contactApi = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        type: "contact",
         name: data.name.trim(),
         email: data.email.trim().toLowerCase(),
         subject: data.subject?.trim() || undefined,
@@ -183,6 +184,42 @@ export const contactApi = {
     if (!res.ok) {
       const validationMsg = parsed.errors?.[0]?.msg;
       throw new Error(validationMsg || parsed.message || "Impossible d'envoyer le message");
+    }
+
+    return { success: parsed.success ?? true, data: { message: parsed.message } };
+  },
+
+  requestDemo: async (data: {
+    name: string;
+    email: string;
+    phone?: string;
+    eventType?: string;
+    message?: string;
+  }): Promise<ApiResponse<{ message?: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "demo",
+        name: data.name.trim(),
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone?.trim() || undefined,
+        eventType: data.eventType || undefined,
+        message: data.message?.trim() || undefined,
+      }),
+    });
+
+    const text = await res.text();
+    let parsed: { success?: boolean; message?: string; errors?: { msg: string }[] } = {};
+    try {
+      parsed = text ? JSON.parse(text) : {};
+    } catch {
+      parsed = { message: text || "Erreur serveur" };
+    }
+
+    if (!res.ok) {
+      const validationMsg = parsed.errors?.[0]?.msg;
+      throw new Error(validationMsg || parsed.message || "Impossible d'envoyer la demande");
     }
 
     return { success: parsed.success ?? true, data: { message: parsed.message } };

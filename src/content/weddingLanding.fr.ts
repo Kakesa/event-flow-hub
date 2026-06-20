@@ -24,7 +24,7 @@ export const NAV_LINKS = [
   { href: '#accueil', label: 'Accueil' },
   { href: '/services', label: 'Services', isRoute: true },
   { href: '/galerie', label: 'Galerie', isRoute: true },
-  { href: '#contact', label: 'Contact' },
+  { href: '#demo', label: 'Démo' },
 ] as const;
 
 export const TESTIMONIALS = [

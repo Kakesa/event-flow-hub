@@ -212,7 +212,7 @@ const GalleryPage = () => {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/auth">
-              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#faf8f5] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
+              <Button size="lg" variant="outline" className="rounded-none uppercase tracking-widest px-10 border-[#faf8f5] text-[#1b1a1a] hover:bg-[#faf8f5] hover:text-[#4a5a44]">
                 Connexion
               </Button>
             </Link>
