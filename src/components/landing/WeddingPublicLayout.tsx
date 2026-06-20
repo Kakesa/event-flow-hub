@@ -4,6 +4,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NAV_LINKS } from '@/content/weddingLanding.fr';
+import WeddingContactSection from '@/components/landing/WeddingContactSection';
+
+const scrollToAnchor = (hash: string, pathname: string) => {
+  const id = hash.replace('#', '');
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.replaceState(null, '', `${pathname}${hash}`);
+  }
+};
 
 const NavLink = ({ href, label, onClick, mobile }: { href: string; label: string; onClick?: () => void; mobile?: boolean }) => {
   const location = useLocation();
@@ -20,9 +30,38 @@ const NavLink = ({ href, label, onClick, mobile }: { href: string; label: string
     );
   }
 
-  const anchorHref = href.startsWith('#') ? (isHome ? href : `/${href}`) : href;
+  if (href.startsWith('#')) {
+    if (href === '#accueil' && !isHome) {
+      return (
+        <Link to="/" className={className} onClick={onClick}>
+          {label}
+        </Link>
+      );
+    }
+
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (isHome) {
+        onClick?.();
+        return;
+      }
+      e.preventDefault();
+      onClick?.();
+      scrollToAnchor(href, location.pathname);
+    };
+
+    return (
+      <a
+        href={isHome ? href : `${location.pathname}${href}`}
+        className={className}
+        onClick={handleClick}
+      >
+        {label}
+      </a>
+    );
+  }
+
   return (
-    <a href={anchorHref} className={className} onClick={onClick}>
+    <a href={href} className={className} onClick={onClick}>
       {label}
     </a>
   );
@@ -153,15 +192,28 @@ interface WeddingPublicLayoutProps {
 }
 
 const WeddingPublicLayout = ({ children }: WeddingPublicLayoutProps) => {
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+
   useEffect(() => {
     document.documentElement.classList.remove('dark');
     return () => document.documentElement.classList.add('dark');
   }, []);
 
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [location.pathname, location.hash]);
+
   return (
     <div className="wedding-landing min-h-screen overflow-x-hidden">
       <WeddingNavbar />
       {children}
+      {!isHome && <WeddingContactSection />}
       <WeddingFooter />
     </div>
   );
