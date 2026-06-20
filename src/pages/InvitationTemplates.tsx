@@ -20,9 +20,9 @@ import { guestsApi, eventsApi, emailsApi, invitationsApi, BASE_URL } from '@/ser
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
 import { getWhatsAppDigits } from '@/utils/phoneUtils';
+import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event } from '@/types/models';
 import { getEventTypeWithArticle } from '@/lib/eventTypePhrases';
-import WhatsAppSender from '@/components/invitations/WhatsAppSender';
 
 interface Template {
   id: string;
@@ -61,8 +61,6 @@ const InvitationTemplates = () => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
   const [isSending, setIsSending] = useState(false);
-  const [showWhatsAppSender, setShowWhatsAppSender] = useState(false);
-  const [whatsappGuests, setWhatsappGuests] = useState<Guest[]>([]);
 
   const [customization, setCustomization] = useState({
     title: 'Vous êtes cordialement invité(e)',
@@ -123,8 +121,8 @@ const InvitationTemplates = () => {
     }
   };
 
-  const generateWhatsAppMessage = () => {
-    const rsvpLink = `${window.location.origin}/rsvp/${eventIdFromUrl}`;
+  const buildWhatsAppMessage = (guest: Guest) => {
+    const rsvpLink = `${window.location.origin}/rsvp/${eventIdFromUrl}/${guest.id}`;
     const isWedding = selectedTemplate?.id.startsWith('wedding_');
     const header = isWedding ? '💍 *INVITATION MARIAGE* 💍' : `✨ *${customization.title.toUpperCase()}* ✨`;
 
@@ -134,6 +132,7 @@ const InvitationTemplates = () => {
       `📅 *Date:* ${customization.date}\n` +
       `🕐 *Heure:* ${customization.time}\n` +
       `📍 *Lieu:* ${customization.location}\n\n` +
+      `Bonjour *${guest.name}*,\n\n` +
       `${customization.message}\n\n` +
       `🙏 *Nous serions honorés de votre présence.*\n\n` +
       `👉 *Confirmez votre réponse ici:* ${rsvpLink}\n\n` +
@@ -141,9 +140,38 @@ const InvitationTemplates = () => {
     );
   };
 
-  const openWhatsApp = (phone: string) => {
-    const message = generateWhatsAppMessage();
-    window.open(`https://wa.me/${getWhatsAppDigits(phone)}?text=${message}`, '_blank');
+  const sendWhatsAppToGuests = async (guestsToSend: Guest[]) => {
+    if (!eventIdFromUrl) return;
+
+    const withPhone = guestsToSend.filter(g => g.phone);
+    const withoutPhone = guestsToSend.length - withPhone.length;
+
+    if (withPhone.length === 0) {
+      toast.error('Aucun invité sélectionné n\'a de numéro WhatsApp');
+      return;
+    }
+
+    for (let i = 0; i < withPhone.length; i++) {
+      const guest = withPhone[i];
+      const message = buildWhatsAppMessage(guest);
+
+      setTimeout(() => {
+        window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
+      }, i * 400);
+
+      try {
+        await invitationsApi.send(guest.id, eventIdFromUrl, 'whatsapp');
+        logWhatsAppAction(eventIdFromUrl, guest.id, guest.name, 'sent');
+      } catch (error) {
+        console.error(`Erreur WhatsApp pour ${guest.name}:`, error);
+      }
+    }
+
+    toast.success(
+      withoutPhone > 0
+        ? `${withPhone.length} conversation(s) WhatsApp ouverte(s). ${withoutPhone} sans numéro ignoré(s).`
+        : `${withPhone.length} conversation(s) WhatsApp ouverte(s).`
+    );
   };
 
   const copyInvitationLink = () => {
@@ -166,11 +194,10 @@ const InvitationTemplates = () => {
       const guestsToSend = guests.filter(g => selectedGuests.includes(g.id));
 
       if (sendMethod === 'whatsapp' || sendMethod === 'both') {
-        setWhatsappGuests(guestsToSend);
-        setShowWhatsAppSender(true);
+        await sendWhatsAppToGuests(guestsToSend);
         if (sendMethod === 'whatsapp') {
+          setSelectedGuests([]);
           setSendDialogOpen(false);
-          setIsSending(false);
           return;
         }
       }
@@ -727,20 +754,6 @@ const InvitationTemplates = () => {
         </DialogContent>
       </Dialog>
 
-      {/* WhatsApp Sender Modal */}
-      <WhatsAppSender
-        open={showWhatsAppSender}
-        onClose={() => {
-          setShowWhatsAppSender(false);
-          setIsSending(false);
-        }}
-        guests={whatsappGuests}
-        event={event}
-        customMessage={customization.message}
-        onSuccess={() => {
-          setSelectedGuests([]);
-        }}
-      />
     </DashboardLayout>
   );
 };
