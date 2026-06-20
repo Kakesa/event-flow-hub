@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { MessageSquare, Send, CheckCircle2, ChevronRight, SkipForward, AlertCircle, Copy, Check } from 'lucide-react';
+import { Send, CheckCircle2, ChevronRight, SkipForward, AlertCircle, Copy, Check } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import type { Guest, Event } from '@/types/models';
 import { invitationsApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -174,7 +175,7 @@ const WhatsAppSender = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-500" />
+            <WhatsAppIcon className="h-5 w-5 text-green-600" />
             Assistant d'envoi WhatsApp
           </DialogTitle>
           <DialogDescription>
@@ -289,7 +290,7 @@ const WhatsAppSender = ({
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4 mr-2" />
+                    <WhatsAppIcon className="h-4 w-4 mr-2" />
                     Envoyer <ChevronRight className="h-4 w-4 ml-1" />
                   </>
                 )}

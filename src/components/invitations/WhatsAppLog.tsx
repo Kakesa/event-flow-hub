@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Send, Trash2, MessageSquare, Inbox, ShieldAlert } from 'lucide-react';
+import { Copy, Send, Trash2, Inbox, ShieldAlert } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import {
   Tooltip,
   TooltipContent,
@@ -81,7 +82,7 @@ const WhatsAppLog = ({ eventId }: WhatsAppLogProps) => {
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-600" />
+            <WhatsAppIcon className="h-5 w-5 text-green-600" />
             Journal WhatsApp
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">

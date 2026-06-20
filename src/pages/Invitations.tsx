@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Send, Mail, MessageSquare, Smartphone, CheckCircle, Palette, PenLine, History } from 'lucide-react';
+import { Send, Mail, Smartphone, CheckCircle, Palette, PenLine, History } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import { useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -23,12 +24,17 @@ import { cn } from '@/lib/utils';
 import EmailComposer from '@/components/invitations/EmailComposer';
 import EmailHistory from '@/components/invitations/EmailHistory';
 import WhatsAppLog from '@/components/invitations/WhatsAppLog';
+import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
-import { getWhatsAppDigits } from '@/utils/phoneUtils';
+import {
+  buildDefaultInviteMessage,
+  guestHasPhone,
+  openWhatsAppInvite,
+} from '@/utils/whatsappInvite';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
-  { id: 'whatsapp' as DistributionMethod, name: 'WhatsApp', icon: MessageSquare, description: 'Envoyer via WhatsApp' },
+  { id: 'whatsapp' as DistributionMethod, name: 'WhatsApp', description: 'Envoyer via WhatsApp', whatsApp: true as const },
   { id: 'sms' as DistributionMethod, name: 'SMS', icon: Smartphone, description: 'Envoyer par SMS' },
 ];
 
@@ -44,6 +50,9 @@ const Invitations = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showEmailComposer, setShowEmailComposer] = useState(false);
+  const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
+  const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
+  const [guestFilter, setGuestFilter] = useState<'all' | 'uninvited'>('all');
 
   // 🔹 Charger les événements
   useEffect(() => {
@@ -95,6 +104,8 @@ const Invitations = () => {
     g => !g.status || g.status === 'invited'
   );
 
+  const visibleGuests = guestFilter === 'all' ? guests : uninvitedGuests;
+
   const toggleGuest = (guestId: string) => {
     setSelectedGuests(prev =>
       prev.includes(guestId)
@@ -104,18 +115,20 @@ const Invitations = () => {
   };
 
   const toggleAll = () => {
-    if (selectedGuests.length === uninvitedGuests.length) {
-      setSelectedGuests([]);
+    const visibleIds = visibleGuests.map(g => g.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedGuests.includes(id));
+    if (allSelected) {
+      setSelectedGuests(prev => prev.filter(id => !visibleIds.includes(id)));
     } else {
-      setSelectedGuests(uninvitedGuests.map(g => g.id));
+      setSelectedGuests(prev => [...new Set([...prev, ...visibleIds])]);
     }
   };
 
-  const handleWhatsAppSend = async (guestsToSend: Guest[]) => {
+  const startWhatsAppSend = async (guestsToSend: Guest[]) => {
     const event = events.find(e => (e._id || e.id) === selectedEvent);
-    if (!event) return;
+    if (!event || guestsToSend.length === 0) return;
 
-    const withPhone = guestsToSend.filter(g => g.phone);
+    const withPhone = guestsToSend.filter(guestHasPhone);
     const withoutPhone = guestsToSend.length - withPhone.length;
 
     if (withPhone.length === 0) {
@@ -127,43 +140,30 @@ const Invitations = () => {
       return;
     }
 
-    for (let i = 0; i < withPhone.length; i++) {
-      const guest = withPhone[i];
-      const rsvpLink = `${window.location.origin}/rsvp/${selectedEvent}/${guest.id}`;
-
-      const message = encodeURIComponent(
-        `✨ *${event.title.toUpperCase()}* ✨\n\n` +
-        `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
-        `📍 *Lieu:* ${event.location}\n\n` +
-        `Bonjour *${guest.name}*,\n\n` +
-        `Vous êtes cordialement invité(e) à cet événement spécial. Nous serions ravis de vous compter parmi nous !\n\n` +
-        `👉 *Confirmez votre présence ici :* ${rsvpLink}\n\n` +
-        `Nous avons hâte de vous voir! 🥂\n\n` +
-        `_HK Events_`
-      );
-
-      setTimeout(() => {
-        window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
-      }, i * 400);
+    if (withPhone.length === 1) {
+      const guest = withPhone[0];
+      openWhatsAppInvite(guest.phone!, buildDefaultInviteMessage(guest, event, selectedEvent));
 
       try {
         await invitationsApi.send(guest.id, selectedEvent, 'whatsapp');
+        logWhatsAppAction(selectedEvent, guest.id, guest.name, 'sent');
       } catch (error) {
-        console.error(`Erreur notification backend pour ${guest.name}:`, error);
+        console.error(error);
       }
-      logWhatsAppAction(selectedEvent, guest.id, guest.name, 'sent');
+
+      toast({
+        title: 'WhatsApp ouvert',
+        description: withoutPhone > 0
+          ? `Discussion avec ${guest.name}. ${withoutPhone} invité(s) sans numéro ignoré(s).`
+          : `Discussion avec ${guest.name}`,
+      });
+      setSelectedGuests([]);
+      refreshGuests();
+      return;
     }
 
-    toast({
-      title: 'WhatsApp ouvert',
-      description:
-        withoutPhone > 0
-          ? `${withPhone.length} conversation(s) ouverte(s). ${withoutPhone} invité(s) sans numéro ignoré(s).`
-          : `${withPhone.length} conversation(s) WhatsApp ouverte(s).`,
-    });
-
-    setSelectedGuests([]);
-    refreshGuests();
+    setWhatsappBulkGuests(guestsToSend);
+    setWhatsappBulkOpen(true);
   };
 
   const handleSendInvitations = async () => {
@@ -183,7 +183,7 @@ const Invitations = () => {
     setSending(true);
     try {
       if (selectedMethod === 'whatsapp') {
-        await handleWhatsAppSend(selectedGuestObjects);
+        await startWhatsAppSend(selectedGuestObjects);
         return;
       } else if (selectedMethod === 'sms') {
         await invitationsApi.sendBulk(selectedGuests, selectedEvent, 'sms');
@@ -255,7 +255,7 @@ const Invitations = () => {
               Historique
             </TabsTrigger>
             <TabsTrigger value="whatsapp-log">
-              <MessageSquare className="h-4 w-4 mr-2" />
+              <WhatsAppIcon className="h-4 w-4 mr-2 text-green-600" />
               Journal WhatsApp
             </TabsTrigger>
           </TabsList>
@@ -277,21 +277,37 @@ const Invitations = () => {
                     </CardHeader>
 
                     <CardContent className="space-y-2">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Checkbox
-                          checked={selectedGuests.length === uninvitedGuests.length && uninvitedGuests.length > 0}
-                          onCheckedChange={toggleAll}
-                        />
-                        <span className="text-sm text-muted-foreground">Tout sélectionner</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={
+                              visibleGuests.length > 0 &&
+                              visibleGuests.every(g => selectedGuests.includes(g.id))
+                            }
+                            onCheckedChange={toggleAll}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            Tout sélectionner ({visibleGuests.length})
+                          </span>
+                        </div>
+                        <Select value={guestFilter} onValueChange={(v: 'all' | 'uninvited') => setGuestFilter(v)}>
+                          <SelectTrigger className="w-44 h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Tous les invités</SelectItem>
+                            <SelectItem value="uninvited">À inviter</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      {uninvitedGuests.length === 0 ? (
+                      {visibleGuests.length === 0 ? (
                         <div className="text-center py-12">
-                          <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-                          <p className="font-semibold">Tous les invités ont été contactés</p>
+                          <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                          <p className="font-semibold">Aucun invité dans cette liste</p>
                         </div>
                       ) : (
-                        uninvitedGuests.map(guest => (
+                        visibleGuests.map(guest => (
                           <div
                             key={guest.id}
                             className={cn(
@@ -326,13 +342,21 @@ const Invitations = () => {
                                   title="Envoyer WhatsApp directement"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleWhatsAppSend([guest]);
+                                    startWhatsAppSend([guest]);
                                   }}
                                 >
-                                  <MessageSquare className="h-4 w-4" />
+                                  <WhatsAppIcon className="h-4 w-4" />
                                 </Button>
                               )}
-                              <Badge variant="outline">À inviter</Badge>
+                              <Badge variant="outline">
+                                {guest.status === 'confirmed'
+                                  ? 'Confirmé'
+                                  : guest.status === 'declined'
+                                    ? 'Décliné'
+                                    : guest.status === 'pending'
+                                      ? 'En attente'
+                                      : 'À inviter'}
+                              </Badge>
                             </div>
                           </div>
                         ))
@@ -356,7 +380,11 @@ const Invitations = () => {
                           selectedMethod === method.id && 'border-primary bg-primary/5'
                         )}
                       >
-                        <method.icon className="h-5 w-5" />
+                        {'whatsApp' in method && method.whatsApp ? (
+                          <WhatsAppIcon className="h-5 w-5 text-green-600" />
+                        ) : (
+                          method.icon && <method.icon className="h-5 w-5" />
+                        )}
                         <div>
                           <p className="font-medium">{method.name}</p>
                           <p className="text-sm text-muted-foreground">{method.description}</p>
@@ -373,6 +401,11 @@ const Invitations = () => {
                         <>
                           <PenLine className="h-4 w-4 mr-2" />
                           Composer & Envoyer ({selectedGuests.length})
+                        </>
+                      ) : selectedMethod === 'whatsapp' ? (
+                        <>
+                          <WhatsAppIcon className="h-4 w-4 mr-2" />
+                          {sending ? 'Envoi...' : `Envoyer (${selectedGuests.length})`}
                         </>
                       ) : (
                         <>
@@ -406,6 +439,19 @@ const Invitations = () => {
           event={events.find(e => (e._id || e.id) === selectedEvent) || null}
           onSuccess={() => {
             setSelectedGuests([]);
+            refreshGuests();
+          }}
+        />
+
+        <WhatsAppBulkDialog
+          open={whatsappBulkOpen}
+          onClose={() => setWhatsappBulkOpen(false)}
+          guests={whatsappBulkGuests}
+          event={events.find(e => (e._id || e.id) === selectedEvent) || null}
+          eventId={selectedEvent}
+          onComplete={() => {
+            setSelectedGuests([]);
+            setWhatsappBulkOpen(false);
             refreshGuests();
           }}
         />

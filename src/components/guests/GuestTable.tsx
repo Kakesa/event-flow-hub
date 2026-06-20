@@ -31,7 +31,6 @@ import {
 import { 
   MoreHorizontal, 
   Mail, 
-  MessageSquare, 
   QrCode, 
   Trash2, 
   User, 
@@ -43,6 +42,7 @@ import {
   Send,
   LayoutPanelLeft
 } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import type { Guest } from '@/types/models';
 import { cn } from '@/lib/utils';
 
@@ -130,9 +130,12 @@ const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, on
               variant="outline" 
               size="sm" 
               className="h-8 text-xs"
-              onClick={() => onSendBulkWhatsApp?.(selectedGuests)}
+              onClick={() => {
+                onSendBulkWhatsApp?.(selectedGuests);
+                setSelectedGuests([]);
+              }}
             >
-              <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+              <WhatsAppIcon className="h-3.5 w-3.5 mr-1.5 text-green-600" />
               WhatsApp
             </Button>
           </div>
@@ -259,7 +262,7 @@ const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, on
                         Envoyer par email
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onSendInvitation?.(guest.id, 'whatsapp')}>
-                        <MessageSquare className="h-4 w-4 mr-2 text-green-600" />
+                        <WhatsAppIcon className="h-4 w-4 mr-2 text-green-600" />
                         Envoyer par WhatsApp
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onGenerateQR?.(guest.id)}>

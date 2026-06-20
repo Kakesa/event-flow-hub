@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Download, Mail, MessageSquare, Loader2 } from 'lucide-react';
+import { Download, Mail, Loader2 } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import {
   Dialog,
   DialogContent,
@@ -137,7 +138,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
               onClick={handleSendByWhatsApp}
               disabled={!qrData || !guest?.phone}
             >
-              <MessageSquare className="h-4 w-4 mr-2" />
+              <WhatsAppIcon className="h-4 w-4 mr-2 text-green-600" />
               WhatsApp
             </Button>
           </div>

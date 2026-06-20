@@ -12,17 +12,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import {
-  Mail, MessageCircle, Send, Eye, Palette, Type,
+  Mail, Send, Eye, Palette, Type,
   Image, Check, Sparkles, Heart, PartyPopper, GraduationCap,
   ArrowLeft, Copy, ExternalLink
 } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import { guestsApi, eventsApi, emailsApi, invitationsApi, BASE_URL } from '@/services/api';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
-import { getWhatsAppDigits } from '@/utils/phoneUtils';
+import { guestHasPhone, openWhatsAppInvite } from '@/utils/whatsappInvite';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event } from '@/types/models';
 import { getEventTypeWithArticle } from '@/lib/eventTypePhrases';
+import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
 
 interface Template {
   id: string;
@@ -61,6 +63,8 @@ const InvitationTemplates = () => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [sendMethod, setSendMethod] = useState<'email' | 'whatsapp' | 'both'>('email');
   const [isSending, setIsSending] = useState(false);
+  const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
+  const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
 
   const [customization, setCustomization] = useState({
     title: 'Vous êtes cordialement invité(e)',
@@ -121,12 +125,12 @@ const InvitationTemplates = () => {
     }
   };
 
-  const buildWhatsAppMessage = (guest: Guest) => {
-    const rsvpLink = `${window.location.origin}/rsvp/${eventIdFromUrl}/${guest.id}`;
+  const buildTemplateWhatsAppMessage = (guest: Guest, _event: Event, evId: string) => {
+    const rsvpLink = `${window.location.origin}/rsvp/${evId}/${guest.id}`;
     const isWedding = selectedTemplate?.id.startsWith('wedding_');
     const header = isWedding ? '💍 *INVITATION MARIAGE* 💍' : `✨ *${customization.title.toUpperCase()}* ✨`;
 
-    return encodeURIComponent(
+    return (
       `${header}\n\n` +
       `📌 *${customization.eventName}*\n\n` +
       `📅 *Date:* ${customization.date}\n` +
@@ -140,38 +144,28 @@ const InvitationTemplates = () => {
     );
   };
 
-  const sendWhatsAppToGuests = async (guestsToSend: Guest[]) => {
-    if (!eventIdFromUrl) return;
+  const sendWhatsAppToGuests = (guestsToSend: Guest[]) => {
+    if (!eventIdFromUrl || !event) return;
 
-    const withPhone = guestsToSend.filter(g => g.phone);
-    const withoutPhone = guestsToSend.length - withPhone.length;
+    const withPhone = guestsToSend.filter(guestHasPhone);
 
     if (withPhone.length === 0) {
       toast.error('Aucun invité sélectionné n\'a de numéro WhatsApp');
       return;
     }
 
-    for (let i = 0; i < withPhone.length; i++) {
-      const guest = withPhone[i];
-      const message = buildWhatsAppMessage(guest);
-
-      setTimeout(() => {
-        window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
-      }, i * 400);
-
-      try {
-        await invitationsApi.send(guest.id, eventIdFromUrl, 'whatsapp');
+    if (withPhone.length === 1) {
+      const guest = withPhone[0];
+      openWhatsAppInvite(guest.phone!, buildTemplateWhatsAppMessage(guest, event, eventIdFromUrl));
+      invitationsApi.send(guest.id, eventIdFromUrl, 'whatsapp').then(() => {
         logWhatsAppAction(eventIdFromUrl, guest.id, guest.name, 'sent');
-      } catch (error) {
-        console.error(`Erreur WhatsApp pour ${guest.name}:`, error);
-      }
+      }).catch(console.error);
+      toast.success(`WhatsApp ouvert pour ${guest.name}`);
+      return;
     }
 
-    toast.success(
-      withoutPhone > 0
-        ? `${withPhone.length} conversation(s) WhatsApp ouverte(s). ${withoutPhone} sans numéro ignoré(s).`
-        : `${withPhone.length} conversation(s) WhatsApp ouverte(s).`
-    );
+    setWhatsappBulkGuests(guestsToSend);
+    setWhatsappBulkOpen(true);
   };
 
   const copyInvitationLink = () => {
@@ -194,10 +188,11 @@ const InvitationTemplates = () => {
       const guestsToSend = guests.filter(g => selectedGuests.includes(g.id));
 
       if (sendMethod === 'whatsapp' || sendMethod === 'both') {
-        await sendWhatsAppToGuests(guestsToSend);
+        sendWhatsAppToGuests(guestsToSend);
         if (sendMethod === 'whatsapp') {
           setSelectedGuests([]);
           setSendDialogOpen(false);
+          setIsSending(false);
           return;
         }
       }
@@ -393,7 +388,7 @@ const InvitationTemplates = () => {
                       <SelectContent>
                         <SelectItem value="whatsapp">
                           <div className="flex items-center gap-2">
-                            <MessageCircle className="w-4 h-4 text-green-500" />
+                            <WhatsAppIcon className="w-4 h-4 text-green-600" />
                             WhatsApp uniquement
                           </div>
                         </SelectItem>
@@ -405,7 +400,8 @@ const InvitationTemplates = () => {
                         </SelectItem>
                         <SelectItem value="both">
                           <div className="flex items-center gap-2">
-                            <Send className="w-4 h-4 text-primary" />
+                            <WhatsAppIcon className="w-4 h-4 text-green-600" />
+                            <Mail className="w-4 h-4 text-blue-500" />
                             WhatsApp + Email
                           </div>
                         </SelectItem>
@@ -450,7 +446,23 @@ const InvitationTemplates = () => {
                     Annuler
                   </Button>
                   <Button onClick={handleSendInvitations} disabled={isSending}>
-                    {isSending ? 'Envoi...' : 'Envoyer les invitations'}
+                    {isSending ? (
+                      'Envoi...'
+                    ) : (
+                      <>
+                        {sendMethod === 'email' ? (
+                          <Mail className="w-4 h-4 mr-2" />
+                        ) : sendMethod === 'whatsapp' ? (
+                          <WhatsAppIcon className="w-4 h-4 mr-2" />
+                        ) : (
+                          <>
+                            <WhatsAppIcon className="w-4 h-4 mr-2" />
+                            <Mail className="w-4 h-4 mr-2" />
+                          </>
+                        )}
+                        Envoyer les invitations
+                      </>
+                    )}
                   </Button>
                 </div>
               </DialogContent>
@@ -753,6 +765,22 @@ const InvitationTemplates = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {eventIdFromUrl && (
+        <WhatsAppBulkDialog
+          open={whatsappBulkOpen}
+          onClose={() => setWhatsappBulkOpen(false)}
+          guests={whatsappBulkGuests}
+          event={event}
+          eventId={eventIdFromUrl}
+          buildMessage={buildTemplateWhatsAppMessage}
+          onComplete={() => {
+            setSelectedGuests([]);
+            setWhatsappBulkOpen(false);
+            setSendDialogOpen(false);
+          }}
+        />
+      )}
 
     </DashboardLayout>
   );

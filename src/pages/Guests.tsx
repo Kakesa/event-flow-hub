@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import GuestTable from '@/components/guests/GuestTable';
 import QRCodeModal from '@/components/guests/QRCodeModal';
 import GuestImportModal from '@/components/guests/GuestImportModal';
+import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
 import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,12 +32,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Phone } from 'lucide-react';
+import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
 import {
   formatPhoneInput,
   normalizePhoneToE164,
-  getWhatsAppDigits,
 } from '@/utils/phoneUtils';
+import {
+  buildDefaultInviteMessage,
+  guestHasPhone,
+  openWhatsAppInvite,
+} from '@/utils/whatsappInvite';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +78,8 @@ const Guests = () => {
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState('');
   const [isAddingGuest, setIsAddingGuest] = useState(false);
+  const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
+  const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
 
   const { toast } = useToast();
   const { canDelete } = usePermissions();
@@ -330,7 +338,7 @@ const Guests = () => {
     }
 
     if (method === 'whatsapp') {
-      if (!guest.phone) {
+      if (!guestHasPhone(guest)) {
         toast({
           title: 'Erreur',
           description: `${guest.name} n'a pas de numéro WhatsApp`,
@@ -339,17 +347,16 @@ const Guests = () => {
         return;
       }
 
-      const rsvpLink = `${window.location.origin}/rsvp/${eventId}/${guest.id}`;
-      const message = encodeURIComponent(
-        `✨ *${(event?.title || 'Événement').toUpperCase()}* ✨\n\n` +
-        (event?.date ? `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` : '') +
-        (event?.location ? `📍 *Lieu:* ${event.location}\n\n` : '\n') +
-        `Bonjour *${guest.name}*,\n\n` +
-        `Vous êtes cordialement invité(e). Confirmez votre présence :\n${rsvpLink}\n\n` +
-        `_HK Events_`
-      );
+      if (!event) {
+        toast({
+          title: 'Erreur',
+          description: 'Événement introuvable',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-      window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
+      openWhatsAppInvite(guest.phone!, buildDefaultInviteMessage(guest, event, eventId));
 
       try {
         await invitationsApi.send(guestId, eventId, 'whatsapp');
@@ -377,7 +384,7 @@ const Guests = () => {
     }
   };
 
-  const handleBulkWhatsApp = async (guestIds: string[]) => {
+  const handleBulkWhatsApp = (guestIds: string[]) => {
     const event = events.find(e => e.id === eventFilter);
     if (!eventFilter || !event) {
       toast({
@@ -389,7 +396,7 @@ const Guests = () => {
     }
 
     const selected = guests.filter(g => guestIds.includes(g.id));
-    const withPhone = selected.filter(g => g.phone);
+    const withPhone = selected.filter(guestHasPhone);
 
     if (withPhone.length === 0) {
       toast({
@@ -400,37 +407,18 @@ const Guests = () => {
       return;
     }
 
-    for (let i = 0; i < withPhone.length; i++) {
-      const guest = withPhone[i];
-      const rsvpLink = `${window.location.origin}/rsvp/${eventFilter}/${guest.id}`;
-      const message = encodeURIComponent(
-        `✨ *${event.title.toUpperCase()}* ✨\n\n` +
-        `📅 *Date:* ${new Date(event.date).toLocaleDateString('fr-FR')}\n` +
-        `📍 *Lieu:* ${event.location}\n\n` +
-        `Bonjour *${guest.name}*,\n\n` +
-        `Vous êtes cordialement invité(e). Confirmez votre présence :\n${rsvpLink}\n\n` +
-        `_HK Events_`
-      );
-
-      setTimeout(() => {
-        window.open(`https://wa.me/${getWhatsAppDigits(guest.phone)}?text=${message}`, '_blank');
-      }, i * 400);
-
-      try {
-        await invitationsApi.send(guest.id, eventFilter, 'whatsapp');
+    if (withPhone.length === 1) {
+      const guest = withPhone[0];
+      openWhatsAppInvite(guest.phone!, buildDefaultInviteMessage(guest, event, eventFilter));
+      invitationsApi.send(guest.id, eventFilter, 'whatsapp').then(() => {
         logWhatsAppAction(eventFilter, guest.id, guest.name, 'sent');
-      } catch {
-        // continue with next guest
-      }
+      }).catch(() => {});
+      toast({ title: 'WhatsApp ouvert', description: `Discussion avec ${guest.name}` });
+      return;
     }
 
-    toast({
-      title: 'WhatsApp ouvert',
-      description:
-        selected.length > withPhone.length
-          ? `${withPhone.length} conversation(s) ouverte(s). ${selected.length - withPhone.length} sans numéro ignoré(s).`
-          : `${withPhone.length} conversation(s) WhatsApp ouverte(s).`,
-    });
+    setWhatsappBulkGuests(selected);
+    setWhatsappBulkOpen(true);
   };
 
   /* =========================
@@ -497,7 +485,10 @@ const Guests = () => {
                   onChange={e => setNewGuest({ ...newGuest, email: e.target.value })}
                 />
                 <div className="space-y-2">
-                  <Label>Téléphone (WhatsApp)</Label>
+                  <Label className="flex items-center gap-2">
+                    Téléphone
+                    <WhatsAppIcon className="h-3.5 w-3.5 text-green-600" />
+                  </Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                     <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
@@ -516,7 +507,8 @@ const Guests = () => {
                       }
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <WhatsAppIcon className="h-3 w-3 text-green-600" />
                     Enregistré au format +243828863897 pour WhatsApp
                   </p>
                 </div>
@@ -606,6 +598,15 @@ const Guests = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <WhatsAppBulkDialog
+        open={whatsappBulkOpen}
+        onClose={() => setWhatsappBulkOpen(false)}
+        guests={whatsappBulkGuests}
+        event={events.find(e => e.id === eventFilter) || null}
+        eventId={eventFilter}
+        onComplete={() => setWhatsappBulkOpen(false)}
+      />
     </DashboardLayout>
   );
 };
