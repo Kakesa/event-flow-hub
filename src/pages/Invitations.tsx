@@ -18,11 +18,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
-import type { Guest, Event, DistributionMethod } from '@/types/models';
+import type { Guest, Event, DistributionMethod, Invitation } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import EmailComposer from '@/components/invitations/EmailComposer';
 import EmailHistory from '@/components/invitations/EmailHistory';
+import InvitationHistory from '@/components/invitations/InvitationHistory';
 import WhatsAppLog from '@/components/invitations/WhatsAppLog';
 import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
@@ -44,6 +45,7 @@ const Invitations = () => {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<DistributionMethod>('email');
@@ -52,7 +54,7 @@ const Invitations = () => {
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
   const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
-  const [guestFilter, setGuestFilter] = useState<'all' | 'uninvited'>('all');
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   // 🔹 Charger les événements
   useEffect(() => {
@@ -78,8 +80,14 @@ const Invitations = () => {
 
     const fetchGuests = async () => {
       try {
-        const res = await guestsApi.getByEvent(selectedEvent);
-        setGuests(res.data);
+        const [guestsRes, invitationsRes] = await Promise.all([
+          guestsApi.getByEvent(selectedEvent),
+          invitationsApi.getByEvent(selectedEvent),
+        ]);
+        setGuests(guestsRes.data);
+        setSentInvitations(
+          (invitationsRes.data || []).filter((inv) => inv.sentAt || inv.status === 'sent'),
+        );
         setSelectedGuests([]);
       } catch {
         toast({ title: 'Erreur', description: 'Impossible de charger les invités', variant: 'destructive' });
@@ -93,18 +101,22 @@ const Invitations = () => {
   const refreshGuests = async () => {
     if (!selectedEvent) return;
     try {
-      const res = await guestsApi.getByEvent(selectedEvent);
-      setGuests(res.data);
+      const [guestsRes, invitationsRes] = await Promise.all([
+        guestsApi.getByEvent(selectedEvent),
+        invitationsApi.getByEvent(selectedEvent),
+      ]);
+      setGuests(guestsRes.data);
+      setSentInvitations(
+        (invitationsRes.data || []).filter((inv) => inv.sentAt || inv.status === 'sent'),
+      );
+      setHistoryRefreshKey((k) => k + 1);
     } catch {
       // Erreur silencieuse pour le rafraîchissement
     }
   };
 
-  const uninvitedGuests = guests.filter(
-    g => !g.status || g.status === 'invited'
-  );
-
-  const visibleGuests = guestFilter === 'all' ? guests : uninvitedGuests;
+  const sentGuestIds = new Set(sentInvitations.map((inv) => String(inv.guestId)));
+  const guestsToContact = guests.filter((g) => !sentGuestIds.has(String(g.id)));
 
   const toggleGuest = (guestId: string) => {
     setSelectedGuests(prev =>
@@ -115,7 +127,7 @@ const Invitations = () => {
   };
 
   const toggleAll = () => {
-    const visibleIds = visibleGuests.map(g => g.id);
+    const visibleIds = guestsToContact.map(g => g.id);
     const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedGuests.includes(id));
     if (allSelected) {
       setSelectedGuests(prev => prev.filter(id => !visibleIds.includes(id)));
@@ -274,40 +286,35 @@ const Invitations = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle>Invités à contacter</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {guestsToContact.length} invité{guestsToContact.length !== 1 ? 's' : ''} sans invitation envoyée
+                      </p>
                     </CardHeader>
 
                     <CardContent className="space-y-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            checked={
-                              visibleGuests.length > 0 &&
-                              visibleGuests.every(g => selectedGuests.includes(g.id))
-                            }
-                            onCheckedChange={toggleAll}
-                          />
-                          <span className="text-sm text-muted-foreground">
-                            Tout sélectionner ({visibleGuests.length})
-                          </span>
-                        </div>
-                        <Select value={guestFilter} onValueChange={(v: 'all' | 'uninvited') => setGuestFilter(v)}>
-                          <SelectTrigger className="w-44 h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Tous les invités</SelectItem>
-                            <SelectItem value="uninvited">À inviter</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Checkbox
+                          checked={
+                            guestsToContact.length > 0 &&
+                            guestsToContact.every(g => selectedGuests.includes(g.id))
+                          }
+                          onCheckedChange={toggleAll}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          Tout sélectionner ({guestsToContact.length})
+                        </span>
                       </div>
 
-                      {visibleGuests.length === 0 ? (
+                      {guestsToContact.length === 0 ? (
                         <div className="text-center py-12">
-                          <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                          <p className="font-semibold">Aucun invité dans cette liste</p>
+                          <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                          <p className="font-semibold">Tous les invités ont reçu une invitation</p>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Consultez l&apos;onglet Historique pour voir les envois effectués.
+                          </p>
                         </div>
                       ) : (
-                        visibleGuests.map(guest => (
+                        guestsToContact.map(guest => (
                           <div
                             key={guest.id}
                             className={cn(
@@ -421,7 +428,8 @@ const Invitations = () => {
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history">
+          <TabsContent value="history" className="space-y-6">
+            <InvitationHistory eventId={selectedEvent || undefined} refreshKey={historyRefreshKey} />
             <EmailHistory eventId={selectedEvent || undefined} />
           </TabsContent>
 

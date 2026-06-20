@@ -541,7 +541,29 @@ export const invitationsApi = {
       headers: getHeaders(),
     });
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
-    return { success: result.success ?? true, data: result.data };
+    const invitations: Invitation[] =
+      result.data?.map((inv) => {
+        const guestRef = inv.guestId;
+        const guestId =
+          typeof guestRef === "object" && guestRef !== null
+            ? guestRef._id || guestRef.id
+            : inv.guestId;
+        return {
+          ...inv,
+          id: inv._id || inv.id,
+          guestId: String(guestId),
+          guest:
+            typeof guestRef === "object" && guestRef !== null
+              ? {
+                  id: guestRef._id || guestRef.id,
+                  name: guestRef.name,
+                  email: guestRef.email,
+                  phone: guestRef.phone,
+                }
+              : undefined,
+        };
+      }) || [];
+    return { success: result.success ?? true, data: invitations };
   },
 
   // 🔹 Marquer comme envoyée

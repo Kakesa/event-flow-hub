@@ -141,12 +141,14 @@ export interface Invitation {
   id: string;
   eventId: string;
   guestId: string;
+  guest?: Pick<Guest, "id" | "name" | "email" | "phone">;
 
   distributionMethod: DistributionMethod;
 
   templateUrl?: string;
   themeColor?: string;
 
+  status?: "pending" | "sent" | "failed";
   sentAt?: string;
   createdAt?: string;
 }
