@@ -32,6 +32,7 @@ import {
   guestHasPhone,
   openWhatsAppInvite,
 } from '@/utils/whatsappInvite';
+import { sortGuestsNewestFirst } from '@/utils/guestSort';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
@@ -116,7 +117,9 @@ const Invitations = () => {
   };
 
   const sentGuestIds = new Set(sentInvitations.map((inv) => String(inv.guestId)));
-  const guestsToContact = guests.filter((g) => !sentGuestIds.has(String(g.id)));
+  const guestsToContact = sortGuestsNewestFirst(
+    guests.filter((g) => !sentGuestIds.has(String(g.id))),
+  );
 
   const toggleGuest = (guestId: string) => {
     setSelectedGuests(prev =>

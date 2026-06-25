@@ -52,6 +52,7 @@ import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
 import GuestBillingCard from '@/components/subscription/GuestBillingCard';
 import { formatPlanLimit } from '@/config/subscriptionPlans';
 import { exportGuestsToCSV, exportGuestsToExcel } from '@/utils/exportUtils';
+import { sortGuestsNewestFirst } from '@/utils/guestSort';
 
 const Guests = () => {
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -135,14 +136,16 @@ const Guests = () => {
   /* =========================
      FILTERS
   ========================= */
-  const filteredGuests = guests.filter(guest => {
-    const matchesSearch =
-      guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      guest.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredGuests = sortGuestsNewestFirst(
+    guests.filter(guest => {
+      const matchesSearch =
+        guest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        guest.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || guest.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      const matchesStatus = statusFilter === 'all' || guest.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    }),
+  );
 
   /* =========================
      ACTIONS
