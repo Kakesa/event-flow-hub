@@ -31,8 +31,9 @@ import type { Event, Guest } from "@/types/models";
 import { rsvpApi, eventsApi, emailsApi, BASE_URL } from "@/services/api";
 import { getEventTypePhraseParts, getEventTypeWithArticle } from "@/lib/eventTypePhrases";
 import RsvpInvitationHero from "@/components/rsvp/RsvpInvitationHero";
-import { downloadQrCodePng } from "@/utils/downloadQrCode";
+import { downloadBrandedQrCodePng, QR_LOGO_SETTINGS } from "@/utils/downloadQrCode";
 import { getGuestCheckInUrl } from "@/utils/qrCode";
+import { getEventCoverUrl } from "@/utils/eventCover";
 import { ALCOHOLIC_DRINKS, SOFT_DRINKS } from "@/config/drinks";
 
 type RsvpChoice = "confirmed" | "declined" | "pending" | "";
@@ -220,7 +221,13 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
     const svg = document.getElementById("rsvp-guest-qr") as SVGSVGElement | null;
     if (!svg) return;
     try {
-      await downloadQrCodePng(svg, `pass-${guest?.name?.replace(/\s+/g, "_") || "invitation"}.png`);
+      await downloadBrandedQrCodePng({
+        svgElement: svg,
+        filename: `pass-${guest?.name?.replace(/\s+/g, "_") || "invitation"}.png`,
+        coverImageUrl: getEventCoverUrl(event),
+        guestName: guest?.name,
+        eventTitle: event.title,
+      });
       toast.success("QR code téléchargé");
     } catch {
       toast.error("Impossible de télécharger le QR code");
@@ -328,13 +335,18 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
               </h3>
             </div>
             <div className="flex flex-col items-center py-8 px-6 bg-white">
-              <div className="p-4 bg-white rounded-lg shadow-inner border border-[#e8e0d8]">
+              <div
+                className="w-full max-w-xs h-28 rounded-t-lg bg-cover bg-center mb-4 -mt-2"
+                style={{ backgroundImage: `url(${getEventCoverUrl(event)})` }}
+              />
+              <div className="p-4 bg-white rounded-lg shadow-inner border border-[#e8e0d8] -mt-12 relative z-10">
                 <QRCodeSVG
                   id="rsvp-guest-qr"
                   value={getGuestCheckInUrl(guest.qrCode)}
                   size={200}
                   level="H"
                   includeMargin
+                  imageSettings={QR_LOGO_SETTINGS}
                 />
               </div>
               <p className="mt-4 text-xs text-[#7a8b72] text-center max-w-xs">

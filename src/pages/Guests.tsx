@@ -563,9 +563,10 @@ const Guests = () => {
             onDelete={handleDelete}
             onSendInvitation={handleSendInvitation}
             onSendBulkWhatsApp={handleBulkWhatsApp}
-            onGenerateQR={g =>
-              setSelectedGuestForQR(guests.find(x => x.id === g) || null)
-            }
+            onGenerateQR={g => {
+              setSelectedGuestForQR(guests.find(x => x.id === g) || null);
+              setIsQRModalOpen(true);
+            }}
           />
         )}
       </div>
@@ -573,7 +574,10 @@ const Guests = () => {
       <QRCodeModal
         guest={selectedGuestForQR}
         open={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
+        onClose={() => {
+          setIsQRModalOpen(false);
+          setSelectedGuestForQR(null);
+        }}
       />
 
       <GuestImportModal
