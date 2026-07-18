@@ -15,8 +15,9 @@ import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import type { Event, Guest } from '@/types/models';
 import { invitationsApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import { logWhatsAppAction } from '@/lib/whatsappLog';
 import { buildDefaultInviteMessage, guestHasPhone, openWhatsAppInvite } from '@/utils/whatsappInvite';
+import { logWhatsAppAction } from '@/lib/whatsappLog';
+import { getStoredWhatsAppTemplateId, type WhatsAppTemplateCustomization } from '@/lib/whatsappTemplates';
 
 interface WhatsAppBulkDialogProps {
   open: boolean;
@@ -24,6 +25,8 @@ interface WhatsAppBulkDialogProps {
   guests: Guest[];
   event: Event | null;
   eventId: string;
+  templateId?: string;
+  customization?: WhatsAppTemplateCustomization;
   buildMessage?: (guest: Guest, event: Event, eventId: string) => string;
   onComplete?: () => void;
 }
@@ -34,7 +37,9 @@ const WhatsAppBulkDialog = ({
   guests,
   event,
   eventId,
-  buildMessage = buildDefaultInviteMessage,
+  templateId = getStoredWhatsAppTemplateId(),
+  customization,
+  buildMessage,
   onComplete,
 }: WhatsAppBulkDialogProps) => {
   const { toast } = useToast();
@@ -77,7 +82,9 @@ const WhatsAppBulkDialog = ({
 
     setOpening(true);
     try {
-      const message = buildMessage(currentGuest, event, eventId);
+      const message = buildMessage
+        ? buildMessage(currentGuest, event, eventId)
+        : buildDefaultInviteMessage(currentGuest, event, eventId, templateId, customization);
       openWhatsAppInvite(currentGuest.phone!, message);
 
       try {
@@ -157,6 +164,13 @@ const WhatsAppBulkDialog = ({
               <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
                 Prêt à envoyer
               </Badge>
+              {event && (
+                <div className="mt-3 rounded-md border bg-background p-2 text-xs whitespace-pre-wrap max-h-28 overflow-y-auto text-muted-foreground">
+                  {buildMessage
+                    ? buildMessage(currentGuest, event, eventId)
+                    : buildDefaultInviteMessage(currentGuest, event, eventId, templateId, customization)}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 text-xs text-muted-foreground">

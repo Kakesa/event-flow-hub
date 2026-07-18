@@ -25,6 +25,14 @@ import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event } from '@/types/models';
 import { getEventTypeWithArticle } from '@/lib/eventTypePhrases';
 import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
+import WhatsAppTemplateSelect from '@/components/invitations/WhatsAppTemplateSelect';
+import RsvpInvitationPreview from '@/components/invitations/RsvpInvitationPreview';
+import {
+  buildWhatsAppMessage,
+  getStoredWhatsAppTemplateId,
+  mapVisualTemplateToWhatsApp,
+  setStoredWhatsAppTemplateId,
+} from '@/lib/whatsappTemplates';
 
 interface Template {
   id: string;
@@ -32,13 +40,15 @@ interface Template {
   category: string;
   preview: string;
   primaryColor: string;
+  rsvpTheme?: string;
   icon: React.ElementType;
 }
 
 const templates: Template[] = [
-  { id: 'wedding_dark', name: 'Mariage Royal (Sombre)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800', primaryColor: '#0F2C33', icon: Heart },
-  { id: 'wedding_sage', name: 'Mariage Nature (Sauge)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800', primaryColor: '#4A5B4F', icon: Heart },
-  { id: 'wedding_luxury', name: 'Mariage Luxe (Or)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800', primaryColor: '#D4AF37', icon: Sparkles },
+  { id: 'boho_sage', name: 'Boho Sage', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800', primaryColor: '#8FA382', rsvpTheme: 'boho_sage', icon: Heart },
+  { id: 'wedding_dark', name: 'Mariage Royal (Sombre)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800', primaryColor: '#0F2C33', rsvpTheme: 'wedding_navy', icon: Heart },
+  { id: 'wedding_sage', name: 'Mariage Nature (Sauge)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800', primaryColor: '#4A5B4F', rsvpTheme: 'wedding_navy', icon: Heart },
+  { id: 'wedding_luxury', name: 'Mariage Luxe (Or)', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800', primaryColor: '#D4AF37', rsvpTheme: 'wedding_navy', icon: Sparkles },
   { id: 'elegant', name: 'Élégant Doré', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400', primaryColor: '#D4AF37', icon: Sparkles },
   { id: 'romantic', name: 'Romantique Rose', category: 'Mariage', preview: 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400', primaryColor: '#E91E63', icon: Heart },
   { id: 'festive', name: 'Festif Coloré', category: 'Anniversaire', preview: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400', primaryColor: '#FF5722', icon: PartyPopper },
@@ -65,6 +75,7 @@ const InvitationTemplates = () => {
   const [isSending, setIsSending] = useState(false);
   const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
   const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
+  const [whatsappTemplateId, setWhatsappTemplateId] = useState(getStoredWhatsAppTemplateId);
 
   const [customization, setCustomization] = useState({
     title: 'Vous êtes cordialement invité(e)',
@@ -76,6 +87,24 @@ const InvitationTemplates = () => {
     primaryColor: templates[0].primaryColor,
     fontFamily: 'Lato',
   });
+
+  const previewGuestName = guests[0]?.name;
+
+  const rsvpPreviewCustomization = {
+    eventName: customization.eventName,
+    message: customization.message,
+    date: customization.date,
+    time: customization.time,
+    location: customization.location,
+    primaryColor: customization.primaryColor,
+  };
+
+  const rsvpPreviewLink =
+    eventIdFromUrl && guests[0]
+      ? `${window.location.origin}/rsvp/${eventIdFromUrl}/${guests[0].id}`
+      : eventIdFromUrl
+        ? `${window.location.origin}/rsvp/${eventIdFromUrl}`
+        : null;
 
   // Charger les données de l'événement et les invités
   React.useEffect(() => {
@@ -111,12 +140,17 @@ const InvitationTemplates = () => {
   const handleSelectTemplate = async (template: Template) => {
     setSelectedTemplate(template);
     setCustomization(prev => ({ ...prev, primaryColor: template.primaryColor }));
+    setWhatsappTemplateId(mapVisualTemplateToWhatsApp(template.id));
+    setStoredWhatsAppTemplateId(mapVisualTemplateToWhatsApp(template.id));
     
     // Persister la couleur dans l'événement si possible
     if (eventIdFromUrl) {
       try {
         const formData = new FormData();
         formData.append('primaryColor', template.primaryColor);
+        if (template.rsvpTheme) {
+          formData.append('theme', template.rsvpTheme);
+        }
         await eventsApi.update(eventIdFromUrl, formData);
         toast.info(`Couleur ${template.name} appliquée à l'événement`);
       } catch (error) {
@@ -125,24 +159,20 @@ const InvitationTemplates = () => {
     }
   };
 
-  const buildTemplateWhatsAppMessage = (guest: Guest, _event: Event, evId: string) => {
-    const rsvpLink = `${window.location.origin}/rsvp/${evId}/${guest.id}`;
-    const isWedding = selectedTemplate?.id.startsWith('wedding_');
-    const header = isWedding ? '💍 *INVITATION MARIAGE* 💍' : `✨ *${customization.title.toUpperCase()}* ✨`;
-
-    return (
-      `${header}\n\n` +
-      `📌 *${customization.eventName}*\n\n` +
-      `📅 *Date:* ${customization.date}\n` +
-      `🕐 *Heure:* ${customization.time}\n` +
-      `📍 *Lieu:* ${customization.location}\n\n` +
-      `Bonjour *${guest.name}*,\n\n` +
-      `${customization.message}\n\n` +
-      `🙏 *Nous serions honorés de votre présence.*\n\n` +
-      `👉 *Confirmez votre réponse ici:* ${rsvpLink}\n\n` +
-      `_HK Events - L'excellence au service de vos souvenirs_`
-    );
-  };
+  const buildTemplateWhatsAppMessage = (guest: Guest, ev: Event, evId: string) =>
+    buildWhatsAppMessage(whatsappTemplateId, {
+      guest,
+      event: ev,
+      eventId: evId,
+      customization: {
+        title: customization.title,
+        eventName: customization.eventName,
+        date: customization.date,
+        time: customization.time,
+        location: customization.location,
+        message: customization.message,
+      },
+    });
 
   const sendWhatsAppToGuests = (guestsToSend: Guest[]) => {
     if (!eventIdFromUrl || !event) return;
@@ -409,6 +439,29 @@ const InvitationTemplates = () => {
                     </Select>
                   </div>
 
+                  {(sendMethod === 'whatsapp' || sendMethod === 'both') && event && guests.length > 0 && (
+                    <WhatsAppTemplateSelect
+                      value={whatsappTemplateId}
+                      onChange={(id) => {
+                        setWhatsappTemplateId(id);
+                        setStoredWhatsAppTemplateId(id);
+                      }}
+                      previewContext={{
+                        guest: guests[0],
+                        event,
+                        eventId: eventIdFromUrl!,
+                        customization: {
+                          title: customization.title,
+                          eventName: customization.eventName,
+                          date: customization.date,
+                          time: customization.time,
+                          location: customization.location,
+                          message: customization.message,
+                        },
+                      }}
+                    />
+                  )}
+
                   {/* Guest Selection */}
                   <div className="space-y-2">
                     <Label>Sélectionner les invités ({selectedGuests.length})</Label>
@@ -638,60 +691,22 @@ const InvitationTemplates = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div
-                  className="aspect-[3/4] rounded-lg overflow-hidden border relative"
-                  style={{ fontFamily: customization.fontFamily }}
-                >
-                  {selectedTemplate ? (
-                    <>
-                      <img
-                        src={selectedTemplate.preview}
-                        alt="Preview"
-                        className="w-full h-full object-cover absolute inset-0"
-                      />
-                      <div className="absolute inset-0 bg-black/50" />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden"
-                          style={{ backgroundColor: customization.primaryColor }}
-                        >
-                          <img
-                            src="/src/assets/black.png"
-                            alt="logo"
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <p className="text-sm opacity-80 mb-2">{customization.title}</p>
-                        <h3
-                          className="text-xl font-bold mb-4"
-                          style={{ color: customization.primaryColor }}
-                        >
-                          {customization.eventName}
-                        </h3>
-                        <div className="space-y-1 text-sm opacity-90">
-                          <p>📅 {customization.date}</p>
-                          <p>🕐 {customization.time}</p>
-                          <p>📍 {customization.location}</p>
-                        </div>
-                        <p className="text-xs mt-4 opacity-70 line-clamp-3">
-                          {customization.message}
-                        </p>
-                        <button
-                          className="mt-4 px-4 py-2 rounded-full text-xs font-medium"
-                          style={{ backgroundColor: customization.primaryColor }}
-                        >
-                          Confirmer ma présence
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted">
-                      <p className="text-muted-foreground text-sm text-center px-4">
-                        Sélectionnez un template pour voir la prévisualisation
-                      </p>
-                    </div>
-                  )}
-                </div>
+                {selectedTemplate ? (
+                  <div className="rsvp-invitation-preview-shell rsvp-invitation-preview-shell--compact">
+                    <RsvpInvitationPreview
+                      event={event}
+                      customization={rsvpPreviewCustomization}
+                      rsvpTheme={selectedTemplate.rsvpTheme}
+                      guestName={previewGuestName}
+                    />
+                  </div>
+                ) : (
+                  <div className="min-h-[320px] flex items-center justify-center bg-muted rounded-lg border">
+                    <p className="text-muted-foreground text-sm text-center px-4">
+                      Sélectionnez un template pour voir la prévisualisation
+                    </p>
+                  </div>
+                )}
 
                 {selectedTemplate && (
                   <div className="mt-4 space-y-2">
@@ -703,6 +718,14 @@ const InvitationTemplates = () => {
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Voir en grand
                     </Button>
+                    {rsvpPreviewLink && (
+                      <Button variant="ghost" className="w-full" asChild>
+                        <a href={rsvpPreviewLink} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Ouvrir la page RSVP
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -713,54 +736,31 @@ const InvitationTemplates = () => {
 
       {/* Full Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Aperçu de l'invitation</DialogTitle>
+        <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle>Aperçu de l&apos;invitation</DialogTitle>
+            <DialogDescription>
+              Prévisualisation complète de la page RSVP telle que la verront vos invités.
+            </DialogDescription>
           </DialogHeader>
           {selectedTemplate && (
-            <div
-              className="aspect-[3/4] rounded-lg overflow-hidden border relative max-h-[70vh]"
-              style={{ fontFamily: customization.fontFamily }}
-            >
-              <img
-                src={selectedTemplate.preview}
-                alt="Preview"
-                className="w-full h-full object-cover absolute inset-0"
+            <div className="rsvp-invitation-preview-shell rsvp-invitation-preview-shell--full px-2 pb-4">
+              <RsvpInvitationPreview
+                event={event}
+                customization={rsvpPreviewCustomization}
+                rsvpTheme={selectedTemplate.rsvpTheme}
+                guestName={previewGuestName}
               />
-              <div className="absolute inset-0 bg-black/50" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center mb-4 overflow-hidden border border-transparent"
-                >
-                  <img
-                    src="/src/assets/black.png"
-                    alt="logo"
-                    className="h-full w-full object-cover" // Utilisez object-cover pour remplir le cercle
-                    style={{ borderRadius: '50%' }} // Assure que l'image est rendue en forme circulaire
-                  />
-                </div>
-                <p className="text-lg opacity-80 mb-3">{customization.title}</p>
-                <h3
-                  className="text-3xl font-bold mb-6"
-                  style={{ color: customization.primaryColor }}
-                >
-                  {customization.eventName}
-                </h3>
-                <div className="space-y-2 text-lg opacity-90">
-                  <p>📅 {customization.date}</p>
-                  <p>🕐 {customization.time}</p>
-                  <p>📍 {customization.location}</p>
-                </div>
-                <p className="text-sm mt-6 opacity-70 max-w-md">
-                  {customization.message}
-                </p>
-                <button
-                  className="mt-6 px-6 py-3 rounded-full font-medium"
-                  style={{ backgroundColor: customization.primaryColor }}
-                >
-                  Confirmer ma présence
-                </button>
-              </div>
+            </div>
+          )}
+          {rsvpPreviewLink && (
+            <div className="px-6 pb-6 pt-2 border-t">
+              <Button variant="outline" className="w-full" asChild>
+                <a href={rsvpPreviewLink} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Ouvrir la page RSVP dans un nouvel onglet
+                </a>
+              </Button>
             </div>
           )}
         </DialogContent>

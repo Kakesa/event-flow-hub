@@ -46,6 +46,8 @@ type FormDataType = {
   startTime: string;
   endTime: string;
   location: string;
+  dressCode: string;
+  dressCodeNotes: string;
   theme: string;
   coverImage: File | null;
 };
@@ -84,6 +86,8 @@ const CreateEvent: React.FC = () => {
     startTime: '',
     endTime: '',
     location: '',
+    dressCode: '',
+    dressCodeNotes: '',
     theme: 'elegant',
     coverImage: null,
   });
@@ -127,6 +131,8 @@ const CreateEvent: React.FC = () => {
       payload.append('startTime', formData.startTime || '');
       payload.append('endTime', formData.endTime || '');
       payload.append('location', formData.location.trim());
+      payload.append('dressCode', formData.dressCode?.trim() || '');
+      payload.append('dressCodeNotes', formData.dressCodeNotes?.trim() || '');
       payload.append('theme', formData.theme);
       if (formData.coverImage) payload.append('coverImage', formData.coverImage);
 
@@ -261,6 +267,25 @@ const CreateEvent: React.FC = () => {
                 <div>
                   <Label>Lieu *</Label>
                   <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
+                </div>
+                <div>
+                  <Label htmlFor="dressCode">Code vestimentaire</Label>
+                  <Input
+                    id="dressCode"
+                    placeholder="Ex. Élégante, Tenue de soirée, Boho chic..."
+                    value={formData.dressCode}
+                    onChange={(e) => setFormData({ ...formData, dressCode: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dressCodeNotes">Précisions vestimentaires (optionnel)</Label>
+                  <Textarea
+                    id="dressCodeNotes"
+                    rows={3}
+                    placeholder="Ex. Tenue de cérémonie souhaitée. Merci d'éviter le blanc..."
+                    value={formData.dressCodeNotes}
+                    onChange={(e) => setFormData({ ...formData, dressCodeNotes: e.target.value })}
+                  />
                 </div>
               </div>
             )}

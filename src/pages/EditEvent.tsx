@@ -48,6 +48,8 @@ const EditEvent = () => {
     startTime: '',
     endTime: '',
     location: '',
+    dressCode: '',
+    dressCodeNotes: '',
     theme: 'elegant',
     coverImage: null as File | null,
   });
@@ -68,6 +70,8 @@ const EditEvent = () => {
           startTime: event.startTime,
           endTime: event.endTime,
           location: event.location,
+          dressCode: event.dressCode || '',
+          dressCodeNotes: event.dressCodeNotes || '',
           theme: event.theme || 'elegant',
           coverImage: null,
         });
@@ -257,6 +261,28 @@ const EditEvent = () => {
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea id="description" placeholder="Décrivez l'événement..." rows={4} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dressCode">Code vestimentaire</Label>
+                  <Input
+                    id="dressCode"
+                    placeholder="Ex. Élégante, Tenue de soirée..."
+                    value={formData.dressCode}
+                    onChange={(e) => setFormData({ ...formData, dressCode: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="dressCodeNotes">Précisions vestimentaires (optionnel)</Label>
+                  <Textarea
+                    id="dressCodeNotes"
+                    placeholder="Ex. Merci d'éviter le blanc et les tons similaires..."
+                    rows={3}
+                    value={formData.dressCodeNotes}
+                    onChange={(e) => setFormData({ ...formData, dressCodeNotes: e.target.value })}
+                  />
+                </div>
               </div>
 
               {/* Theme Selection */}

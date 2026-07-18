@@ -32,6 +32,8 @@ import {
   guestHasPhone,
   openWhatsAppInvite,
 } from '@/utils/whatsappInvite';
+import { getStoredWhatsAppTemplateId, setStoredWhatsAppTemplateId } from '@/lib/whatsappTemplates';
+import WhatsAppTemplateSelect from '@/components/invitations/WhatsAppTemplateSelect';
 import { sortGuestsNewestFirst } from '@/utils/guestSort';
 
 const distributionMethods = [
@@ -55,6 +57,7 @@ const Invitations = () => {
   const [showEmailComposer, setShowEmailComposer] = useState(false);
   const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
   const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
+  const [whatsappTemplateId, setWhatsappTemplateId] = useState(getStoredWhatsAppTemplateId);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   // 🔹 Charger les événements
@@ -157,7 +160,10 @@ const Invitations = () => {
 
     if (withPhone.length === 1) {
       const guest = withPhone[0];
-      openWhatsAppInvite(guest.phone!, buildDefaultInviteMessage(guest, event, selectedEvent));
+      openWhatsAppInvite(
+        guest.phone!,
+        buildDefaultInviteMessage(guest, event, selectedEvent, whatsappTemplateId),
+      );
 
       try {
         await invitationsApi.send(guest.id, selectedEvent, 'whatsapp');
@@ -402,6 +408,21 @@ const Invitations = () => {
                       </div>
                     ))}
 
+                    {selectedMethod === 'whatsapp' && (
+                      <WhatsAppTemplateSelect
+                        value={whatsappTemplateId}
+                        onChange={(id) => {
+                          setWhatsappTemplateId(id);
+                          setStoredWhatsAppTemplateId(id);
+                        }}
+                        previewContext={(() => {
+                          const ev = events.find((e) => (e._id || e.id) === selectedEvent);
+                          if (!ev || guests.length === 0) return undefined;
+                          return { guest: guests[0], event: ev, eventId: selectedEvent };
+                        })()}
+                      />
+                    )}
+
                     <Button
                       className="w-full"
                       disabled={sending || selectedGuests.length === 0}
@@ -460,6 +481,7 @@ const Invitations = () => {
           guests={whatsappBulkGuests}
           event={events.find(e => (e._id || e.id) === selectedEvent) || null}
           eventId={selectedEvent}
+          templateId={whatsappTemplateId}
           onComplete={() => {
             setSelectedGuests([]);
             setWhatsappBulkOpen(false);

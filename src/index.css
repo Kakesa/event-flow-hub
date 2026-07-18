@@ -360,3 +360,602 @@
     transform: rotate(calc(var(--rsvp-rotate, 0deg) + 4deg)) translateY(-4px);
   }
 }
+
+.rsvp-page:has(.wedding-rsvp) {
+  background-color: #d8d4cc;
+}
+
+.rsvp-page:has(.boho-rsvp) {
+  background-color: #ebe8e3;
+}
+
+/* ─── RSVP style invitation mariage navy ─── */
+.wedding-rsvp {
+  --wrsvp-navy: #1e2d4a;
+  --wrsvp-gold: #c9a227;
+  --wrsvp-cream: #f5f3ef;
+  --wrsvp-cream-dark: #e8e4dc;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--wrsvp-cream);
+  font-family: 'Roboto', sans-serif;
+}
+
+@media (min-width: 480px) {
+  .wedding-rsvp {
+    max-width: 430px;
+    box-shadow: 0 0 56px rgba(30, 45, 74, 0.18);
+  }
+}
+
+.wedding-rsvp-envelope {
+  --wrsvp-envelope-bg: #6b8294;
+  background: var(--wrsvp-envelope-bg);
+  color: #fff;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(2.5rem, 8vh, 4rem) 1.25rem clamp(1.5rem, 4vh, 2.5rem);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.rsvp-invitation-preview-shell--compact .wedding-rsvp-envelope {
+  min-height: min(85vh, 640px);
+}
+
+.wedding-rsvp-envelope-names {
+  flex: 0 0 auto;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.wedding-rsvp-couple-name {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(2.15rem, 9.5vw, 3.1rem);
+  line-height: 1.05;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.wedding-rsvp-couple-amp {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(0.75rem, 3.2vw, 0.9rem);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0.1rem 0;
+  line-height: 1;
+}
+
+.wedding-rsvp-envelope-scene {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: clamp(10rem, 28vh, 16rem);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wedding-rsvp-envelope-flap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.wedding-rsvp-envelope-flap-line {
+  position: absolute;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  transform-origin: center;
+}
+
+.wedding-rsvp-envelope-flap-line--left {
+  width: 56%;
+  left: 0;
+  top: 42%;
+  transform-origin: 100% 50%;
+  transform: rotate(-24deg);
+}
+
+.wedding-rsvp-envelope-flap-line--right {
+  width: 56%;
+  right: 0;
+  top: 42%;
+  transform-origin: 0% 50%;
+  transform: rotate(24deg);
+}
+
+.wedding-rsvp-envelope-flap::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: min(48vw, 205px) solid transparent;
+  border-right: min(48vw, 205px) solid transparent;
+  border-top: min(28vw, 120px) solid rgba(0, 0, 0, 0.07);
+}
+
+.wedding-rsvp-seal {
+  position: relative;
+  z-index: 3;
+  width: clamp(3.75rem, 16vw, 4.75rem);
+  height: clamp(3.75rem, 16vw, 4.75rem);
+  border-radius: 50%;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.28),
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wedding-rsvp-seal-deco {
+  width: 58%;
+  height: 58%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12),
+    inset 0 0 12px rgba(0, 0, 0, 0.08);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.18), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% 55%, rgba(0, 0, 0, 0.06), transparent);
+  position: relative;
+}
+
+.wedding-rsvp-seal-deco::before,
+.wedding-rsvp-seal-deco::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.wedding-rsvp-seal-deco::before {
+  inset: 18%;
+  transform: rotate(12deg);
+}
+
+.wedding-rsvp-seal-deco::after {
+  inset: 28%;
+  border-style: dashed;
+  opacity: 0.45;
+}
+
+.wedding-rsvp-envelope-footer {
+  flex: 0 0 auto;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.wedding-rsvp-envelope-date {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0;
+  font-weight: 400;
+}
+
+.wedding-rsvp-scroll-hint {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  padding: 0.5rem 0.75rem 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.wedding-rsvp-scroll-hint-ring {
+  position: absolute;
+  top: 0.15rem;
+  left: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-left: -1.375rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  animation: weddingRsvpScrollRing 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+.wedding-rsvp-scroll-hint-ring--delayed {
+  animation-delay: 1.2s;
+}
+
+.wedding-rsvp-scroll-hint-icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0;
+  margin-top: 0.15rem;
+}
+
+.wedding-rsvp-scroll-hint-chevron {
+  display: block;
+}
+
+.wedding-rsvp-scroll-hint-chevron--top {
+  margin-bottom: -0.85rem;
+  opacity: 0.45;
+}
+
+.wedding-rsvp-scroll-hint-label {
+  position: relative;
+  z-index: 1;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.wedding-rsvp-scroll-hint:hover {
+  color: #fff;
+}
+
+.wedding-rsvp-scroll-hint:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+@keyframes weddingRsvpScrollRing {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.75;
+  }
+  70%, 100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.wedding-rsvp-script {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(2.1rem, 9vw, 3rem);
+  line-height: 1.15;
+}
+
+.wedding-rsvp-cream { background: var(--wrsvp-cream); color: #2c3444; }
+.wedding-rsvp-navy { background: var(--wrsvp-navy); color: #f5f3ef; }
+.wedding-rsvp-section { padding: 2rem 1.15rem; }
+.wedding-rsvp-section--compact { padding-top: 0; padding-bottom: 2rem; }
+.wedding-rsvp-section--border-top { border-top: 1px solid var(--wrsvp-cream-dark); }
+.wedding-rsvp-section-inner { max-width: 100%; margin: 0 auto; padding: 0 0.25rem; }
+
+.wedding-rsvp-floral-frame { position: relative; padding: 2.5rem 1rem; isolation: isolate; }
+.wedding-rsvp-floral-content { position: relative; z-index: 2; padding: 0 2.75rem; }
+.wedding-rsvp-floral-corner {
+  position: absolute; width: 52px; height: 52px; z-index: 1; opacity: 0.65; pointer-events: none;
+  background:
+    radial-gradient(circle at 30% 35%, var(--wrsvp-navy) 0 11px, transparent 12px),
+    radial-gradient(circle at 55% 25%, var(--wrsvp-navy) 0 8px, transparent 9px),
+    radial-gradient(circle at 70% 50%, var(--wrsvp-navy) 0 9px, transparent 10px);
+}
+.wedding-rsvp-floral-corner--tl { top: 0.35rem; left: 0.35rem; }
+.wedding-rsvp-floral-corner--tr { top: 0.35rem; right: 0.35rem; transform: scaleX(-1); }
+.wedding-rsvp-floral-corner--bl { bottom: 0.35rem; left: 0.35rem; transform: scaleY(-1); }
+.wedding-rsvp-floral-corner--br { bottom: 0.35rem; right: 0.35rem; transform: scale(-1); }
+
+.wedding-rsvp-monogram {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2.75rem; letter-spacing: 0.22em; color: var(--wrsvp-navy); margin: 0.75rem 0 1rem;
+}
+.wedding-rsvp-quote { font-style: italic; line-height: 1.65; color: #3d4654; overflow-wrap: break-word; }
+.wedding-rsvp-announce {
+  font-family: 'Playfair Display', Georgia, serif; font-size: 1.15rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--wrsvp-navy); font-weight: 600;
+}
+.wedding-rsvp-intro { font-size: 0.88rem; line-height: 1.75; color: #4a5568; overflow-wrap: break-word; }
+
+.wedding-rsvp-photo-block { overflow: hidden; background: #ddd8d0; width: 100%; }
+.wedding-rsvp-photo { width: 100%; display: block; object-fit: cover; }
+.wedding-rsvp-photo--hero { aspect-ratio: 4/5; min-height: min(105vw, 540px); object-position: center 20%; }
+
+.wedding-rsvp-date-block { text-align: center; padding: 2rem 1rem; }
+.wedding-rsvp-date-block-day {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(3.5rem, 18vw, 4.5rem); line-height: 1;
+}
+
+.wedding-rsvp-calendar {
+  border: 1px solid var(--wrsvp-cream-dark);
+  background: #fff;
+  padding: 1rem 0.75rem 1.25rem;
+  border-radius: 4px;
+  max-width: 100%;
+}
+
+.wedding-rsvp-calendar-head,
+.wedding-rsvp-calendar-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  text-align: center;
+}
+
+.wedding-rsvp-calendar-head {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--wrsvp-navy);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--wrsvp-cream-dark);
+}
+
+.wedding-rsvp-calendar-row + .wedding-rsvp-calendar-row {
+  margin-top: 4px;
+}
+
+.wedding-rsvp-calendar-day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: #4a5568;
+  aspect-ratio: 1;
+  max-width: 2.5rem;
+  margin: 0 auto;
+  width: 100%;
+  border-radius: 50%;
+}
+
+.wedding-rsvp-calendar-day--empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.wedding-rsvp-calendar-day--event {
+  background: var(--wrsvp-navy);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--wrsvp-gold, #c9a227);
+  z-index: 1;
+}
+
+.wedding-rsvp-calendar-heart {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 0.55rem;
+  color: var(--wrsvp-gold, #c9a227);
+  line-height: 1;
+}
+
+.wedding-rsvp-countdown-wrap { text-align: center; }
+.wedding-rsvp-countdown-title { font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase; margin-bottom: 0.85rem; }
+.wedding-rsvp-countdown--inline { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.15rem; }
+.wedding-rsvp-countdown-sep { font-family: 'Playfair Display', serif; font-size: 1.75rem; padding-bottom: 1rem; opacity: 0.7; }
+.wedding-rsvp-countdown-box { min-width: 3.25rem; padding: 0.5rem 0.25rem; text-align: center; }
+.wedding-rsvp-countdown-value { font-family: 'Playfair Display', serif; font-size: 1.65rem; color: #f5f3ef; }
+.wedding-rsvp-countdown-label { font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,243,239,0.75); }
+
+.wedding-rsvp-label { font-size: 0.65rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--wrsvp-navy); font-weight: 600; }
+.wedding-rsvp-btn {
+  background: var(--wrsvp-navy) !important; color: #f5f3ef !important;
+  border-radius: 999px; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.68rem;
+}
+.wedding-rsvp-form-wrap { padding: 0.5rem 1rem 1.5rem; }
+.wedding-rsvp-form-wrap .rsvp-glass { border: 1px solid var(--wrsvp-cream-dark); background: #fff; }
+
+/* ─── RSVP style Boho Sage ─── */
+.boho-rsvp {
+  --boho-sage: #8fa382;
+  --boho-brown: #4a3f35;
+  --boho-cream: #faf9f7;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--boho-cream);
+  font-family: 'Roboto', sans-serif;
+  color: var(--boho-brown);
+}
+
+@media (min-width: 480px) {
+  .boho-rsvp { max-width: 430px; box-shadow: 0 0 48px rgba(74, 63, 53, 0.12); }
+}
+
+.boho-rsvp-script {
+  font-family: 'Great Vibes', cursive;
+  font-size: clamp(1.85rem, 7vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.boho-rsvp-header {
+  display: flex; gap: 1rem; align-items: center;
+  padding: 1.5rem 1.25rem 1rem;
+  background: var(--boho-brown); color: #fff;
+}
+
+.boho-rsvp-header-photo {
+  width: 88px; height: 88px; flex-shrink: 0;
+  border-radius: 50%; overflow: hidden; border: 3px solid rgba(255,255,255,0.35);
+}
+.boho-rsvp-header-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+.boho-rsvp-header-label {
+  font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.85;
+}
+.boho-rsvp-couple { color: #fff; margin-top: 0.25rem; }
+.boho-rsvp-heart-icon { font-size: 0.85rem; opacity: 0.8; margin-top: 0.35rem; display: inline-block; }
+
+.boho-rsvp-arch-section { padding: 0 0 0.5rem; background: var(--boho-cream); }
+.boho-rsvp-arch {
+  margin: -1rem 1rem 0; padding-top: 2rem;
+  background: var(--boho-sage);
+  border-radius: 50% 50% 0 0 / 18% 18% 0 0;
+  color: #fff; text-align: center;
+}
+.boho-rsvp-arch-inner { padding: 1.5rem 1.75rem 2rem; }
+.boho-rsvp-arch-quote { font-style: italic; font-size: 0.9rem; line-height: 1.65; opacity: 0.95; margin-bottom: 0.75rem; overflow-wrap: break-word; }
+.boho-rsvp-arch-names { margin: 0.5rem 0; }
+.boho-rsvp-announce { font-family: 'Playfair Display', serif; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.95rem; margin: 0.75rem 0; }
+.boho-rsvp-intro { font-size: 0.85rem; line-height: 1.7; opacity: 0.92; overflow-wrap: break-word; }
+
+.boho-rsvp-photo-wrap { position: relative; background: var(--boho-cream); }
+.boho-rsvp-photo-main { width: 100%; height: min(72vw, 360px); object-fit: cover; display: block; }
+.boho-rsvp-wave { color: var(--boho-cream); line-height: 0; margin-top: -1px; }
+.boho-rsvp-wave svg { width: 100%; height: 28px; display: block; }
+.boho-rsvp-wave--flip { transform: scaleY(-1); }
+
+.boho-rsvp-date-section {
+  text-align: center; padding: 2rem 1.5rem 2.5rem; position: relative; background: var(--boho-cream);
+}
+.boho-rsvp-date-title { color: var(--boho-brown); margin-bottom: 0.5rem; }
+.boho-rsvp-date-value { font-family: 'Playfair Display', serif; font-size: 1.35rem; letter-spacing: 0.08em; }
+.boho-rsvp-time { font-size: 0.95rem; margin-top: 0.5rem; color: #6b635a; }
+.boho-rsvp-botanical {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 40px; opacity: 0.35;
+  background:
+    radial-gradient(circle at 30% 50%, var(--boho-sage) 0 8px, transparent 9px),
+    radial-gradient(circle at 50% 40%, var(--boho-sage) 0 10px, transparent 11px),
+    radial-gradient(circle at 70% 50%, var(--boho-sage) 0 8px, transparent 9px);
+}
+
+.boho-rsvp-countdown-section { position: relative; overflow: hidden; min-height: 140px; }
+.boho-rsvp-countdown-bg { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.4); min-height: 140px; }
+.boho-rsvp-countdown-overlay {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(74, 63, 53, 0.45); color: #fff; padding: 1rem;
+}
+.boho-rsvp-countdown-label { font-size: 0.65rem; letter-spacing: 0.28em; text-transform: uppercase; margin-bottom: 0.5rem; opacity: 0.9; }
+.boho-rsvp-countdown-grid { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.15rem; }
+.boho-rsvp-countdown-sep { font-family: 'Playfair Display', serif; font-size: 1.5rem; padding-bottom: 0.75rem; opacity: 0.85; }
+.boho-rsvp-countdown-box { min-width: 2.75rem; text-align: center; padding: 0.25rem; }
+.boho-rsvp-countdown-value { font-family: 'Playfair Display', serif; font-size: 1.45rem; line-height: 1; }
+.boho-rsvp-countdown-unit { font-size: 0.48rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.25rem; opacity: 0.85; }
+
+.boho-rsvp-program { padding: 2rem 1.5rem; background: #fff; }
+.boho-rsvp-program-title { text-align: center; color: var(--boho-brown); margin-bottom: 1.25rem; }
+.boho-rsvp-program-item {
+  display: flex; align-items: flex-start; gap: 1rem; padding: 0.85rem 0;
+  border-bottom: 1px solid #ebe8e3; color: var(--boho-brown);
+}
+.boho-rsvp-program-time { font-family: 'Playfair Display', serif; font-size: 1.05rem; }
+.boho-rsvp-program-label { font-size: 0.82rem; color: #6b635a; margin-top: 0.15rem; }
+
+.boho-rsvp-dress-section {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: #faf8f5;
+  border-top: 1px solid #e8e0d8;
+}
+
+.boho-rsvp-dress-icon { color: var(--boho-sage); opacity: 0.85; }
+.boho-rsvp-dress-title { font-size: clamp(1.75rem, 7vw, 2.25rem); color: var(--boho-brown); margin: 0.35rem 0 0.75rem; }
+.boho-rsvp-dress-notes { font-size: 0.88rem; line-height: 1.65; color: #6b635a; max-width: 20rem; margin: 0 auto; }
+
+.boho-rsvp-rsvp-section { padding: 2rem 1rem 1rem; background: var(--boho-cream); text-align: center; }
+.boho-rsvp-rsvp-title { color: var(--boho-brown); margin-bottom: 0.35rem; }
+.boho-rsvp-rsvp-deadline { font-size: 0.82rem; color: #6b635a; margin-bottom: 1rem; }
+.boho-rsvp-form-wrap { text-align: left; }
+.boho-rsvp-form-wrap .rsvp-glass {
+  border: none; border-radius: 12px; background: #fff;
+  box-shadow: 0 4px 24px rgba(74, 63, 53, 0.08);
+}
+
+.boho-rsvp-footer {
+  position: relative; text-align: center; padding: 2rem 1rem 2.5rem; background: var(--boho-cream);
+}
+.boho-rsvp-footer-photo {
+  width: 100%; max-width: 280px; height: 160px; object-fit: cover;
+  border-radius: 8px; margin: 0 auto 1rem; display: block;
+}
+.boho-rsvp-footer-names { color: var(--boho-brown); }
+.boho-rsvp-hearts { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.boho-rsvp-heart {
+  position: absolute; bottom: 20%; font-size: 0.75rem; color: #fff; opacity: 0.7;
+  animation: bohoHeartFloat 4s ease-in-out infinite;
+}
+@keyframes bohoHeartFloat {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-8px); opacity: 0.9; }
+}
+
+.wedding-rsvp-success, .boho-rsvp + .wedding-rsvp-success {
+  width: 100%; max-width: 100%; min-height: 100vh; padding: 2rem 1rem;
+}
+@media (min-width: 480px) {
+  .wedding-rsvp-success { max-width: 430px; margin: 0 auto; }
+}
+
+/* ─── Prévisualisation invitation (éditeur templates) ─── */
+.rsvp-invitation-preview-shell {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  background: #d8d4cc;
+}
+
+.rsvp-invitation-preview-shell:has(.boho-rsvp) {
+  background: #ebe8e3;
+}
+
+.rsvp-invitation-preview-shell--compact {
+  max-height: min(75vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.rsvp-invitation-preview-shell--compact .rsvp-invitation-preview {
+  min-height: 0;
+}
+
+.rsvp-invitation-preview-shell--compact .wedding-rsvp,
+.rsvp-invitation-preview-shell--compact .boho-rsvp {
+  max-width: 100%;
+  box-shadow: none;
+}
+
+.rsvp-invitation-preview-shell--full {
+  max-height: min(85vh, 900px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.rsvp-invitation-preview-shell--full .rsvp-invitation-preview {
+  display: flex;
+  justify-content: center;
+}
+
+.rsvp-invitation-preview-shell--full .wedding-rsvp,
+.rsvp-invitation-preview-shell--full .boho-rsvp {
+  max-width: 430px;
+  width: 100%;
+  box-shadow: 0 0 48px rgba(0, 0, 0, 0.08);
+}
