@@ -108,6 +108,9 @@ export interface Event {
   primaryColor?: string;
   accentColor?: string;
 
+  dressCode?: string;
+  dressCodeNotes?: string;
+
   organizer?: Organizer;
 
   createdAt?: string;

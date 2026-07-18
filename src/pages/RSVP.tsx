@@ -28,12 +28,15 @@ import { QRCodeSVG } from "qrcode.react";
 import logoBlack from "@/assets/black.png";
 
 import type { Event, Guest } from "@/types/models";
-import { rsvpApi, eventsApi, emailsApi, BASE_URL } from "@/services/api";
-import { getEventTypePhraseParts, getEventTypeWithArticle } from "@/lib/eventTypePhrases";
-import RsvpInvitationHero from "@/components/rsvp/RsvpInvitationHero";
+import { rsvpApi, eventsApi, emailsApi } from "@/services/api";
+import WeddingStyleRsvpLayout from "@/components/rsvp/WeddingStyleRsvpLayout";
+import SageBohoRsvpLayout from "@/components/rsvp/SageBohoRsvpLayout";
+import { getRsvpLayoutId } from "@/lib/rsvpLayout";
+import { getEventTypeWithArticle } from "@/lib/eventTypePhrases";
 import { downloadBrandedQrCodePng, QR_LOGO_SETTINGS } from "@/utils/downloadQrCode";
 import { getGuestCheckInUrl } from "@/utils/qrCode";
 import { getEventCoverUrl } from "@/utils/eventCover";
+import { formatFullDate as formatRsvpFullDate, getRsvpThemeColor } from "@/lib/rsvpWeddingLayout";
 import { ALCOHOLIC_DRINKS, SOFT_DRINKS } from "@/config/drinks";
 
 type RsvpChoice = "confirmed" | "declined" | "pending" | "";
@@ -43,33 +46,18 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
-const getCoverUrl = (event: Event) => {
-  if (!event.coverImage) {
-    return "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80";
-  }
-  return event.coverImage.startsWith("http")
-    ? event.coverImage
-    : `${BASE_URL}${event.coverImage}`;
-};
+const getCoverUrl = (event: Event) => getEventCoverUrl(event);
 
-const accentColor = (event: Event) => event.primaryColor || "#b8956c";
-
-const formatFullDate = (date: string) =>
-  new Date(date).toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+const formatFullDate = formatRsvpFullDate;
 
 const RSVPSkeleton = () => (
-  <div className="rsvp-page min-h-screen">
-    <Skeleton className="w-full h-[62dvh] min-h-[280px] rounded-none" />
-    <Skeleton className="w-full h-64 rounded-none" />
-    <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
-      <Skeleton className="h-40 rounded-none" />
-      <Skeleton className="h-36 rounded-none" />
-      <Skeleton className="h-96 rounded-none" />
+  <div className="rsvp-page min-h-screen flex justify-center py-0">
+    <div className="wedding-rsvp w-full">
+      <Skeleton className="w-full h-56 rounded-none bg-[#1e2d4a]/20" />
+      <Skeleton className="w-full h-48 rounded-none" />
+      <Skeleton className="w-full aspect-[4/5] rounded-none" />
+      <Skeleton className="w-full h-44 rounded-none bg-[#1e2d4a]/15" />
+      <Skeleton className="w-full h-96 rounded-none m-0" />
     </div>
   </div>
 );
@@ -128,8 +116,8 @@ const FloatingHearts = ({ contained = false }: { contained?: boolean }) => {
   );
 };
 
-const EventCountdown = ({ date }: { date: string }) => {
-  const [parts, setParts] = useState({ days: 0, hours: 0, minutes: 0 });
+const EventCountdown = ({ date, variant = "default" }: { date: string; variant?: "default" | "wedding" | "boho" }) => {
+  const [parts, setParts] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
     const update = () => {
@@ -139,14 +127,47 @@ const EventCountdown = ({ date }: { date: string }) => {
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
         minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
       });
     };
     update();
-    const id = setInterval(update, 30000);
+    const id = setInterval(update, variant === "wedding" || variant === "boho" ? 1000 : 30000);
     return () => clearInterval(id);
-  }, [date]);
+  }, [date, variant]);
 
   if (new Date(date) <= new Date()) return null;
+
+  if (variant === "wedding" || variant === "boho") {
+    const weddingBoxes = [
+      { label: "Jours", value: parts.days },
+      { label: "Heures", value: parts.hours },
+      { label: "Min", value: parts.minutes },
+      { label: "Sec", value: parts.seconds },
+    ];
+    const wrapClass = variant === "boho" ? "boho-rsvp-countdown-inline" : "wedding-rsvp-countdown-wrap";
+    const gridClass = variant === "boho" ? "boho-rsvp-countdown-grid" : "wedding-rsvp-countdown wedding-rsvp-countdown--inline";
+    const boxClass = variant === "boho" ? "boho-rsvp-countdown-box" : "wedding-rsvp-countdown-box";
+    const valueClass = variant === "boho" ? "boho-rsvp-countdown-value" : "wedding-rsvp-countdown-value";
+    const labelClass = variant === "boho" ? "boho-rsvp-countdown-unit" : "wedding-rsvp-countdown-label";
+    const sepClass = variant === "boho" ? "boho-rsvp-countdown-sep" : "wedding-rsvp-countdown-sep";
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className={wrapClass}>
+        {variant === "wedding" && <p className="wedding-rsvp-countdown-title">Il reste</p>}
+        <div className={gridClass}>
+          {weddingBoxes.map((box, index) => (
+            <React.Fragment key={box.label}>
+              {index > 0 && <span className={sepClass} aria-hidden>:</span>}
+              <div className={boxClass}>
+                <p className={valueClass}>{String(box.value).padStart(2, "0")}</p>
+                <p className={labelClass}>{box.label}</p>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
 
   const boxes = [
     { label: "Jours", value: parts.days },
@@ -235,7 +256,10 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
   };
 
   return (
-    <div className="rsvp-page min-h-screen flex items-center justify-center p-4 py-16 relative">
+    <div
+      className="wedding-rsvp-success relative"
+      style={{ '--wrsvp-burgundy': getRsvpThemeColor(event) } as React.CSSProperties}
+    >
       <FloatingHearts />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -249,7 +273,7 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
             className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-              confirmed ? "bg-[#4a5a44]" : "bg-[#f5ebe6]"
+              confirmed ? "bg-[var(--wrsvp-burgundy,#601a24)]" : "bg-[#f5ebe6]"
             }`}
           >
             {confirmed ? (
@@ -327,7 +351,7 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
             transition={{ delay: 0.4 }}
             className="rsvp-ticket rounded-sm overflow-hidden"
           >
-            <div className="bg-[#4a5a44] text-[#faf8f5] px-6 py-4 text-center">
+            <div className="bg-[var(--wrsvp-burgundy,#601a24)] text-[#faf8f5] px-6 py-4 text-center">
               <p className="text-xs uppercase tracking-[0.25em] text-[#d4bc94] mb-1">Pass d&apos;entrée</p>
               <h3 className="font-display text-lg flex items-center justify-center gap-2">
                 <QrCode className="w-5 h-5" />
@@ -547,262 +571,245 @@ const RSVP = () => {
   if (!event) return <RSVPError message="Événement introuvable" />;
   if (isSubmitted) return <SuccessView formData={formData} guest={guest} event={event} />;
 
-  const accent = accentColor(event);
+  const accent = getRsvpThemeColor(event);
   const guestName = guest?.name || formData.name;
-  const { prefix: typePrefix, noun: typeNoun } = getEventTypePhraseParts(event.type);
   const typePhrase = getEventTypeWithArticle(event.type);
+  const coverUrl = getCoverUrl(event);
 
-  return (
-    <div className="rsvp-page min-h-screen relative overflow-x-hidden">
-      <RsvpInvitationHero
-        coverSrc={getCoverUrl(event)}
-        coverAlt={event.title}
-        eventType={event.type}
-        title={event.title}
-        typePrefix={typePrefix}
-        typeNoun={typeNoun}
-        typePhrase={typePhrase}
-        guestName={guestName || undefined}
-        description={event.description}
-        onImageError={(e) => {
-          (e.target as HTMLImageElement).src =
-            "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80";
-        }}
-      >
-        <EventCountdown date={event.date} />
-      </RsvpInvitationHero>
-
-      {/* Content */}
-      <div className="max-w-2xl mx-auto px-4 pt-4 pb-16 relative z-20 space-y-6">
-        {/* Event details */}
-        <motion.div variants={fadeUp} initial="hidden" animate="visible" className="rsvp-glass p-6 sm:p-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { icon: Calendar, label: "Date", value: formatFullDate(event.date) },
-              { icon: Clock, label: "Horaire", value: `${event.startTime || "—"} – ${event.endTime || "—"}` },
-              { icon: MapPin, label: "Lieu", value: event.location },
-            ].map(({ icon: Icon, label, value }) => (
-              <div
-                key={label}
-                className="flex flex-col items-center text-center p-4 bg-[#faf8f5] border border-[#e8e0d8] rounded-sm"
-              >
-                <Icon className="w-5 h-5 text-[#b8956c] mb-2" />
-                <p className="text-[10px] uppercase tracking-[0.2em] text-[#7a8b72] mb-1">{label}</p>
-                <p className="text-sm font-medium text-[#4a5a44] leading-snug">{value}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Form */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          transition={{ delay: 0.1 }}
-          className="rsvp-glass overflow-hidden"
-          style={{ borderTop: `3px solid ${accent}` }}
-        >
-          <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
-            {!guest && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-[#4a5a44] text-xs uppercase tracking-wider">
-                    Votre nom *
-                  </Label>
-                  <Input
-                    id="name"
-                    placeholder="Prénom et nom"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    className="rounded-sm border-[#e8e0d8] bg-white focus-visible:ring-[#b8956c]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[#4a5a44] text-xs uppercase tracking-wider">
-                    Votre email *
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@exemple.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    className="rounded-sm border-[#e8e0d8] bg-white focus-visible:ring-[#b8956c]"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* RSVP choice */}
-            <div className="space-y-5 text-center">
-              <div>
-                <p className="wedding-script text-3xl text-[#b8956c] mb-1">Réponse</p>
-                <h2 className="font-display text-xl sm:text-2xl font-semibold text-[#4a5a44]">
-                  Serez-vous des nôtres ?
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
-                {[
-                  {
-                    value: "confirmed" as const,
-                    label: "Oui, avec plaisir",
-                    sub: "Je serai présent(e)",
-                    icon: Check,
-                    activeClass: "border-[#4a5a44] bg-[#4a5a44]/5",
-                    iconActive: "bg-[#4a5a44] text-white",
-                  },
-                  {
-                    value: "declined" as const,
-                    label: "Non, désolé(e)",
-                    sub: "Je ne pourrai pas venir",
-                    icon: X,
-                    activeClass: "border-[#b8956c] bg-[#f5ebe6]",
-                    iconActive: "bg-[#b8956c] text-white",
-                  },
-                ].map((option) => {
-                  const selected = formData.status === option.value;
-                  const Icon = option.icon;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, status: option.value })}
-                      className={`rsvp-choice flex flex-col items-center gap-3 p-6 rounded-sm border-2 cursor-pointer ${
-                        selected
-                          ? `rsvp-choice-selected ${option.activeClass}`
-                          : "border-[#e8e0d8] bg-white hover:border-[#b8956c]/40"
-                      }`}
-                    >
-                      <div
-                        className={`p-2.5 rounded-full transition-colors ${
-                          selected ? option.iconActive : "bg-[#f5ebe6] text-[#7a8b72]"
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="font-display font-semibold text-[#4a5a44] text-sm">{option.label}</p>
-                        <p className="text-xs text-[#7a8b72] mt-0.5">{option.sub}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {formData.status === "confirmed" && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-6 overflow-hidden"
-                >
-                  <div className="text-center space-y-2 pt-2">
-                    <Label className="font-display text-lg text-[#4a5a44] flex items-center justify-center gap-2">
-                      <Wine className="w-5 h-5" style={{ color: accent }} />
-                      Vos préférences
-                    </Label>
-                    <p className="text-sm text-[#7a8b72]">Choisissez jusqu&apos;à 2 boissons 🥂</p>
-                  </div>
-
-                  <div className="p-5 sm:p-6 bg-[#faf8f5] border border-[#e8e0d8] rounded-sm space-y-5">
-                    <div>
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <Beer className="w-4 h-4 text-[#7a8b72]" />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a8b72]">
-                          Alcoolisées
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {ALCOHOLIC_DRINKS.map((drink) => (
-                          <DrinkChip
-                            key={drink}
-                            drink={drink}
-                            selected={formData.drinkPreference.split(", ").includes(drink)}
-                            accent={accent}
-                            onToggle={() => toggleDrink(drink)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-[#e8e0d8]" />
-
-                    <div>
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <GlassWater className="w-4 h-4 text-[#7a8b72]" />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a8b72]">
-                          Sans alcool
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap justify-center gap-2">
-                        {SOFT_DRINKS.map((drink) => (
-                          <DrinkChip
-                            key={drink}
-                            drink={drink}
-                            selected={formData.drinkPreference.split(", ").includes(drink)}
-                            accent={accent}
-                            onToggle={() => toggleDrink(drink)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="dietary" className="text-xs uppercase tracking-wider text-[#7a8b72]">
-                      Restrictions alimentaires
-                    </Label>
-                    <Input
-                      id="dietary"
-                      placeholder="Végétarien, allergies..."
-                      value={formData.dietaryRestrictions}
-                      onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
-                      className="rounded-sm border-[#e8e0d8] bg-white"
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
+  const rsvpForm = (
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
+      transition={{ delay: 0.1 }}
+      className="rsvp-glass overflow-hidden"
+      style={{ borderTop: `3px solid ${accent}` }}
+    >
+      <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-8">
+        {!guest && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="message" className="text-xs uppercase tracking-wider text-[#7a8b72]">
-                Un petit mot (optionnel)
+              <Label htmlFor="name" className="text-[#4a5a44] text-xs uppercase tracking-wider">
+                Votre nom *
               </Label>
-              <Textarea
-                id="message"
-                placeholder="Laissez un message aux organisateurs..."
-                rows={3}
-                value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="rounded-sm border-[#e8e0d8] bg-white resize-none focus-visible:ring-[#b8956c]"
+              <Input
+                id="name"
+                placeholder="Prénom et nom"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                className="rounded-sm border-[#e8e0d8] bg-white focus-visible:ring-[#b8956c]"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[#4a5a44] text-xs uppercase tracking-wider">
+                Votre email *
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@exemple.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                className="rounded-sm border-[#e8e0d8] bg-white focus-visible:ring-[#b8956c]"
+              />
+            </div>
+          </div>
+        )}
 
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full h-12 rounded-sm uppercase tracking-[0.2em] text-xs font-semibold text-white border-0 hover:opacity-95 transition-opacity"
-              style={{ backgroundColor: accent }}
+        <div className="space-y-5 text-center">
+          <div>
+            <p className="wedding-script text-3xl text-[#b8956c] mb-1">Réponse</p>
+            <h2 className="font-display text-xl sm:text-2xl font-semibold text-[#4a5a44]">
+              Serez-vous des nôtres ?
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
+            {[
+              {
+                value: "confirmed" as const,
+                label: "Oui, avec plaisir",
+                sub: "Je serai présent(e)",
+                icon: Check,
+                activeClass: "border-[var(--wrsvp-burgundy,#601a24)] bg-[var(--wrsvp-burgundy,#601a24)]/5",
+                iconActive: "bg-[var(--wrsvp-burgundy,#601a24)] text-white",
+              },
+              {
+                value: "declined" as const,
+                label: "Non, désolé(e)",
+                sub: "Je ne pourrai pas venir",
+                icon: X,
+                activeClass: "border-[#b8956c] bg-[#f5ebe6]",
+                iconActive: "bg-[#b8956c] text-white",
+              },
+            ].map((option) => {
+              const selected = formData.status === option.value;
+              const Icon = option.icon;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: option.value })}
+                  className={`rsvp-choice flex flex-col items-center gap-3 p-6 rounded-sm border-2 cursor-pointer ${
+                    selected
+                      ? `rsvp-choice-selected ${option.activeClass}`
+                      : "border-[#e8e0d8] bg-white hover:border-[#b8956c]/40"
+                  }`}
+                >
+                  <div
+                    className={`p-2.5 rounded-full transition-colors ${
+                      selected ? option.iconActive : "bg-[#f5ebe6] text-[#7a8b72]"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold text-[#4a5a44] text-sm">{option.label}</p>
+                    <p className="text-xs text-[#7a8b72] mt-0.5">{option.sub}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {formData.status === "confirmed" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-6 overflow-hidden"
             >
-              {isSubmitting ? "Envoi en cours..." : "Confirmer ma réponse"}
-            </Button>
-          </form>
-        </motion.div>
+              <div className="text-center space-y-2 pt-2">
+                <Label className="font-display text-lg text-[#4a5a44] flex items-center justify-center gap-2">
+                  <Wine className="w-5 h-5" style={{ color: accent }} />
+                  Vos préférences
+                </Label>
+                <p className="text-sm text-[#7a8b72]">Choisissez jusqu&apos;à 2 boissons 🥂</p>
+              </div>
 
-        {/* Footer */}
-        <div className="flex flex-col items-center gap-3 pt-4">
+              <div className="p-5 sm:p-6 bg-[#faf8f5] border border-[#e8e0d8] rounded-sm space-y-5">
+                <div>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <Beer className="w-4 h-4 text-[#7a8b72]" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a8b72]">
+                      Alcoolisées
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {ALCOHOLIC_DRINKS.map((drink) => (
+                      <DrinkChip
+                        key={drink}
+                        drink={drink}
+                        selected={formData.drinkPreference.split(", ").includes(drink)}
+                        accent={accent}
+                        onToggle={() => toggleDrink(drink)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#e8e0d8]" />
+
+                <div>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <GlassWater className="w-4 h-4 text-[#7a8b72]" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7a8b72]">
+                      Sans alcool
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {SOFT_DRINKS.map((drink) => (
+                      <DrinkChip
+                        key={drink}
+                        drink={drink}
+                        selected={formData.drinkPreference.split(", ").includes(drink)}
+                        accent={accent}
+                        onToggle={() => toggleDrink(drink)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dietary" className="text-xs uppercase tracking-wider text-[#7a8b72]">
+                  Restrictions alimentaires
+                </Label>
+                <Input
+                  id="dietary"
+                  placeholder="Végétarien, allergies..."
+                  value={formData.dietaryRestrictions}
+                  onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
+                  className="rounded-sm border-[#e8e0d8] bg-white"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="space-y-2">
+          <Label htmlFor="message" className="text-xs uppercase tracking-wider text-[#7a8b72]">
+            Un petit mot (optionnel)
+          </Label>
+          <Textarea
+            id="message"
+            placeholder="Laissez un message aux organisateurs..."
+            rows={3}
+            value={formData.message}
+            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+            className="rounded-sm border-[#e8e0d8] bg-white resize-none focus-visible:ring-[#b8956c]"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full h-12 rounded-sm uppercase tracking-[0.2em] text-xs font-semibold text-white border-0 hover:opacity-95 transition-opacity"
+          style={{ backgroundColor: accent }}
+        >
+          {isSubmitting ? "Envoi en cours..." : "Confirmer ma réponse"}
+        </Button>
+      </form>
+    </motion.div>
+  );
+
+  const layoutId = getRsvpLayoutId(event);
+  const countdownVariant = layoutId === "boho_sage" ? "boho" : "wedding";
+
+  const layoutProps = {
+    event,
+    coverUrl,
+    guestName: guestName || undefined,
+    typePhrase,
+    countdown: <EventCountdown date={event.date} variant={countdownVariant} />,
+    onImageError: (e: React.SyntheticEvent<HTMLImageElement>) => {
+      (e.target as HTMLImageElement).src =
+        "https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80";
+    },
+    formSection: (
+      <>
+        {rsvpForm}
+        <div className="flex flex-col items-center gap-3 pt-6 pb-2">
           <div className="h-11 w-11 rounded-full border border-[#b8956c] p-0.5 bg-white overflow-hidden shadow-sm">
             <img src={logoBlack} alt="HK Event" className="h-full w-full object-contain" />
           </div>
           <p className="text-[10px] uppercase tracking-[0.25em] text-[#7a8b72]">Propulsé par HK Event</p>
         </div>
-      </div>
+      </>
+    ),
+  };
+
+  return (
+    <div className="rsvp-page min-h-screen relative overflow-x-hidden py-0 flex justify-center">
+      {layoutId === "boho_sage" ? (
+        <SageBohoRsvpLayout {...layoutProps} />
+      ) : (
+        <WeddingStyleRsvpLayout {...layoutProps} />
+      )}
     </div>
   );
 };

@@ -43,6 +43,8 @@ import {
   guestHasPhone,
   openWhatsAppInvite,
 } from '@/utils/whatsappInvite';
+import { getStoredWhatsAppTemplateId, setStoredWhatsAppTemplateId } from '@/lib/whatsappTemplates';
+import WhatsAppTemplateSelect from '@/components/invitations/WhatsAppTemplateSelect';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
@@ -81,6 +83,7 @@ const Guests = () => {
   const [isAddingGuest, setIsAddingGuest] = useState(false);
   const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
   const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
+  const [whatsappTemplateId, setWhatsappTemplateId] = useState(getStoredWhatsAppTemplateId);
 
   const { toast } = useToast();
   const { canDelete } = usePermissions();
@@ -359,7 +362,10 @@ const Guests = () => {
         return;
       }
 
-      openWhatsAppInvite(guest.phone!, buildDefaultInviteMessage(guest, event, eventId));
+      openWhatsAppInvite(
+        guest.phone!,
+        buildDefaultInviteMessage(guest, event, eventId, whatsappTemplateId),
+      );
 
       try {
         await invitationsApi.send(guestId, eventId, 'whatsapp');
@@ -412,7 +418,10 @@ const Guests = () => {
 
     if (withPhone.length === 1) {
       const guest = withPhone[0];
-      openWhatsAppInvite(guest.phone!, buildDefaultInviteMessage(guest, event, eventFilter));
+      openWhatsAppInvite(
+        guest.phone!,
+        buildDefaultInviteMessage(guest, event, eventFilter, whatsappTemplateId),
+      );
       invitationsApi.send(guest.id, eventFilter, 'whatsapp').then(() => {
         logWhatsAppAction(eventFilter, guest.id, guest.name, 'sent');
       }).catch(() => {});
@@ -555,6 +564,22 @@ const Guests = () => {
         )}
 
         {/* TABLE */}
+        {eventFilter && filteredGuests.length > 0 && (
+          <WhatsAppTemplateSelect
+            value={whatsappTemplateId}
+            onChange={(id) => {
+              setWhatsappTemplateId(id);
+              setStoredWhatsAppTemplateId(id);
+            }}
+            previewContext={{
+              guest: filteredGuests[0],
+              event: events.find((e) => e.id === eventFilter)!,
+              eventId: eventFilter,
+            }}
+            className="max-w-md"
+          />
+        )}
+
         {loading ? (
           <div className="h-40 flex items-center justify-center">Chargement...</div>
         ) : (
@@ -612,6 +637,7 @@ const Guests = () => {
         guests={whatsappBulkGuests}
         event={events.find(e => e.id === eventFilter) || null}
         eventId={eventFilter}
+        templateId={whatsappTemplateId}
         onComplete={() => setWhatsappBulkOpen(false)}
       />
     </DashboardLayout>
