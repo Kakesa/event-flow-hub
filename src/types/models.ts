@@ -37,6 +37,8 @@ export interface User {
   subscriptionType?: SubscriptionType;
   planLimitsBypass?: boolean;
   guestPriceFc?: number | null;
+  /** Quota total d'invités (tous événements), défini par le super admin */
+  maxGuests?: number | null;
   permissions?: ModulePermission[];
   createdAt?: string;
   updatedAt?: string;
@@ -48,6 +50,9 @@ export interface SubscriptionLimitsStatus {
   hasPremiumAdminAccess?: boolean;
   maxEvents: number | null;
   maxGuests: number | null;
+  /** Quota total personnalisé par le super admin (tous événements confondus) */
+  maxGuestsQuota?: number | null;
+  totalGuestCount?: number;
   eventCount: number;
   canCreateEvent: boolean;
   customizableTemplates: boolean;

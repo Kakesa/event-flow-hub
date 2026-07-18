@@ -52,7 +52,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
 import GuestBillingCard from '@/components/subscription/GuestBillingCard';
-import { formatPlanLimit } from '@/config/subscriptionPlans';
+import { getGuestLimitDescription } from '@/lib/guestQuotaMessages';
 import { exportGuestsToCSV, exportGuestsToExcel } from '@/utils/exportUtils';
 import { sortGuestsNewestFirst } from '@/utils/guestSort';
 
@@ -202,7 +202,7 @@ const Guests = () => {
         if (limits && limits.canAddGuest === false) {
           toast({
             title: 'Limite atteinte',
-            description: `Votre plan autorise ${formatPlanLimit(limits.maxGuests)} invité(s) par événement.`,
+            description: getGuestLimitDescription(limits, guests.length),
             variant: 'destructive',
           });
           return;
@@ -277,7 +277,7 @@ const Guests = () => {
       if (limits && limits.canAddGuest === false) {
         toast({
           title: 'Limite atteinte',
-          description: `Votre plan autorise ${formatPlanLimit(limits.maxGuests)} invité(s) par événement.`,
+          description: getGuestLimitDescription(limits, guests.length),
           variant: 'destructive',
         });
         return;
@@ -554,11 +554,7 @@ const Guests = () => {
         {limits && limits.canAddGuest === false && eventFilter && (
           <PlanLimitAlert
             title="Limite d'invités atteinte"
-            description={
-              limits.planLimitsBypass
-                ? 'Déblocage actif — actualisez la page si le bouton reste grisé.'
-                : `Votre plan ${limits.plan} autorise ${formatPlanLimit(limits.maxGuests)} invité(s) par événement (${limits.guestCount ?? guests.length} utilisés).`
-            }
+            description={getGuestLimitDescription(limits, limits.guestCount ?? guests.length)}
             bypassed={limits.planLimitsBypass}
           />
         )}
