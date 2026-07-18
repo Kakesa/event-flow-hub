@@ -153,6 +153,17 @@ const Guests = () => {
   /* =========================
      ACTIONS
   ========================= */
+  const buildGuestPayload = (guest: typeof newGuest, normalizedPhone?: string) => {
+    const email = guest.email.trim();
+    return {
+      eventId: guest.eventId,
+      name: guest.name.trim(),
+      ...(email ? { email } : {}),
+      ...(normalizedPhone ? { phone: normalizedPhone } : {}),
+      ...(guest.table.trim() ? { table: guest.table.trim() } : {}),
+    };
+  };
+
   const handleAddGuest = async () => {
     if (isAddingGuest) return;
 
@@ -178,10 +189,7 @@ const Guests = () => {
       }
     }
 
-    const guestPayload = {
-      ...newGuest,
-      phone: normalizedPhone || '',
-    };
+    const guestPayload = buildGuestPayload(newGuest, normalizedPhone);
 
     const checkContactDuplicates = () => {
       return guests.find(g => {
@@ -266,11 +274,7 @@ const Guests = () => {
       }
     }
 
-    const guestPayload = {
-      ...newGuest,
-      email: newGuest.email.trim(),
-      phone: normalizedPhone || '',
-    };
+    const guestPayload = buildGuestPayload(newGuest, normalizedPhone);
 
     setIsAddingGuest(true);
     try {
@@ -466,7 +470,9 @@ const Guests = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Ajouter un invité</DialogTitle>
-                <DialogDescription>Informations de l'invité</DialogDescription>
+                <DialogDescription>
+                  Nom et événement obligatoires. Email et téléphone optionnels.
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-3">
@@ -475,7 +481,7 @@ const Guests = () => {
                   onValueChange={v => setNewGuest({ ...newGuest, eventId: v })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Événement" />
+                    <SelectValue placeholder="Événement *" />
                   </SelectTrigger>
                   <SelectContent>
                     {events.map(e => (
@@ -487,12 +493,13 @@ const Guests = () => {
                 </Select>
 
                 <Input
-                  placeholder="Nom"
+                  placeholder="Nom *"
                   value={newGuest.name}
                   onChange={e => setNewGuest({ ...newGuest, name: e.target.value })}
                 />
                 <Input
-                  placeholder="Email"
+                  placeholder="Email (optionnel)"
+                  type="email"
                   value={newGuest.email}
                   onChange={e => setNewGuest({ ...newGuest, email: e.target.value })}
                 />
