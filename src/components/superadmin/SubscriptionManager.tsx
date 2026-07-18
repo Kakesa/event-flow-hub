@@ -50,7 +50,6 @@ import type { User, SubscriptionType } from '@/types/models';
 import {
   SUBSCRIPTION_PLANS,
   SELLABLE_PLANS,
-  getPlanDefinition,
   getPlanPrice,
   calculateSubscriptionMRR,
 } from '@/config/subscriptionPlans';
@@ -81,6 +80,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
   const [newPlan, setNewPlan] = useState<SubscriptionType>('free');
   const [bypassLimits, setBypassLimits] = useState(false);
   const [guestPriceChoice, setGuestPriceChoice] = useState<string>('default');
+  const [maxGuestsQuota, setMaxGuestsQuota] = useState('');
   const [defaultGuestPriceFc, setDefaultGuestPriceFc] = useState(1500);
   const [updating, setUpdating] = useState(false);
   const [togglingBypassUserId, setTogglingBypassUserId] = useState<string | null>(null);
@@ -144,6 +144,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
     setGuestPriceChoice(
       user.guestPriceFc ? String(user.guestPriceFc) : 'default'
     );
+    setMaxGuestsQuota(user.maxGuests != null ? String(user.maxGuests) : '');
     setShowUpgradeDialog(true);
   };
 
@@ -193,11 +194,21 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
       if (bypassLimits !== (selectedUser.planLimitsBypass === true)) {
         await usersApi.update(userId, { planLimitsBypass: bypassLimits });
       }
+      const parsedQuota =
+        maxGuestsQuota.trim() === '' ? null : Number(maxGuestsQuota.trim());
+      const currentQuota = selectedUser.maxGuests ?? null;
+      if (parsedQuota !== currentQuota) {
+        if (maxGuestsQuota.trim() !== '' && (!Number.isInteger(parsedQuota) || (parsedQuota as number) < 0)) {
+          throw new Error('Quota d\'invités invalide');
+        }
+        await usersApi.update(userId, { maxGuests: parsedQuota });
+      }
       toast({
         title: 'Abonnement mis à jour',
         description: `${selectedUser.name} est maintenant sur le plan ${newPlan}`,
       });
       setShowUpgradeDialog(false);
+      onRefresh?.();
     } catch {
       toast({
         title: 'Erreur',
@@ -395,6 +406,7 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
                   <TableHead>Plan actuel</TableHead>
                   <TableHead>Prix</TableHead>
                   <TableHead>Tarif / invité</TableHead>
+                  <TableHead>Quota invités</TableHead>
                   <TableHead>Limites</TableHead>
                   <TableHead>Inscrit le</TableHead>
                   <TableHead>Statut</TableHead>
@@ -424,6 +436,9 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
                         {!user.guestPriceFc && (
                           <span className="block text-xs text-muted-foreground">défaut</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {user.maxGuests != null ? user.maxGuests.toLocaleString('fr-FR') : '—'}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -500,73 +515,76 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
 
       {/* Upgrade Dialog */}
       <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Modifier l'abonnement</DialogTitle>
-            <DialogDescription>
-              Changez le plan d'abonnement de {selectedUser?.name}
+        <DialogContent className="max-w-md p-4 gap-3 max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-1 pb-0">
+            <DialogTitle className="text-base">Modifier l&apos;abonnement</DialogTitle>
+            <DialogDescription className="text-xs">
+              {selectedUser?.name} · {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="p-3 rounded bg-muted">
-              <p className="font-medium">{selectedUser?.name}</p>
-              <p className="text-sm text-muted-foreground">{selectedUser?.email}</p>
-              <div className="mt-2">
-                Plan actuel: {getPlanBadge(selectedUser?.subscriptionType)}
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+              <span className="text-muted-foreground">Plan actuel</span>
+              {getPlanBadge(selectedUser?.subscriptionType)}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Nouveau plan</Label>
+                <Select value={newPlan} onValueChange={(v) => setNewPlan(v as SubscriptionType)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[...SELLABLE_PLANS, ...(selectedUser?.subscriptionType === 'basic' ? (['basic'] as SubscriptionType[]) : [])].map((plan) => (
+                      <SelectItem key={plan} value={plan}>
+                        {SUBSCRIPTION_PLANS[plan].label}
+                        {getPlanPrice(plan) === 0 ? '' : ` — $${getPlanPrice(plan)}/mois`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Tarif / invité (FC)</Label>
+                <Select value={guestPriceChoice} onValueChange={setGuestPriceChoice}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">
+                      Défaut ({defaultGuestPriceFc.toLocaleString('fr-FR')} FC)
+                    </SelectItem>
+                    {NEGOTIATED_GUEST_PRICES_FC.map((price) => (
+                      <SelectItem key={price} value={String(price)}>
+                        {price.toLocaleString('fr-FR')} FC
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nouveau plan</label>
-              <Select value={newPlan} onValueChange={(v) => setNewPlan(v as SubscriptionType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[...SELLABLE_PLANS, ...(selectedUser?.subscriptionType === 'basic' ? (['basic'] as SubscriptionType[]) : [])].map((plan) => (
-                    <SelectItem key={plan} value={plan}>
-                      <div className="flex items-center justify-between w-full gap-4">
-                        <span>{SUBSCRIPTION_PLANS[plan].label}</span>
-                        <span className="text-muted-foreground">
-                          {getPlanPrice(plan) === 0 ? 'Gratuit' : `$${getPlanPrice(plan)}/mois`}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-1.5">
+              <Label htmlFor="max-guests-quota" className="text-xs">Nombre maximum d&apos;invités</Label>
+              <Input
+                id="max-guests-quota"
+                type="number"
+                min={0}
+                step={1}
+                placeholder="Ex. 200"
+                className="h-9"
+                value={maxGuestsQuota}
+                onChange={(e) => setMaxGuestsQuota(e.target.value)}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label>Tarif par invité (FC)</Label>
-              <Select value={guestPriceChoice} onValueChange={setGuestPriceChoice}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">
-                    Défaut plateforme ({defaultGuestPriceFc.toLocaleString('fr-FR')} FC)
-                  </SelectItem>
-                  {NEGOTIATED_GUEST_PRICES_FC.map((price) => (
-                    <SelectItem key={price} value={String(price)}>
-                      {price.toLocaleString('fr-FR')} FC / invité
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                L&apos;admin utilisera ce tarif pour facturer cet organisateur.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div className="space-y-1">
-                <Label htmlFor="plan-bypass">Débloquer les limites du plan</Label>
-                <p className="text-xs text-muted-foreground">
-                  Ignore événements / invités / fonctionnalités liées au plan (utile après changement manuel).
-                </p>
-              </div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <Label htmlFor="plan-bypass" className="text-xs font-normal cursor-pointer">
+                Débloquer les limites du plan
+              </Label>
               <Switch
                 id="plan-bypass"
                 checked={bypassLimits}
@@ -574,53 +592,33 @@ const SubscriptionManager = ({ users, onUpdateSubscription, onRefresh, className
               />
             </div>
 
-            <div className="p-3 rounded bg-muted/50 space-y-1">
-              <p className="text-sm font-medium">Fonctionnalités du plan {getPlanDefinition(newPlan).label}:</p>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                {getPlanDefinition(newPlan).features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             {newPlan !== (selectedUser?.subscriptionType || 'free') && (
               <div className={cn(
-                'p-3 rounded flex items-start gap-2',
+                'rounded-md px-3 py-2 text-xs flex items-center gap-2',
                 getPlanPrice(newPlan) > getPlanPrice(selectedUser?.subscriptionType)
                   ? 'bg-green-500/10 text-green-700'
                   : 'bg-amber-500/10 text-amber-700'
               )}>
                 {getPlanPrice(newPlan) > getPlanPrice(selectedUser?.subscriptionType) ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 mt-0.5" />
-                    <span className="text-sm">
-                      Upgrade: +${getPlanPrice(newPlan) - getPlanPrice(selectedUser?.subscriptionType)}/mois
-                    </span>
-                  </>
+                  <ChevronUp className="h-3.5 w-3.5 shrink-0" />
                 ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mt-0.5" />
-                    <span className="text-sm">
-                      Downgrade: -${getPlanPrice(selectedUser?.subscriptionType) - getPlanPrice(newPlan)}/mois
-                    </span>
-                  </>
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                 )}
+                <span>
+                  {getPlanPrice(newPlan) > getPlanPrice(selectedUser?.subscriptionType)
+                    ? `Upgrade +$${getPlanPrice(newPlan) - getPlanPrice(selectedUser?.subscriptionType)}/mois`
+                    : `Downgrade -$${getPlanPrice(selectedUser?.subscriptionType) - getPlanPrice(newPlan)}/mois`}
+                </span>
               </div>
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUpgradeDialog(false)}>
+          <DialogFooter className="gap-2 sm:gap-0 pt-1">
+            <Button variant="outline" size="sm" onClick={() => setShowUpgradeDialog(false)}>
               Annuler
             </Button>
-            <Button 
-              onClick={handleConfirmUpgrade}
-              disabled={updating || newPlan === (selectedUser?.subscriptionType || 'free')}
-            >
-              {updating ? 'Mise à jour...' : 'Confirmer'}
+            <Button size="sm" onClick={handleConfirmUpgrade} disabled={updating}>
+              {updating ? 'Mise à jour...' : 'Enregistrer'}
             </Button>
           </DialogFooter>
         </DialogContent>

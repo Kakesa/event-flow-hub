@@ -53,6 +53,7 @@ import { calculateSubscriptionMRR } from '@/config/subscriptionPlans';
 import AuditLogsPanel from '@/components/superadmin/AuditLogsPanel';
 import UserImpersonation from '@/components/superadmin/UserImpersonation';
 import SubscriptionManager from '@/components/superadmin/SubscriptionManager';
+import OrganizerGuestQuotaDialog from '@/components/superadmin/OrganizerGuestQuotaDialog';
 import VisitorsPanel from '@/components/superadmin/VisitorsPanel';
 import TestDataPurgePanel from '@/components/superadmin/TestDataPurgePanel';
 
@@ -112,6 +113,8 @@ const SuperAdminDashboard = () => {
   const [adminFilter, setAdminFilter] = useState<string>('all'); // ✨ Filtre par admin
   const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState<User | null>(null);
+  const [quotaDialogOpen, setQuotaDialogOpen] = useState(false);
+  const [selectedUserForQuota, setSelectedUserForQuota] = useState<User | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Données graphiques
@@ -719,6 +722,7 @@ const SuperAdminDashboard = () => {
                       <TableHead>Téléphone</TableHead>
                       <TableHead>Rôle</TableHead>
                       <TableHead>Abonnement</TableHead>
+                      <TableHead>Quota invités</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead>Inscrit le</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -774,6 +778,15 @@ const SuperAdminDashboard = () => {
                             )}
                           </div>
                         </TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {user.role === 'superadmin' ? (
+                            '—'
+                          ) : user.maxGuests != null ? (
+                            user.maxGuests.toLocaleString('fr-FR')
+                          ) : (
+                            <span className="text-muted-foreground">Plan</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {user.isActive !== false ? (
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
@@ -805,6 +818,17 @@ const SuperAdminDashboard = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Voir détails
                               </DropdownMenuItem>
+                              {user.role !== 'superadmin' && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedUserForQuota(user);
+                                    setQuotaDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Quota invités
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleToggleUserStatus(user._id || user.id || '', user.isActive !== false)}
@@ -1046,6 +1070,13 @@ const SuperAdminDashboard = () => {
           user={selectedUserForPermissions}
           open={permissionsModalOpen}
           onOpenChange={setPermissionsModalOpen}
+          onSaved={fetchAllData}
+        />
+
+        <OrganizerGuestQuotaDialog
+          user={selectedUserForQuota}
+          open={quotaDialogOpen}
+          onOpenChange={setQuotaDialogOpen}
           onSaved={fetchAllData}
         />
       </div>
