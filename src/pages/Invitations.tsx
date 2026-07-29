@@ -35,6 +35,11 @@ import {
 import { getStoredWhatsAppTemplateId, setStoredWhatsAppTemplateId } from '@/lib/whatsappTemplates';
 import WhatsAppTemplateSelect from '@/components/invitations/WhatsAppTemplateSelect';
 import { sortGuestsNewestFirst } from '@/utils/guestSort';
+import {
+  getGuestsWithoutInvitation,
+  resolveGuestId,
+} from '@/utils/invitationUtils';
+import { getWhatsAppLog, refreshWhatsAppLog } from '@/lib/whatsappLog';
 
 const distributionMethods = [
   { id: 'email' as DistributionMethod, name: 'Email', icon: Mail, description: 'Envoyer par email' },
@@ -48,7 +53,8 @@ const Invitations = () => {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
-  const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [whatsappInvitedGuestIds, setWhatsappInvitedGuestIds] = useState<string[]>([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [selectedMethod, setSelectedMethod] = useState<DistributionMethod>('email');
@@ -89,9 +95,14 @@ const Invitations = () => {
           invitationsApi.getByEvent(selectedEvent),
         ]);
         setGuests(guestsRes.data);
-        setSentInvitations(
-          (invitationsRes.data || []).filter((inv) => inv.sentAt || inv.status === 'sent'),
-        );
+        setInvitations(invitationsRes.data || []);
+
+        await refreshWhatsAppLog(selectedEvent);
+        const waSentIds = getWhatsAppLog(selectedEvent)
+          .filter((entry) => (entry.sendCount ?? 0) > 0 || Boolean(entry.sentAt))
+          .map((entry) => String(entry.guestId));
+        setWhatsappInvitedGuestIds(waSentIds);
+
         setSelectedGuests([]);
       } catch {
         toast({ title: 'Erreur', description: 'Impossible de charger les invités', variant: 'destructive' });
@@ -110,8 +121,19 @@ const Invitations = () => {
         invitationsApi.getByEvent(selectedEvent),
       ]);
       setGuests(guestsRes.data);
-      setSentInvitations(
-        (invitationsRes.data || []).filter((inv) => inv.sentAt || inv.status === 'sent'),
+      setInvitations(invitationsRes.data || []);
+
+      await refreshWhatsAppLog(selectedEvent);
+      const waSentIds = getWhatsAppLog(selectedEvent)
+        .filter((entry) => (entry.sendCount ?? 0) > 0 || Boolean(entry.sentAt))
+        .map((entry) => String(entry.guestId));
+      setWhatsappInvitedGuestIds(waSentIds);
+
+      setSelectedGuests((prev) =>
+        prev.filter((id) =>
+          getGuestsWithoutInvitation(guestsRes.data, invitationsRes.data || [], waSentIds)
+            .some((guest) => resolveGuestId(guest) === id),
+        ),
       );
       setHistoryRefreshKey((k) => k + 1);
     } catch {
@@ -119,12 +141,12 @@ const Invitations = () => {
     }
   };
 
-  const sentGuestIds = new Set(sentInvitations.map((inv) => String(inv.guestId)));
   const guestsToContact = sortGuestsNewestFirst(
-    guests.filter((g) => !sentGuestIds.has(String(g.id))),
+    getGuestsWithoutInvitation(guests, invitations, whatsappInvitedGuestIds),
   );
 
   const toggleGuest = (guestId: string) => {
+    if (!guestsToContact.some((guest) => resolveGuestId(guest) === guestId)) return;
     setSelectedGuests(prev =>
       prev.includes(guestId)
         ? prev.filter(id => id !== guestId)
@@ -133,7 +155,7 @@ const Invitations = () => {
   };
 
   const toggleAll = () => {
-    const visibleIds = guestsToContact.map(g => g.id);
+    const visibleIds = guestsToContact.map(g => resolveGuestId(g)).filter(Boolean);
     const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedGuests.includes(id));
     if (allSelected) {
       setSelectedGuests(prev => prev.filter(id => !visibleIds.includes(id)));
@@ -166,8 +188,8 @@ const Invitations = () => {
       );
 
       try {
-        await invitationsApi.send(guest.id, selectedEvent, 'whatsapp');
-        logWhatsAppAction(selectedEvent, guest.id, guest.name, 'sent');
+        await invitationsApi.send(resolveGuestId(guest), selectedEvent, 'whatsapp');
+        logWhatsAppAction(selectedEvent, resolveGuestId(guest), guest.name, 'sent');
       } catch (error) {
         console.error(error);
       }
@@ -193,7 +215,9 @@ const Invitations = () => {
       return;
     }
 
-    const selectedGuestObjects = guests.filter(g => selectedGuests.includes(g.id));
+    const selectedGuestObjects = guestsToContact.filter((g) =>
+      selectedGuests.includes(resolveGuestId(g)),
+    );
 
     // Email → ouvrir le compositeur pour personnaliser le template
     if (selectedMethod === 'email') {
@@ -305,7 +329,7 @@ const Invitations = () => {
                         <Checkbox
                           checked={
                             guestsToContact.length > 0 &&
-                            guestsToContact.every(g => selectedGuests.includes(g.id))
+                            guestsToContact.every(g => selectedGuests.includes(resolveGuestId(g)))
                           }
                           onCheckedChange={toggleAll}
                         />
@@ -323,21 +347,23 @@ const Invitations = () => {
                           </p>
                         </div>
                       ) : (
-                        guestsToContact.map(guest => (
+                        guestsToContact.map((guest) => {
+                          const guestId = resolveGuestId(guest);
+                          return (
                           <div
-                            key={guest.id}
+                            key={guestId}
                             className={cn(
                               'flex items-center gap-4 p-4 rounded-lg border transition-all hover:border-primary/50',
-                              selectedGuests.includes(guest.id)
+                              selectedGuests.includes(guestId)
                                 ? 'border-primary bg-primary/5 shadow-sm'
                                 : 'border-border'
                             )}
                           >
                             <Checkbox 
-                              checked={selectedGuests.includes(guest.id)} 
-                              onCheckedChange={() => toggleGuest(guest.id)}
+                              checked={selectedGuests.includes(guestId)} 
+                              onCheckedChange={() => toggleGuest(guestId)}
                             />
-                            <div className="flex-1 cursor-pointer" onClick={() => toggleGuest(guest.id)}>
+                            <div className="flex-1 cursor-pointer" onClick={() => toggleGuest(guestId)}>
                               <p className="font-medium">{guest.name}</p>
                               <div className="flex items-center gap-3">
                                 <p className="text-sm text-muted-foreground">{guest.email}</p>
@@ -375,7 +401,8 @@ const Invitations = () => {
                               </Badge>
                             </div>
                           </div>
-                        ))
+                          );
+                        })
                       )}
                     </CardContent>
                   </Card>
@@ -467,7 +494,7 @@ const Invitations = () => {
         <EmailComposer
           open={showEmailComposer}
           onClose={() => setShowEmailComposer(false)}
-          selectedGuests={guests.filter(g => selectedGuests.includes(g.id))}
+          selectedGuests={guestsToContact.filter((g) => selectedGuests.includes(resolveGuestId(g)))}
           event={events.find(e => (e._id || e.id) === selectedEvent) || null}
           onSuccess={() => {
             setSelectedGuests([]);

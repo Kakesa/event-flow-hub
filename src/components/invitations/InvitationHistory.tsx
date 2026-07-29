@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { invitationsApi } from '@/services/api';
 import type { Invitation } from '@/types/models';
+import { isInvitationAlreadySent } from '@/utils/invitationUtils';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +47,7 @@ const InvitationHistory = ({ eventId, refreshKey = 0 }: InvitationHistoryProps) 
     try {
       const res = await invitationsApi.getByEvent(eventId);
       const sent = (res.data || [])
-        .filter((inv) => inv.sentAt)
+        .filter((inv) => isInvitationAlreadySent(inv))
         .sort(
           (a, b) =>
             new Date(b.sentAt!).getTime() - new Date(a.sentAt!).getTime(),

@@ -385,7 +385,7 @@ export const guestsApi = {
 
     const result = await handleResponse<{ success: boolean; data: any[] }>(res);
     const guests: Guest[] =
-      result.data?.map((g) => ({ ...g, id: g._id })) || [];
+      result.data?.map((g) => ({ ...g, id: g._id || g.id })) || [];
 
     return { success: result.success ?? true, data: guests };
   },

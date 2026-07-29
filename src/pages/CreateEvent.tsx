@@ -229,7 +229,7 @@ const CreateEvent: React.FC = () => {
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <Label>Titre *</Label>
+                  <Label>Nom événement *</Label>
                   <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
                 </div>
                 <div>
