@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
 import type { Guest } from '@/types/models';
+import { getGuestTableLabel } from '@/components/seating/GuestTableSelector';
 import { cn } from '@/lib/utils';
 
 interface GuestTableProps {
@@ -52,6 +53,7 @@ interface GuestTableProps {
   onSendBulkWhatsApp?: (guestIds: string[]) => void;
   onDelete?: (guestId: string) => void;
   onGenerateQR?: (guestId: string) => void;
+  onAssignTable?: (guest: Guest) => void;
 }
 
 const statusConfig = {
@@ -86,7 +88,7 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
-const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, onGenerateQR }: GuestTableProps) => {
+const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, onGenerateQR, onAssignTable }: GuestTableProps) => {
   const [selectedGuests, setSelectedGuests] = useState<string[]>([]);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const deleteTargetGuest = guests.find(g => g.id === deleteTargetId);
@@ -226,10 +228,10 @@ const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, on
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {guest.table ? (
+                  {getGuestTableLabel(guest) !== 'Non assigné' ? (
                     <div className="flex items-center gap-2">
                        <LayoutPanelLeft className="h-4 w-4 text-primary/60" />
-                       <span className="font-medium">{guest.table}</span>
+                       <span className="font-medium">{getGuestTableLabel(guest)}</span>
                     </div>
                   ) : (
                     <span className="text-muted-foreground/40 italic text-sm">Non assignée</span>
@@ -269,6 +271,12 @@ const GuestTable = ({ guests, onSendInvitation, onSendBulkWhatsApp, onDelete, on
                         <QrCode className="h-4 w-4 mr-2 text-chart-3" />
                         Générer QR Code
                       </DropdownMenuItem>
+                      {onAssignTable && (
+                        <DropdownMenuItem onClick={() => onAssignTable(guest)}>
+                          <LayoutPanelLeft className="h-4 w-4 mr-2 text-primary" />
+                          Affecter à une table
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => setDeleteTargetId(guest.id)}

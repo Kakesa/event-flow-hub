@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users, Clock, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Edit, Trash2, MoreVertical, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -86,8 +86,12 @@ const EventCard = ({ event, guestCount = 0, onDelete, onOpen, canEdit = true, ca
                     Modifier
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => navigate(`/invitations/templates?eventId=${event._id}`)}>
+                <DropdownMenuItem onClick={() => navigate(`/events/${event._id}/tables`)}>
                   <Users className="h-4 w-4 mr-2" />
+                  Plan de salle
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/invitations/templates?eventId=${event._id}`)}>
+                  <Mail className="h-4 w-4 mr-2" />
                   Envoyer invitations
                 </DropdownMenuItem>
                 {canDelete && (

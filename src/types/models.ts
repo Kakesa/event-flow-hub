@@ -116,6 +116,8 @@ export interface Event {
   dressCode?: string;
   dressCodeNotes?: string;
 
+  seating?: SeatingConfig;
+
   organizer?: Organizer;
 
   createdAt?: string;
@@ -138,10 +140,87 @@ export interface Guest {
   message?: string;
   qrCode?: string;
   table?: string;
+  tableId?: string | SeatingTable | null;
+  groupId?: string | GuestGroup | null;
   respondedAt?: string;
 
   createdAt?: string;
   updatedAt?: string;
+}
+
+// ===================== SEATING =====================
+export type SeatingSetupMethod = "by_table_count" | "by_capacity" | "manual" | "";
+
+export interface SeatingConfig {
+  configured?: boolean;
+  expectedGuestCount?: number;
+  setupMethod?: SeatingSetupMethod;
+  skippedAt?: string;
+}
+
+export type TableStatus = "available" | "almost_full" | "full";
+
+export interface SeatingTable {
+  id: string;
+  eventId: string;
+  name: string;
+  number: number;
+  capacity: number;
+  color?: string;
+  description?: string;
+  position?: { x: number; y: number };
+  guestCount?: number;
+  remainingSeats?: number;
+  isFull?: boolean;
+  fillRate?: number;
+  status?: TableStatus;
+}
+
+export type GuestGroupType =
+  | "family"
+  | "vip"
+  | "sponsors"
+  | "partners"
+  | "press"
+  | "organizers"
+  | "friends"
+  | "colleagues"
+  | "honorees"
+  | "custom";
+
+export interface GuestGroup {
+  id: string;
+  eventId: string;
+  name: string;
+  type: GuestGroupType;
+  color?: string;
+}
+
+export interface SeatingStats {
+  totalGuests: number;
+  assignedGuests: number;
+  unassignedGuests: number;
+  tableCount: number;
+  totalCapacity: number;
+  totalOccupied: number;
+  totalRemainingSeats: number;
+  fullTables: number;
+  incompleteTables: number;
+  emptyTables: number;
+  globalFillRate: number;
+}
+
+export interface SeatingOverview {
+  event: {
+    id: string;
+    title: string;
+    coverImage?: string;
+    seating: SeatingConfig;
+  };
+  tables: SeatingTable[];
+  groups: GuestGroup[];
+  guests: Guest[];
+  stats: SeatingStats;
 }
 
 // ===================== INVITATION =====================

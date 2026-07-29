@@ -8,6 +8,10 @@ import type {
   User,
   ApiResponse,
   ModulePermission,
+  SeatingOverview,
+  SeatingTable,
+  GuestGroup,
+  SeatingStats,
 } from "@/types/models";
 import { API_BASE_URL, BASE_URL } from "@/config/env";
 import { parseScanToken } from "@/utils/qrCode";
@@ -450,6 +454,202 @@ export const guestsApi = {
     const guest: Guest = { ...result.data, id: result.data._id };
 
     return { success: result.success ?? true, data: guest };
+  },
+};
+
+// ==================== PLAN DE SALLE ====================
+const mapSeatingId = <T extends { _id?: string; id?: string }>(item: T): T & { id: string } => ({
+  ...item,
+  id: item.id || item._id || "",
+});
+
+export const seatingApi = {
+  getOverview: async (eventId: string): Promise<ApiResponse<SeatingOverview>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: SeatingOverview }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  generateTables: async (
+    eventId: string,
+    payload: {
+      expectedGuestCount: number;
+      method: "by_table_count" | "by_capacity";
+      tableCount?: number;
+      capacityPerTable?: number;
+    },
+  ): Promise<ApiResponse<SeatingTable[]>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/generate`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await handleResponse<{ success: boolean; data: SeatingTable[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  skipSetup: async (eventId: string): Promise<ApiResponse<unknown>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/skip-setup`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  createTable: async (
+    eventId: string,
+    data: Partial<SeatingTable>,
+  ): Promise<ApiResponse<SeatingTable>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/tables`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: SeatingTable }>(res);
+    return { success: result.success ?? true, data: mapSeatingId(result.data) };
+  },
+
+  updateTable: async (
+    tableId: string,
+    data: Partial<SeatingTable>,
+  ): Promise<ApiResponse<SeatingTable>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/tables/${tableId}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: SeatingTable }>(res);
+    return { success: result.success ?? true, data: mapSeatingId(result.data) };
+  },
+
+  deleteTable: async (tableId: string): Promise<ApiResponse<void>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/tables/${tableId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    await handleResponse(res);
+    return { success: true, data: undefined };
+  },
+
+  assignGuest: async (
+    guestId: string,
+    tableId: string | null,
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/guests/${guestId}/assign`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({ tableId }),
+    });
+    const result = await handleResponse<{ success: boolean; data: Guest }>(res);
+    return { success: result.success ?? true, data: mapSeatingId(result.data) };
+  },
+
+  autoDistribute: async (
+    eventId: string,
+    options?: { respectGroups?: boolean; onlyUnassigned?: boolean },
+  ): Promise<ApiResponse<{ assigned: number; unassigned: number; message?: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/auto-distribute`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(options || {}),
+    });
+    const result = await handleResponse<{ success: boolean; data: { assigned: number; unassigned: number; message?: string } }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  createGroup: async (
+    eventId: string,
+    data: { name: string; type?: GuestGroup["type"]; color?: string },
+  ): Promise<ApiResponse<GuestGroup>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/groups`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: GuestGroup }>(res);
+    return { success: result.success ?? true, data: mapSeatingId(result.data) };
+  },
+
+  createPresetGroups: async (eventId: string): Promise<ApiResponse<GuestGroup[]>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/groups/presets`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: GuestGroup[] }>(res);
+    return { success: result.success ?? true, data: result.data.map(mapSeatingId) };
+  },
+
+  assignGuestToGroup: async (
+    guestId: string,
+    groupId: string | null,
+  ): Promise<ApiResponse<Guest>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/guests/${guestId}/group`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({ groupId }),
+    });
+    const result = await handleResponse<{ success: boolean; data: Guest }>(res);
+    return { success: result.success ?? true, data: mapSeatingId(result.data) };
+  },
+
+  updateGroup: async (
+    groupId: string,
+    data: { name?: string; type?: GuestGroup["type"]; color?: string },
+  ): Promise<ApiResponse<GuestGroup>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/groups/${groupId}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    const result = await handleResponse<{ success: boolean; data: GuestGroup }>(res);
+    return { success: result.success ?? true, data: mapSeatingId(result.data) };
+  },
+
+  deleteGroup: async (groupId: string): Promise<ApiResponse<void>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/groups/${groupId}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    await handleResponse(res);
+    return { success: true, data: undefined };
+  },
+
+  search: async (
+    eventId: string,
+    q: string,
+  ): Promise<ApiResponse<{ guests: Guest[]; tables: SeatingTable[] }>> => {
+    const res = await fetch(
+      `${API_BASE_URL}/seating/event/${eventId}/search?q=${encodeURIComponent(q)}`,
+      { headers: getHeaders() },
+    );
+    const result = await handleResponse<{ success: boolean; data: { guests: Guest[]; tables: SeatingTable[] } }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  updatePositions: async (
+    eventId: string,
+    positions: { id: string; x: number; y: number }[],
+  ): Promise<ApiResponse<SeatingTable[]>> => {
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/positions`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({ positions }),
+    });
+    const result = await handleResponse<{ success: boolean; data: SeatingTable[] }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  getPrintData: async (
+    eventId: string,
+    tableId?: string,
+  ): Promise<ApiResponse<unknown>> => {
+    const query = tableId ? `?tableId=${tableId}` : "";
+    const res = await fetch(`${API_BASE_URL}/seating/event/${eventId}/print${query}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
   },
 };
 
