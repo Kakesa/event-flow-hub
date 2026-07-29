@@ -1,4 +1,5 @@
 import type { Guest, Event } from '@/types/models';
+import { getGuestTableName, getGuestGroupName } from '@/utils/seatingHelpers';
 
 // Conversion des statuts en français
 const statusLabels: Record<string, string> = {
@@ -8,37 +9,43 @@ const statusLabels: Record<string, string> = {
   pending: 'En attente',
 };
 
+const guestExportHeaders = [
+  'Nom complet',
+  'Email',
+  'Téléphone',
+  'Événement',
+  'Statut',
+  'Table',
+  'Groupe',
+  'Préférence boisson',
+  'Date de création',
+];
+
+const mapGuestExportRow = (guest: Guest, events: Event[]) => {
+  const event = events.find((e) => e.id === guest.eventId);
+  return [
+    guest.name,
+    guest.email || '',
+    guest.phone || '',
+    event?.title || 'N/A',
+    statusLabels[guest.status] || guest.status,
+    getGuestTableName(guest) || 'Non assigné',
+    getGuestGroupName(guest) || '',
+    guest.drinkPreference || '',
+    guest.createdAt ? new Date(guest.createdAt).toLocaleDateString('fr-FR') : '',
+  ];
+};
+
 // Export CSV des invités
 export const exportGuestsToCSV = (
   guests: Guest[], 
   events: Event[], 
   filename: string = 'invites'
 ) => {
-  const headers = [
-    'Nom complet',
-    'Email',
-    'Téléphone',
-    'Événement',
-    'Statut',
-    'Préférence boisson',
-    'Date de création',
-  ];
-
-  const rows = guests.map((guest) => {
-    const event = events.find(e => e.id === guest.eventId);
-    return [
-      guest.name,
-      guest.email || '',
-      guest.phone || '',
-      event?.title || 'N/A',
-      statusLabels[guest.status] || guest.status,
-      guest.drinkPreference || '',
-      guest.createdAt ? new Date(guest.createdAt).toLocaleDateString('fr-FR') : '',
-    ];
-  });
+  const rows = guests.map((guest) => mapGuestExportRow(guest, events));
 
   const csvContent = [
-    headers.join(';'),
+    guestExportHeaders.join(';'),
     ...rows.map(row => row.map(cell => `"${cell}"`).join(';')),
   ].join('\n');
 
@@ -51,28 +58,7 @@ export const exportGuestsToExcel = (
   events: Event[], 
   filename: string = 'invites'
 ) => {
-  const headers = [
-    'Nom complet',
-    'Email',
-    'Téléphone',
-    'Événement',
-    'Statut',
-    'Préférence boisson',
-    'Date de création',
-  ];
-
-  const rows = guests.map((guest) => {
-    const event = events.find(e => e.id === guest.eventId);
-    return [
-      guest.name,
-      guest.email || '',
-      guest.phone || '',
-      event?.title || 'N/A',
-      statusLabels[guest.status] || guest.status,
-      guest.drinkPreference || '',
-      guest.createdAt ? new Date(guest.createdAt).toLocaleDateString('fr-FR') : '',
-    ];
-  });
+  const rows = guests.map((guest) => mapGuestExportRow(guest, events));
 
   // Create HTML table for Excel
   const htmlContent = `
@@ -102,7 +88,7 @@ export const exportGuestsToExcel = (
     <body>
       <table>
         <thead>
-          <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+          <tr>${guestExportHeaders.map(h => `<th>${h}</th>`).join('')}</tr>
         </thead>
         <tbody>
           ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}

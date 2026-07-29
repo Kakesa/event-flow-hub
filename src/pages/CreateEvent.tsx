@@ -140,8 +140,12 @@ const CreateEvent: React.FC = () => {
 
       if (res.success) {
         toast.success('Événement créé avec succès');
-        // Rediriger vers la liste des événements et rafraîchir pour voir le nouvel event
-        window.location.href = '/events';
+        const eventId = res.data?.id || res.data?._id;
+        if (eventId) {
+          window.location.href = `/events/${eventId}/tables/setup?welcome=1`;
+        } else {
+          window.location.href = '/events';
+        }
       } else {
         toast.error('Erreur lors de la création de l\'événement');
       }
@@ -225,7 +229,7 @@ const CreateEvent: React.FC = () => {
             {step === 1 && (
               <div className="space-y-5">
                 <div>
-                  <Label>Titre *</Label>
+                  <Label>Nom événement *</Label>
                   <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
                 </div>
                 <div>

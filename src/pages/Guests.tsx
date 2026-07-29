@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import GuestTable from '@/components/guests/GuestTable';
 import QRCodeModal from '@/components/guests/QRCodeModal';
 import GuestImportModal from '@/components/guests/GuestImportModal';
+import GuestAssignmentModal from '@/components/seating/GuestAssignmentModal';
 import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
 import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Phone } from 'lucide-react';
 import WhatsAppIcon from '@/components/icons/WhatsAppIcon';
-import { guestsApi, eventsApi, invitationsApi } from '@/services/api';
+import { guestsApi, eventsApi, invitationsApi, seatingApi } from '@/services/api';
 import {
   formatPhoneInput,
   normalizePhoneToE164,
@@ -46,7 +47,7 @@ import {
 import { getStoredWhatsAppTemplateId, setStoredWhatsAppTemplateId } from '@/lib/whatsappTemplates';
 import WhatsAppTemplateSelect from '@/components/invitations/WhatsAppTemplateSelect';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
-import type { Guest, Event } from '@/types/models';
+import type { Guest, Event, SeatingTable, GuestGroup } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
@@ -84,6 +85,10 @@ const Guests = () => {
   const [whatsappBulkOpen, setWhatsappBulkOpen] = useState(false);
   const [whatsappBulkGuests, setWhatsappBulkGuests] = useState<Guest[]>([]);
   const [whatsappTemplateId, setWhatsappTemplateId] = useState(getStoredWhatsAppTemplateId);
+
+  const [seatingTables, setSeatingTables] = useState<SeatingTable[]>([]);
+  const [seatingGroups, setSeatingGroups] = useState<GuestGroup[]>([]);
+  const [assignGuest, setAssignGuest] = useState<Guest | null>(null);
 
   const { toast } = useToast();
   const { canDelete } = usePermissions();
@@ -135,6 +140,34 @@ const Guests = () => {
 
     loadGuests();
   }, [eventFilter]);
+
+  useEffect(() => {
+    if (!eventFilter) return;
+    seatingApi.getOverview(eventFilter).then((res) => {
+      setSeatingTables(res.data.tables);
+      setSeatingGroups(res.data.groups);
+    }).catch(() => {
+      setSeatingTables([]);
+      setSeatingGroups([]);
+    });
+  }, [eventFilter]);
+
+  const reloadGuests = async () => {
+    if (!eventFilter) return;
+    const res = await guestsApi.getByEvent(eventFilter);
+    setGuests(res.data);
+  };
+
+  const handleAssignTable = async (guestId: string, tableId: string | null) => {
+    await seatingApi.assignGuest(guestId, tableId);
+    await reloadGuests();
+    toast({ title: 'Table mise à jour' });
+  };
+
+  const handleAssignGroup = async (guestId: string, groupId: string | null) => {
+    await seatingApi.assignGuestToGroup(guestId, groupId);
+    await reloadGuests();
+  };
 
   /* =========================
      FILTERS
@@ -591,6 +624,7 @@ const Guests = () => {
             onDelete={handleDelete}
             onSendInvitation={handleSendInvitation}
             onSendBulkWhatsApp={handleBulkWhatsApp}
+            onAssignTable={eventFilter ? setAssignGuest : undefined}
             onGenerateQR={g => {
               setSelectedGuestForQR(guests.find(x => x.id === g) || null);
               setIsQRModalOpen(true);
@@ -642,6 +676,16 @@ const Guests = () => {
         eventId={eventFilter}
         templateId={whatsappTemplateId}
         onComplete={() => setWhatsappBulkOpen(false)}
+      />
+
+      <GuestAssignmentModal
+        open={!!assignGuest}
+        onOpenChange={(open) => !open && setAssignGuest(null)}
+        guest={assignGuest}
+        tables={seatingTables}
+        groups={seatingGroups}
+        onAssignTable={handleAssignTable}
+        onAssignGroup={seatingGroups.length ? handleAssignGroup : undefined}
       />
     </DashboardLayout>
   );

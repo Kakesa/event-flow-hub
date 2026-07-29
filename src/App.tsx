@@ -35,6 +35,9 @@ const Users = lazy(() => import("./pages/Users"));
 const GalleryPage = lazy(() => import("./pages/GalleryPage"));
 const ServicesIndexPage = lazy(() => import("./pages/ServicesIndexPage"));
 const ServicePage = lazy(() => import("./pages/ServicePage"));
+const TablesPage = lazy(() => import("./pages/TablesPage"));
+const TableSetupWizard = lazy(() => import("./pages/TableSetupWizard"));
+const FloorPlanPage = lazy(() => import("./pages/FloorPlanPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageFallback = () => (
@@ -87,6 +90,10 @@ const App = () => (
               <Route path="/events/create" element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
               <Route path="/events/edit/:eventId" element={<ProtectedRoute><EditEvent /></ProtectedRoute>} />
               <Route path="/guests" element={<ProtectedRoute><Guests /></ProtectedRoute>} />
+              <Route path="/tables" element={<ProtectedRoute><TablesPage /></ProtectedRoute>} />
+              <Route path="/events/:eventId/tables" element={<ProtectedRoute><TablesPage /></ProtectedRoute>} />
+              <Route path="/events/:eventId/tables/setup" element={<ProtectedRoute><TableSetupWizard /></ProtectedRoute>} />
+              <Route path="/events/:eventId/tables/floor-plan" element={<ProtectedRoute><FloorPlanPage /></ProtectedRoute>} />
               <Route path="/guestbook" element={<ProtectedRoute><Guestbook /></ProtectedRoute>} />
               <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
               <Route path="/invitations" element={<ProtectedRoute><Invitations /></ProtectedRoute>} />
