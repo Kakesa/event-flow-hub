@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react';
-import { showUserAuthorizationToast } from '@/components/common/UserAuthorizationNotice';
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import { WELCOME_ACCOUNT_SESSION_KEY } from '@/content/welcomeAccountMessage';
 import { authApi } from '@/services/api';
 import logoBlack from '@/assets/black.png';
 
@@ -64,9 +64,6 @@ const Auth = () => {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   const finishAuth = (user?: { role?: string }) => {
-    if (user?.role === 'user') {
-      showUserAuthorizationToast(toast);
-    }
     navigate(redirectTo, { replace: true });
   };
 
@@ -76,7 +73,11 @@ const Auth = () => {
       const result = await loginWithGoogle(credential);
       if (result.success) {
         toast.success('Connexion réussie !');
-        if (activeTab === 'register') {
+        if (result.isNewUser) {
+          sessionStorage.setItem(
+            WELCOME_ACCOUNT_SESSION_KEY,
+            result.user?.name || 'cher client',
+          );
           sessionStorage.setItem('hk_event_show_install', '1');
         }
         finishAuth(result.user);
@@ -168,8 +169,9 @@ const Auth = () => {
       });
 
       if (result.success) {
-        toast.success(
-          "Inscription réussie ! Notre équipe vous contactera bientôt sur WhatsApp.",
+        sessionStorage.setItem(
+          WELCOME_ACCOUNT_SESSION_KEY,
+          result.user?.name || name.trim(),
         );
         sessionStorage.setItem('hk_event_show_install', '1');
         finishAuth(result.user);

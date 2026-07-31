@@ -21,7 +21,12 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import UserAuthorizationNotice from '@/components/common/UserAuthorizationNotice';
+import WelcomeAccountDialog from '@/components/auth/WelcomeAccountDialog';
+import {
+  WELCOME_ACCOUNT_SESSION_KEY,
+  hasConfirmedWelcomeWhatsApp,
+  markWelcomeWhatsAppContacted,
+} from '@/content/welcomeAccountMessage';
 import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import InstallAppPrompt from '@/components/pwa/InstallAppPrompt';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
@@ -63,12 +68,14 @@ const navigation = [
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [welcomeUserName, setWelcomeUserName] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { canInstall, isInstalled } = usePwaInstall();
 
-  useEffect(() => {
+  const tryShowInstallPrompt = () => {
     if (isInstalled || isInstallDismissed()) return;
 
     if (sessionStorage.getItem('hk_event_show_install') === '1') {
@@ -81,9 +88,47 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       sessionStorage.setItem('hk_event_install_prompt_shown', '1');
       setShowInstallPrompt(true);
     }
-  }, [canInstall, isInstalled]);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const userId = user.id || user._id;
+    const pendingName = sessionStorage.getItem(WELCOME_ACCOUNT_SESSION_KEY);
+
+    if (pendingName) {
+      sessionStorage.removeItem(WELCOME_ACCOUNT_SESSION_KEY);
+      setWelcomeUserName(pendingName);
+      setShowWelcomeDialog(true);
+      return;
+    }
+
+    if (user.role === 'user' && userId && !hasConfirmedWelcomeWhatsApp(userId)) {
+      setWelcomeUserName(user.name || '');
+      setShowWelcomeDialog(true);
+      return;
+    }
+
+    tryShowInstallPrompt();
+  }, [user]);
+
+  const handleWelcomeWhatsAppContacted = () => {
+    const userId = user?.id || user?._id;
+    if (userId) {
+      markWelcomeWhatsAppContacted(userId);
+    }
+    setShowWelcomeDialog(false);
+  };
+
+  const welcomeGateActive = showWelcomeDialog && user?.role === 'user';
+
+  useEffect(() => {
+    if (showWelcomeDialog) return;
+    tryShowInstallPrompt();
+  }, [canInstall, isInstalled, showWelcomeDialog]);
 
   const handleLogout = () => {
+    if (welcomeGateActive) return;
     logout();
     navigate('/');
   };
@@ -94,7 +139,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   return (
     <NotificationsProvider>
-    <div className="min-h-screen bg-background">
+    <div className={cn('min-h-screen bg-background', welcomeGateActive && 'pointer-events-none select-none')}>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -245,19 +290,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
         {/* Page content */}
         <main className="p-4 pb-24 lg:p-8 lg:pb-8">
-          {user?.role === 'user' && <UserAuthorizationNotice />}
           {children}
         </main>
       </div>
 
-      <MobileBottomNav />
+      {!welcomeGateActive && <MobileBottomNav />}
       <InstallAppPrompt
-        open={showInstallPrompt}
+        open={showInstallPrompt && !welcomeGateActive}
         onClose={() => setShowInstallPrompt(false)}
         onDismiss={() => {
           dismissInstallPrompt();
           setShowInstallPrompt(false);
         }}
+      />
+      <WelcomeAccountDialog
+        open={showWelcomeDialog}
+        userName={welcomeUserName || user?.name || ''}
+        onWhatsAppContacted={handleWelcomeWhatsAppContacted}
       />
     </div>
     </NotificationsProvider>

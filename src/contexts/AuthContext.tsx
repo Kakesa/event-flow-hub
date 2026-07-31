@@ -9,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string; user?: User }>;
-  loginWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  loginWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string; user?: User; isNewUser?: boolean }>;
   updateUser: (data: UpdateProfileData) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
@@ -121,7 +121,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(res.data.user);
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('eventflow_user', JSON.stringify(res.data.user));
-        return { success: true, user: res.data.user };
+        return {
+          success: true,
+          user: res.data.user,
+          isNewUser: res.data.isNewUser === true,
+        };
       }
       return { success: false, error: 'Connexion Google échouée' };
     } catch (err: unknown) {

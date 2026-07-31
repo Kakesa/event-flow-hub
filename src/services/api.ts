@@ -114,7 +114,7 @@ export const authApi = {
 
   googleLogin: async (
     credential: string,
-  ): Promise<ApiResponse<{ token: string; user: User }>> => {
+  ): Promise<ApiResponse<{ token: string; user: User; isNewUser?: boolean }>> => {
     const res = await fetch(`${API_BASE_URL}/auth/google`, {
       method: "POST",
       headers: getHeaders(),

@@ -1,16 +1,12 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Plus, User, Bell, Users, Coins } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, Plus, User, Bell, Users, Coins, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { USER_AUTHORIZATION_MESSAGE } from '@/components/common/UserAuthorizationNotice';
 import { useNotificationsPanelSafe } from '@/contexts/NotificationsContext';
 
 const MobileBottomNav = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const notifications = useNotificationsPanelSafe();
 
   const isActive = (path: string) => {
@@ -21,18 +17,7 @@ const MobileBottomNav = () => {
   };
 
   const isSuperAdmin = user?.role === 'superadmin';
-
-  const handleCreateEvent = () => {
-    if (user?.role === 'user') {
-      toast({
-        title: 'Autorisation requise',
-        description: USER_AUTHORIZATION_MESSAGE,
-        variant: 'destructive',
-      });
-      return;
-    }
-    navigate('/events/create');
-  };
+  const isBasicUser = user?.role === 'user';
 
   const navItems = isSuperAdmin
     ? [
@@ -72,38 +57,60 @@ const MobileBottomNav = () => {
           onClick: undefined,
         },
       ]
-    : [
-    {
-      label: 'Home',
-      href: '/dashboard',
-      icon: Home,
-      onClick: undefined,
-    },
-    ...(user?.role !== 'user' && notifications
+    : isBasicUser
       ? [
           {
-            label: 'Alertes',
-            href: '#notifications',
-            icon: Bell,
-            onClick: () => notifications.openPanel(),
-            badge: notifications.unreadCount,
-          } as const,
+            label: 'Home',
+            href: '/dashboard',
+            icon: Home,
+            onClick: undefined,
+          },
+          {
+            label: 'Scanner',
+            href: '/scanner',
+            icon: QrCode,
+            onClick: undefined,
+            highlight: true,
+          },
+          {
+            label: 'Profil',
+            href: '/settings',
+            icon: User,
+            onClick: undefined,
+          },
         ]
-      : []),
-    {
-      label: 'Événement',
-      href: '/events/create',
-      icon: Plus,
-      onClick: handleCreateEvent,
-      highlight: true,
-    },
-    {
-      label: 'Profil',
-      href: '/settings',
-      icon: User,
-      onClick: undefined,
-    },
-  ];
+      : [
+          {
+            label: 'Home',
+            href: '/dashboard',
+            icon: Home,
+            onClick: undefined,
+          },
+          ...(notifications
+            ? [
+                {
+                  label: 'Alertes',
+                  href: '#notifications',
+                  icon: Bell,
+                  onClick: () => notifications.openPanel(),
+                  badge: notifications.unreadCount,
+                } as const,
+              ]
+            : []),
+          {
+            label: 'Événement',
+            href: '/events/create',
+            icon: Plus,
+            onClick: undefined,
+            highlight: true,
+          },
+          {
+            label: 'Profil',
+            href: '/settings',
+            icon: User,
+            onClick: undefined,
+          },
+        ];
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden pb-[env(safe-area-inset-bottom)]">
@@ -158,7 +165,11 @@ const MobileBottomNav = () => {
               <span
                 className={cn(
                   'flex h-10 w-10 items-center justify-center rounded-full',
-                  active ? 'bg-primary/10 text-primary' : 'bg-muted/60',
+                  'highlight' in item && item.highlight
+                    ? 'bg-primary text-primary-foreground shadow-gold'
+                    : active
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted/60',
                 )}
               >
                 <Icon className="h-5 w-5" />

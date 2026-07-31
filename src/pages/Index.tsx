@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, TrendingUp, Activity, MessageSquare, Heart, Reply, Send } from 'lucide-react';
+import { Calendar, Users, CheckCircle2, Clock, Plus, ArrowRight, TrendingUp, Activity, MessageSquare, Heart, Reply, Send, QrCode } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
 import { eventsApi, guestsApi, guestbookApi } from '@/services/api';
-import { SUPER_ADMIN_NAME, SUPER_ADMIN_PHONES } from '@/components/common/UserAuthorizationNotice';
 import type { Event, Guest, GuestbookMessage } from '@/types/models';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -241,7 +240,7 @@ const Index = () => {
               </h1>
               <p className="text-muted-foreground mt-1">
                 {isBasicUser
-                  ? 'Votre espace sera disponible après validation par le super admin'
+                  ? 'Bienvenue sur HK Events'
                   : 'Voici un aperçu de vos événements'}
               </p>
             </div>
@@ -268,16 +267,16 @@ const Index = () => {
         </div>
 
         {isBasicUser ? (
-          <Card className="border-dashed">
-            <CardContent className="py-10 text-center space-y-3">
-              <Clock className="h-10 w-10 text-amber-500 mx-auto" />
-              <h2 className="font-display text-xl font-semibold">En attente d&apos;autorisation</h2>
-              <p className="text-muted-foreground max-w-xl mx-auto">
-                Contactez le super admin <strong>{SUPER_ADMIN_NAME}</strong> au{' '}
-                {SUPER_ADMIN_PHONES.join(' ou ')} pour obtenir les droits de création
-                d&apos;événements. En attendant, vous pouvez utiliser le scanner QR depuis le menu.
+          <Card>
+            <CardContent className="py-10 text-center space-y-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mx-auto">
+                <QrCode className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="font-display text-xl font-semibold">Scanner QR</h2>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Contrôlez les entrées des invités à l&apos;événement.
               </p>
-              <Button variant="outline" onClick={() => navigate('/scanner')}>
+              <Button onClick={() => navigate('/scanner')}>
                 Ouvrir le scanner QR
               </Button>
             </CardContent>
