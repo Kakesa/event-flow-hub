@@ -34,6 +34,7 @@ export interface PurgePreview {
   payments: number;
   tables: number;
   guestGroups: number;
+  checkInLogs: number;
   totalMessages: number;
 }
 
@@ -112,6 +113,7 @@ const TestDataPurgePanel = ({ onPurged }: TestDataPurgePanelProps) => {
         { label: 'Invités', value: preview.guests },
         { label: 'Tables (plan de salle)', value: preview.tables },
         { label: 'Groupes invités', value: preview.guestGroups },
+        { label: 'Journal check-in', value: preview.checkInLogs },
         { label: 'Invitations envoyées', value: preview.invitations },
         { label: 'Messages livre d\'or', value: preview.guestbookMessages },
         { label: 'Historique e-mails', value: preview.emails },

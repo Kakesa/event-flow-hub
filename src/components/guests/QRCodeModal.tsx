@@ -25,7 +25,7 @@ interface QRCodeModalProps {
 }
 
 const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
-  const [qrData, setQrData] = useState<{ qrCode: string; code: string } | null>(null);
+  const [qrData, setQrData] = useState<{ qrCode: string; code: string; invitationCode?: string } | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -71,6 +71,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
         coverImageUrl: getEventCoverUrl(event),
         guestName: guest?.name,
         eventTitle: event?.title,
+        invitationCode: qrData.invitationCode || qrData.code,
       });
       toast({ title: 'Téléchargé', description: 'QR Code téléchargé avec succès' });
     } catch {
@@ -126,7 +127,7 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
                 <div className="p-4 bg-white rounded-xl shadow-lg border border-[#e8e0d8]">
                   <QRCodeSVG
                     id="qr-code-svg"
-                    value={getGuestCheckInUrl(qrData.qrCode)}
+                    value={getGuestCheckInUrl(qrData.qrCode, qrData.invitationCode || qrData.code)}
                     size={200}
                     level="H"
                     includeMargin
@@ -135,7 +136,12 @@ const QRCodeModal = ({ guest, open, onClose }: QRCodeModalProps) => {
                     imageSettings={QR_LOGO_SETTINGS}
                   />
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground text-center max-w-xs">
+                {(qrData.invitationCode || qrData.code) && (
+                  <p className="mt-4 font-mono text-base font-semibold tracking-wider text-[#4a5a44]">
+                    {qrData.invitationCode || qrData.code}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground text-center max-w-xs">
                   Présentez ce QR code à l&apos;entrée de l&apos;événement
                 </p>
               </>

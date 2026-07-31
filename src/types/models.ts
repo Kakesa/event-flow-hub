@@ -144,8 +144,51 @@ export interface Guest {
   groupId?: string | GuestGroup | null;
   respondedAt?: string;
 
+  invitationCode?: string;
+  checkedIn?: boolean;
+  checkedInAt?: string;
+  checkedInBy?: { id?: string | null; name: string } | null;
+  checkedInMethod?: CheckInMethod;
+  seatCount?: number;
+  invitationStatus?: InvitationCheckInStatus;
+  eventName?: string;
+  canCheckIn?: boolean;
+  declineReason?: string | null;
+
   createdAt?: string;
   updatedAt?: string;
+}
+
+export type CheckInMethod =
+  | 'QR_CODE'
+  | 'SEARCH_NAME'
+  | 'SEARCH_PHONE'
+  | 'SEARCH_INVITATION_CODE';
+
+export type InvitationCheckInStatus =
+  | 'CHECKED_IN'
+  | 'CONFIRMED'
+  | 'CANCELLED'
+  | 'PENDING'
+  | 'INVITED';
+
+export interface GuestCheckInCard {
+  id: string;
+  name: string;
+  phone?: string | null;
+  invitationCode?: string;
+  eventId: string;
+  eventName: string;
+  table?: string | null;
+  seatCount: number;
+  status: GuestStatus;
+  invitationStatus: InvitationCheckInStatus;
+  checkedIn: boolean;
+  checkedInAt?: string | null;
+  checkedInBy?: { id?: string | null; name: string } | null;
+  checkedInMethod?: CheckInMethod | null;
+  canCheckIn: boolean;
+  declineReason?: string | null;
 }
 
 // ===================== SEATING =====================

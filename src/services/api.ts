@@ -266,6 +266,7 @@ export const platformApi = {
     payments: number;
     tables: number;
     guestGroups: number;
+    checkInLogs: number;
     totalMessages: number;
   }>> => {
     const res = await fetch(`${API_BASE_URL}/platform/purge-preview`, {
@@ -1397,7 +1398,7 @@ export const qrCodeApi = {
    */
   generate: async (
     guestId: string,
-  ): Promise<ApiResponse<{ qrCode: string; code: string }>> => {
+  ): Promise<ApiResponse<{ qrCode: string; code: string; invitationCode?: string }>> => {
     const res = await fetch(
       `${API_BASE_URL}/public/rsvp/${guestId}/generate-qr`,
       {
@@ -1408,14 +1409,15 @@ export const qrCodeApi = {
 
     const result = await handleResponse<{
       success: boolean;
-      data: { qrCode: string; code?: string };
+      data: { qrCode: string; code?: string; invitationCode?: string };
     }>(res);
 
     const qrCode = result.data?.qrCode || "";
+    const invitationCode = result.data?.invitationCode || result.data?.code || "";
 
     return {
       success: result.success ?? true,
-      data: { qrCode, code: qrCode },
+      data: { qrCode, code: invitationCode, invitationCode },
     };
   },
 
@@ -1463,6 +1465,111 @@ export const qrCodeApi = {
         isValid,
         message: result.message,
       },
+    };
+  },
+};
+
+// ==================== CHECK-IN (CONTRÔLE ENTRÉE) ====================
+export const checkInApi = {
+  search: async (
+    eventId: string,
+    query: string,
+  ): Promise<
+    ApiResponse<{
+      searchType: string;
+      method: import('@/types/models').CheckInMethod;
+      results: import('@/types/models').GuestCheckInCard[];
+    }>
+  > => {
+    const params = new URLSearchParams({ q: query.trim() });
+    const res = await fetch(
+      `${API_BASE_URL}/events/${eventId}/invitations/search?${params}`,
+      { headers: getHeaders() },
+    );
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  checkInGuest: async (
+    eventId: string,
+    guestId: string,
+    method: import('@/types/models').CheckInMethod,
+  ): Promise<
+    ApiResponse<{ guest: import('@/types/models').GuestCheckInCard; message?: string }>
+  > => {
+    const res = await fetch(
+      `${API_BASE_URL}/events/${eventId}/invitations/${guestId}/check-in`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ method }),
+      },
+    );
+
+    const text = await res.text();
+    let result: { success?: boolean; data?: any; message?: string } = {};
+    try {
+      result = text ? JSON.parse(text) : {};
+    } catch {
+      result = { message: text || 'Erreur serveur' };
+    }
+
+    if (!res.ok) {
+      if (result.data?.alreadyCheckedIn && result.data?.guest) {
+        const err = new Error(
+          result.message || 'Cette invitation a déjà été utilisée.',
+        ) as Error & { data?: typeof result.data };
+        err.data = result.data;
+        throw err;
+      }
+      throw new Error(result.message || 'Une erreur est survenue');
+    }
+
+    return {
+      success: result.success ?? true,
+      message: result.message,
+      data: result.data,
+    };
+  },
+
+  checkInByQr: async (
+    eventId: string,
+    code: string,
+  ): Promise<
+    ApiResponse<{ guest: import('@/types/models').GuestCheckInCard; message?: string }>
+  > => {
+    const res = await fetch(
+      `${API_BASE_URL}/events/${eventId}/invitations/check-in/qr`,
+      {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ token: code }),
+      },
+    );
+
+    const text = await res.text();
+    let result: { success?: boolean; message?: string; data?: any } = {};
+    try {
+      result = text ? JSON.parse(text) : {};
+    } catch {
+      result = { message: text || 'Erreur serveur' };
+    }
+
+    if (!res.ok) {
+      if (result.data?.alreadyCheckedIn && result.data?.guest) {
+        const err = new Error(
+          result.message || 'Cette invitation a déjà été utilisée.',
+        ) as Error & { data?: typeof result.data };
+        err.data = result.data;
+        throw err;
+      }
+      throw new Error(result.message || 'Une erreur est survenue');
+    }
+
+    return {
+      success: result.success ?? true,
+      message: result.message,
+      data: result.data,
     };
   },
 };
