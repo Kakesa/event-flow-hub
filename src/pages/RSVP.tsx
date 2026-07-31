@@ -248,6 +248,7 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
         coverImageUrl: getEventCoverUrl(event),
         guestName: guest?.name,
         eventTitle: event.title,
+        invitationCode: guest?.invitationCode,
       });
       toast.success("QR code téléchargé");
     } catch {
@@ -366,14 +367,19 @@ const SuccessView = ({ formData, guest, event }: SuccessViewProps) => {
               <div className="p-4 bg-white rounded-lg shadow-inner border border-[#e8e0d8] -mt-12 relative z-10">
                 <QRCodeSVG
                   id="rsvp-guest-qr"
-                  value={getGuestCheckInUrl(guest.qrCode)}
+                  value={getGuestCheckInUrl(guest.qrCode, guest.invitationCode)}
                   size={200}
                   level="H"
                   includeMargin
                   imageSettings={QR_LOGO_SETTINGS}
                 />
               </div>
-              <p className="mt-4 text-xs text-[#7a8b72] text-center max-w-xs">
+              {guest.invitationCode && (
+                <p className="mt-4 font-mono text-base font-semibold tracking-[0.15em] text-[#4a5a44]">
+                  {guest.invitationCode}
+                </p>
+              )}
+              <p className="mt-2 text-xs text-[#7a8b72] text-center max-w-xs">
                 Présentez ce QR code à l&apos;accueil le jour de l&apos;événement
               </p>
               <Button

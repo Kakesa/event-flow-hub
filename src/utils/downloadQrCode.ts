@@ -13,6 +13,7 @@ export interface BrandedQrDownloadOptions {
   coverImageUrl?: string;
   guestName?: string;
   eventTitle?: string;
+  invitationCode?: string;
 }
 
 function getAbsoluteUrl(path: string): string {
@@ -97,7 +98,7 @@ async function svgToImage(svgElement: SVGSVGElement): Promise<HTMLImageElement> 
 
 /** Télécharge un QR code en PNG avec photo de couverture et logo HK Event au centre */
 export async function downloadBrandedQrCodePng(options: BrandedQrDownloadOptions): Promise<void> {
-  const { svgElement, filename, coverImageUrl, guestName, eventTitle } = options;
+  const { svgElement, filename, coverImageUrl, guestName, eventTitle, invitationCode } = options;
 
   const width = 600;
   const height = 920;
@@ -176,6 +177,16 @@ export async function downloadBrandedQrCodePng(options: BrandedQrDownloadOptions
 
   ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
+  let footerY = qrY + qrSize + pad + 28;
+
+  if (invitationCode) {
+    ctx.fillStyle = '#4a5a44';
+    ctx.font = '600 18px "Courier New", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(invitationCode.toUpperCase(), width / 2, footerY);
+    footerY += 28;
+  }
+
   try {
     const logo = await loadImage(getAbsoluteUrl(HK_LOGO_PATH));
     const logoSize = qrSize * 0.2;
@@ -204,7 +215,7 @@ export async function downloadBrandedQrCodePng(options: BrandedQrDownloadOptions
   ctx.fillStyle = '#7a8b72';
   ctx.font = '13px system-ui, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Présentez ce code à l\'accueil', width / 2, qrY + qrSize + pad + 36);
+  ctx.fillText('Présentez ce code à l\'accueil', width / 2, footerY);
 
   ctx.fillStyle = '#4a5a44';
   ctx.font = '600 14px Georgia, serif';
