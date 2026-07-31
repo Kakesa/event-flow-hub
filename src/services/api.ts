@@ -47,15 +47,15 @@ export const authApi = {
   register: async (data: {
     name: string;
     email: string;
-    phone?: string;
+    phone: string;
     password: string;
   }): Promise<ApiResponse<{ token: string; user: User }>> => {
-    const payload: any = {
+    const payload = {
       name: data.name.trim(),
       email: data.email.trim().toLowerCase(),
+      phone: data.phone.trim(),
       password: data.password,
     };
-    if (data.phone?.trim()) payload.phone = data.phone.trim();
 
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
@@ -264,6 +264,8 @@ export const platformApi = {
     users: number;
     userAvatars: number;
     payments: number;
+    tables: number;
+    guestGroups: number;
     totalMessages: number;
   }>> => {
     const res = await fetch(`${API_BASE_URL}/platform/purge-preview`, {

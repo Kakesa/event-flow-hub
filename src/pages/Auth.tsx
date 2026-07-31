@@ -17,7 +17,7 @@ import logoBlack from '@/assets/black.png';
 interface RegisterData {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
   password: string;
   confirmPassword?: string;
 }
@@ -135,7 +135,7 @@ const Auth = () => {
     e.preventDefault();
     const { name, email, phone, password, confirmPassword } = registerData;
 
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+    if (!name.trim() || !email.trim() || !phone.trim() || !password || !confirmPassword) {
       toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -150,16 +150,13 @@ const Auth = () => {
       return;
     }
 
-    let phoneForBackend: string | undefined;
-    if (phone) {
-      let cleaned = phone.replace(/\D/g, '');
-      if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-      if (cleaned.length === 9) phoneForBackend = cleaned;
-      else {
-        toast.error('Numéro de téléphone invalide');
-        return;
-      }
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (cleaned.length !== 9) {
+      toast.error('Numéro de téléphone invalide (9 chiffres requis)');
+      return;
     }
+    const phoneForBackend = cleaned;
 
     setLoadingRegister(true);
     try {
@@ -171,7 +168,9 @@ const Auth = () => {
       });
 
       if (result.success) {
-        toast.success("Inscription réussie ! Bienvenue !");
+        toast.success(
+          "Inscription réussie ! Notre équipe vous contactera bientôt sur WhatsApp.",
+        );
         sessionStorage.setItem('hk_event_show_install', '1');
         finishAuth(result.user);
       } else {
@@ -348,7 +347,7 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Téléphone</Label>
+                    <Label>Téléphone *</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                       <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
@@ -358,6 +357,7 @@ const Auth = () => {
                         className="pl-24"
                         type="tel"
                         placeholder="81 234 5678"
+                        required
                         value={registerData.phone}
                         onChange={(e) => {
                           let val = e.target.value.replace(/\D/g, '');
@@ -367,6 +367,9 @@ const Auth = () => {
                         }}
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Pour recevoir un message de bienvenue de l&apos;équipe HK Events sur WhatsApp.
+                    </p>
                   </div>
 
                   <div className="space-y-2">

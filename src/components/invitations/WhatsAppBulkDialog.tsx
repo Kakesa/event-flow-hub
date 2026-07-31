@@ -48,6 +48,7 @@ const WhatsAppBulkDialog = ({
   const [skippedCount, setSkippedCount] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [readyForNext, setReadyForNext] = useState(false);
 
   const queue = useMemo(() => guests.filter(guestHasPhone), [guests]);
   const skippedNoPhone = guests.length - queue.length;
@@ -61,6 +62,7 @@ const WhatsAppBulkDialog = ({
       setSkippedCount(0);
       setIsDone(false);
       setOpening(false);
+      setReadyForNext(false);
     }
   }, [open, guests]);
 
@@ -70,6 +72,7 @@ const WhatsAppBulkDialog = ({
   };
 
   const goNext = () => {
+    setReadyForNext(false);
     if (currentIndex < queue.length - 1) {
       setCurrentIndex((i) => i + 1);
     } else {
@@ -95,14 +98,18 @@ const WhatsAppBulkDialog = ({
       }
 
       setSentCount((c) => c + 1);
+      setReadyForNext(true);
       toast({
         title: 'WhatsApp ouvert',
-        description: `Message prêt pour ${currentGuest.name}. Passez au suivant après l'envoi.`,
+        description: `Envoyez le message à ${currentGuest.name}, puis cliquez sur « Étape suivante ».`,
       });
-      goNext();
     } finally {
       setOpening(false);
     }
+  };
+
+  const handleNextStep = () => {
+    goNext();
   };
 
   const handleSkip = () => {
@@ -161,8 +168,15 @@ const WhatsAppBulkDialog = ({
                   {currentGuest.phone}
                 </p>
               )}
-              <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
-                Prêt à envoyer
+              <Badge
+                variant="outline"
+                className={
+                  readyForNext
+                    ? 'text-green-700 border-green-200 bg-green-50'
+                    : 'text-muted-foreground border-border bg-background'
+                }
+              >
+                {readyForNext ? 'Message prêt — envoyez dans WhatsApp' : 'Prêt à envoyer'}
               </Badge>
               {event && (
                 <div className="mt-3 rounded-md border bg-background p-2 text-xs whitespace-pre-wrap max-h-28 overflow-y-auto text-muted-foreground">
@@ -202,14 +216,20 @@ const WhatsAppBulkDialog = ({
                 <SkipForward className="h-4 w-4 mr-2" />
                 Passer
               </Button>
-              <Button
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                onClick={handleOpenWhatsApp}
-                disabled={opening}
-              >
-                <WhatsAppIcon className="h-4 w-4 mr-2" />
-                {opening ? 'Ouverture…' : 'Ouvrir WhatsApp'}
-              </Button>
+              {readyForNext ? (
+                <Button className="flex-1" onClick={handleNextStep}>
+                  Étape suivante
+                </Button>
+              ) : (
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={handleOpenWhatsApp}
+                  disabled={opening}
+                >
+                  <WhatsAppIcon className="h-4 w-4 mr-2" />
+                  {opening ? 'Ouverture…' : 'Ouvrir WhatsApp'}
+                </Button>
+              )}
             </>
           )}
         </DialogFooter>

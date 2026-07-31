@@ -5,6 +5,8 @@ import GuestTable from '@/components/guests/GuestTable';
 import QRCodeModal from '@/components/guests/QRCodeModal';
 import GuestImportModal from '@/components/guests/GuestImportModal';
 import GuestAssignmentModal from '@/components/seating/GuestAssignmentModal';
+import GuestTableSelector from '@/components/seating/GuestTableSelector';
+import GuestGroupSelector from '@/components/seating/GuestGroupSelector';
 import WhatsAppBulkDialog from '@/components/invitations/WhatsAppBulkDialog';
 import PermissionButton from '@/components/common/PermissionButton';
 import { Button } from '@/components/ui/button';
@@ -44,15 +46,13 @@ import {
   guestHasPhone,
   openWhatsAppInvite,
 } from '@/utils/whatsappInvite';
-import { getStoredWhatsAppTemplateId, setStoredWhatsAppTemplateId } from '@/lib/whatsappTemplates';
-import WhatsAppTemplateSelect from '@/components/invitations/WhatsAppTemplateSelect';
+import { getStoredWhatsAppTemplateId } from '@/lib/whatsappTemplates';
 import { logWhatsAppAction } from '@/lib/whatsappLog';
 import type { Guest, Event, SeatingTable, GuestGroup } from '@/types/models';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import PlanLimitAlert from '@/components/subscription/PlanLimitAlert';
-import GuestBillingCard from '@/components/subscription/GuestBillingCard';
 import { getGuestLimitDescription } from '@/lib/guestQuotaMessages';
 import { exportGuestsToCSV, exportGuestsToExcel } from '@/utils/exportUtils';
 import { sortGuestsNewestFirst } from '@/utils/guestSort';
@@ -74,8 +74,12 @@ const Guests = () => {
     email: '',
     phone: '',
     eventId: '',
-    table: '',
+    tableId: null as string | null,
+    groupId: null as string | null,
   });
+
+  const [addFormTables, setAddFormTables] = useState<SeatingTable[]>([]);
+  const [addFormGroups, setAddFormGroups] = useState<GuestGroup[]>([]);
 
   const [selectedGuestForQR, setSelectedGuestForQR] = useState<Guest | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -152,6 +156,43 @@ const Guests = () => {
     });
   }, [eventFilter]);
 
+  useEffect(() => {
+    if (!newGuest.eventId) {
+      setAddFormTables([]);
+      setAddFormGroups([]);
+      return;
+    }
+    seatingApi.getOverview(newGuest.eventId).then((res) => {
+      setAddFormTables(res.data.tables);
+      setAddFormGroups(res.data.groups);
+    }).catch(() => {
+      setAddFormTables([]);
+      setAddFormGroups([]);
+    });
+  }, [newGuest.eventId]);
+
+  const resetNewGuestForm = (eventId?: string) => ({
+    name: '',
+    email: '',
+    phone: '',
+    eventId: eventId || '',
+    tableId: null as string | null,
+    groupId: null as string | null,
+  });
+
+  const applySeatingToGuest = async (
+    guestId: string,
+    tableId: string | null,
+    groupId: string | null,
+  ) => {
+    if (tableId) {
+      await seatingApi.assignGuest(guestId, tableId);
+    }
+    if (groupId) {
+      await seatingApi.assignGuestToGroup(guestId, groupId);
+    }
+  };
+
   const reloadGuests = async () => {
     if (!eventFilter) return;
     const res = await guestsApi.getByEvent(eventFilter);
@@ -193,7 +234,6 @@ const Guests = () => {
       name: guest.name.trim(),
       ...(email ? { email } : {}),
       ...(normalizedPhone ? { phone: normalizedPhone } : {}),
-      ...(guest.table.trim() ? { table: guest.table.trim() } : {}),
     };
   };
 
@@ -249,12 +289,17 @@ const Guests = () => {
           return;
         }
 
-        await guestsApi.create(guestPayload.eventId, guestPayload);
+        const created = await guestsApi.create(guestPayload.eventId, guestPayload);
+        await applySeatingToGuest(
+          created.data.id,
+          newGuest.tableId,
+          newGuest.groupId,
+        );
 
         toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
         setIsAddDialogOpen(false);
         setIsDuplicateDialogOpen(false);
-        setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
+        setNewGuest(resetNewGuestForm());
 
         setEventFilter(guestPayload.eventId);
         const res = await guestsApi.getByEvent(guestPayload.eventId);
@@ -320,11 +365,16 @@ const Guests = () => {
         return;
       }
 
-      await guestsApi.create(guestPayload.eventId, guestPayload);
+      const created = await guestsApi.create(guestPayload.eventId, guestPayload);
+      await applySeatingToGuest(
+        created.data.id,
+        newGuest.tableId,
+        newGuest.groupId,
+      );
       toast({ title: 'Succès', description: 'Invité ajouté avec succès' });
       setIsAddDialogOpen(false);
       setIsDuplicateDialogOpen(false);
-      setNewGuest({ name: '', email: '', phone: '', eventId: '', table: '' });
+      setNewGuest(resetNewGuestForm());
       setEventFilter(guestPayload.eventId);
       const res = await guestsApi.getByEvent(guestPayload.eventId);
       setGuests(res.data);
@@ -489,7 +539,15 @@ const Guests = () => {
         {/* HEADER */}
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Invités</h1>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog
+            open={isAddDialogOpen}
+            onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (open) {
+                setNewGuest(resetNewGuestForm(eventFilter));
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <PermissionButton
                 module="guests"
@@ -511,7 +569,9 @@ const Guests = () => {
               <div className="space-y-3">
                 <Select
                   value={newGuest.eventId}
-                  onValueChange={v => setNewGuest({ ...newGuest, eventId: v })}
+                  onValueChange={(v) =>
+                    setNewGuest({ ...newGuest, eventId: v, tableId: null, groupId: null })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Événement *" />
@@ -564,11 +624,32 @@ const Guests = () => {
                     Enregistré au format +243828863897 pour WhatsApp
                   </p>
                 </div>
-                <Input
-                  placeholder="Numéro de table (Optionnel)"
-                  value={newGuest.table}
-                  onChange={e => setNewGuest({ ...newGuest, table: e.target.value })}
-                />
+                {newGuest.eventId && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Table (optionnel)</Label>
+                      {addFormTables.length > 0 ? (
+                        <GuestTableSelector
+                          tables={addFormTables}
+                          value={newGuest.tableId}
+                          onChange={(tableId) => setNewGuest({ ...newGuest, tableId })}
+                        />
+                      ) : (
+                        <p className="text-xs text-muted-foreground py-2">
+                          Aucune table configurée. Créez-en depuis le plan de salle.
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Groupe (optionnel)</Label>
+                      <GuestGroupSelector
+                        groups={addFormGroups}
+                        value={newGuest.groupId}
+                        onChange={(groupId) => setNewGuest({ ...newGuest, groupId })}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <DialogFooter>
@@ -583,14 +664,6 @@ const Guests = () => {
           </Dialog>
         </div>
 
-        {limits?.billing && (
-          <GuestBillingCard
-            billing={eventFilter && limits.eventBilling ? limits.eventBilling : limits.billing}
-            pricePerGuestFc={limits.pricePerGuestFc}
-            compact={!eventFilter}
-          />
-        )}
-
         {limits && limits.canAddGuest === false && eventFilter && (
           <PlanLimitAlert
             title="Limite d'invités atteinte"
@@ -600,22 +673,6 @@ const Guests = () => {
         )}
 
         {/* TABLE */}
-        {eventFilter && filteredGuests.length > 0 && (
-          <WhatsAppTemplateSelect
-            value={whatsappTemplateId}
-            onChange={(id) => {
-              setWhatsappTemplateId(id);
-              setStoredWhatsAppTemplateId(id);
-            }}
-            previewContext={{
-              guest: filteredGuests[0],
-              event: events.find((e) => e.id === eventFilter)!,
-              eventId: eventFilter,
-            }}
-            className="max-w-md"
-          />
-        )}
-
         {loading ? (
           <div className="h-40 flex items-center justify-center">Chargement...</div>
         ) : (

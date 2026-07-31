@@ -32,6 +32,8 @@ export interface PurgePreview {
   users: number;
   userAvatars: number;
   payments: number;
+  tables: number;
+  guestGroups: number;
   totalMessages: number;
 }
 
@@ -108,6 +110,8 @@ const TestDataPurgePanel = ({ onPurged }: TestDataPurgePanelProps) => {
         { label: 'Photos de couverture', value: preview.eventPhotos },
         { label: 'Avatars utilisateurs', value: preview.userAvatars },
         { label: 'Invités', value: preview.guests },
+        { label: 'Tables (plan de salle)', value: preview.tables },
+        { label: 'Groupes invités', value: preview.guestGroups },
         { label: 'Invitations envoyées', value: preview.invitations },
         { label: 'Messages livre d\'or', value: preview.guestbookMessages },
         { label: 'Historique e-mails', value: preview.emails },
@@ -127,8 +131,9 @@ const TestDataPurgePanel = ({ onPurged }: TestDataPurgePanelProps) => {
           Nettoyage des données de test
         </CardTitle>
         <CardDescription>
-          Supprime tous les comptes utilisateurs (sauf super admin), événements, photos, invités et messages
-          pour repartir sur une base propre avant l&apos;ouverture aux vrais utilisateurs.
+          Supprime tous les comptes utilisateurs (sauf super admin), événements, photos, invités, plan de salle
+          (tables et groupes), invitations et messages pour repartir sur une base propre avant l&apos;ouverture
+          aux vrais utilisateurs.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
