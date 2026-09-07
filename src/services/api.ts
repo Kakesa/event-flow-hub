@@ -12,6 +12,7 @@ import type {
   SeatingTable,
   GuestGroup,
   SeatingStats,
+  MarqueTable,
 } from "@/types/models";
 import { API_BASE_URL, BASE_URL } from "@/config/env";
 import { parseScanToken } from "@/utils/qrCode";
@@ -653,6 +654,100 @@ export const seatingApi = {
       headers: getHeaders(),
     });
     return handleResponse(res);
+  },
+};
+
+// ==================== MARQUE-TABLES ====================
+const mapMarqueTable = (item: any): MarqueTable => ({
+  ...item,
+  id: item.id || item._id || "",
+});
+
+export const marqueTablesApi = {
+  listByEvent: async (eventId: string): Promise<ApiResponse<MarqueTable[]>> => {
+    const res = await fetch(`${API_BASE_URL}/marque-tables/event/${eventId}`, {
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return {
+      success: result.success ?? true,
+      data: (result.data || []).map(mapMarqueTable),
+    };
+  },
+
+  create: async (
+    eventId: string,
+    payload: Partial<MarqueTable>,
+  ): Promise<ApiResponse<MarqueTable>> => {
+    const res = await fetch(`${API_BASE_URL}/marque-tables/event/${eventId}`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: mapMarqueTable(result.data) };
+  },
+
+  update: async (
+    id: string,
+    payload: Partial<MarqueTable>,
+  ): Promise<ApiResponse<MarqueTable>> => {
+    const res = await fetch(`${API_BASE_URL}/marque-tables/${id}`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: mapMarqueTable(result.data) };
+  },
+
+  remove: async (id: string): Promise<ApiResponse<{ id: string }>> => {
+    const res = await fetch(`${API_BASE_URL}/marque-tables/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: { id: string } }>(res);
+    return { success: result.success ?? true, data: result.data };
+  },
+
+  duplicate: async (id: string): Promise<ApiResponse<MarqueTable>> => {
+    const res = await fetch(`${API_BASE_URL}/marque-tables/${id}/duplicate`, {
+      method: "POST",
+      headers: getHeaders(),
+    });
+    const result = await handleResponse<{ success: boolean; data: any }>(res);
+    return { success: result.success ?? true, data: mapMarqueTable(result.data) };
+  },
+
+  reorder: async (
+    eventId: string,
+    items: { id: string; order: number }[],
+  ): Promise<ApiResponse<MarqueTable[]>> => {
+    const res = await fetch(`${API_BASE_URL}/marque-tables/event/${eventId}/reorder`, {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({ items }),
+    });
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return {
+      success: result.success ?? true,
+      data: (result.data || []).map(mapMarqueTable),
+    };
+  },
+
+  syncFromTables: async (eventId: string): Promise<ApiResponse<MarqueTable[]>> => {
+    const res = await fetch(
+      `${API_BASE_URL}/marque-tables/event/${eventId}/sync-from-tables`,
+      {
+        method: "POST",
+        headers: getHeaders(),
+      },
+    );
+    const result = await handleResponse<{ success: boolean; data: any[] }>(res);
+    return {
+      success: result.success ?? true,
+      data: (result.data || []).map(mapMarqueTable),
+    };
   },
 };
 

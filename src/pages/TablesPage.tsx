@@ -9,12 +9,14 @@ import {
   Settings2,
   Printer,
   Users,
+  Tag,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import TableCard from '@/components/seating/TableCard';
 import GuestAssignmentModal from '@/components/seating/GuestAssignmentModal';
 import TablePrintPreview from '@/components/seating/TablePrintPreview';
 import GuestGroupsPanel from '@/components/seating/GuestGroupsPanel';
+import EventContextNav from '@/components/marque-tables/EventContextNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -224,6 +226,12 @@ const TablesPage = () => {
             {selectedEventId && (
               <>
                 <Button variant="outline" asChild>
+                  <Link to={`/events/${selectedEventId}/marque-tables`}>
+                    <Tag className="mr-2 h-4 w-4" />
+                    Marque-tables
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
                   <Link to={`/events/${selectedEventId}/tables/floor-plan`}>
                     <Map className="mr-2 h-4 w-4" />
                     Plan interactif
@@ -251,6 +259,8 @@ const TablesPage = () => {
             )}
           </div>
         </div>
+
+        {selectedEventId && <EventContextNav eventId={selectedEventId} />}
 
         {notConfigured && selectedEventId && (
           <Card className="border-dashed border-primary/40 bg-primary/5">

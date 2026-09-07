@@ -124,6 +124,62 @@ export interface Event {
   updatedAt?: string;
 }
 
+// ===================== MARQUE-TABLES =====================
+export type MarqueTableTemplateId = 'classic-floral' | 'minimal' | 'centered-serif';
+
+export interface MarqueTableTextStyle {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  letterSpacing?: string;
+  align?: 'left' | 'center' | 'right';
+  offsetX?: number;
+  offsetY?: number;
+  color?: string;
+}
+
+export interface MarqueTableDesign {
+  templateId?: MarqueTableTemplateId;
+  orientation?: 'portrait' | 'landscape';
+  widthMm?: number;
+  heightMm?: number;
+  tentFold?: boolean;
+  backgroundColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  border?: {
+    enabled?: boolean;
+    color?: string;
+    widthMm?: number;
+    radiusMm?: number;
+  };
+  decoration?: {
+    enabled?: boolean;
+    motif?: 'floral-left' | 'none';
+    opacity?: number;
+  };
+  label?: MarqueTableTextStyle;
+  title?: MarqueTableTextStyle;
+  names?: MarqueTableTextStyle;
+  date?: MarqueTableTextStyle;
+}
+
+export interface MarqueTable {
+  id: string;
+  eventId: string;
+  number: string;
+  label: string;
+  titleText: string;
+  /** Lien vers la table seating (si généré automatiquement) */
+  tableId?: string | null;
+  displayNameOverride?: string | null;
+  displayDateOverride?: string | null;
+  order: number;
+  design: MarqueTableDesign;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // ===================== GUEST =====================
 export interface Guest {
   id: string;
