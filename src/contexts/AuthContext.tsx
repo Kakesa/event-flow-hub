@@ -9,7 +9,13 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string; user?: User }>;
-  loginWithGoogle: (credential: string) => Promise<{ success: boolean; error?: string; user?: User; isNewUser?: boolean }>;
+  loginWithGoogle: (credential: string, phone?: string) => Promise<{
+    success: boolean;
+    error?: string;
+    code?: string;
+    user?: User;
+    isNewUser?: boolean;
+  }>;
   updateUser: (data: UpdateProfileData) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
@@ -112,11 +118,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loginWithGoogle = async (credential: string) => {
+  const loginWithGoogle = async (credential: string, phone?: string) => {
     if (isLoading) return { success: false, error: 'Déjà en cours...' };
     setIsLoading(true);
     try {
-      const res = await authApi.googleLogin(credential);
+      const res = await authApi.googleLogin(credential, phone);
       if (res.success) {
         setUser(res.data.user);
         localStorage.setItem('token', res.data.token);
@@ -130,7 +136,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: false, error: 'Connexion Google échouée' };
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : 'Erreur inconnue';
-      return { success: false, error };
+      const code =
+        err && typeof err === 'object' && 'code' in err
+          ? String((err as { code?: string }).code || '')
+          : undefined;
+      return { success: false, error, code: code || undefined };
     } finally {
       setIsLoading(false);
     }

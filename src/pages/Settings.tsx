@@ -133,7 +133,15 @@ const Settings = () => {
     }
 
     let phoneForBackend = '';
-    if (profile.phone) {
+    if (!profile.phone?.trim()) {
+      toast({
+        title: 'Erreur',
+        description: 'Le numéro de téléphone est obligatoire',
+        variant: 'destructive',
+      });
+      return;
+    }
+    {
       let cleaned = profile.phone.replace(/\D/g, '');
       if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
       if (cleaned.length !== 9) {
@@ -291,7 +299,7 @@ const Settings = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone</Label>
+                    <Label htmlFor="phone">Téléphone *</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                       <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
