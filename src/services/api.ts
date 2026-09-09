@@ -37,7 +37,11 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 
   if (!response.ok) {
     console.error("API ERROR:", response.status, data);
-    throw new Error(data.message || "Une erreur est survenue");
+    const err = new Error(data.message || "Une erreur est survenue") as Error & {
+      code?: string;
+    };
+    if (data.code) err.code = data.code;
+    throw err;
   }
 
   return data;
@@ -115,11 +119,15 @@ export const authApi = {
 
   googleLogin: async (
     credential: string,
+    phone?: string,
   ): Promise<ApiResponse<{ token: string; user: User; isNewUser?: boolean }>> => {
     const res = await fetch(`${API_BASE_URL}/auth/google`, {
       method: "POST",
       headers: getHeaders(),
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify({
+        credential,
+        ...(phone ? { phone } : {}),
+      }),
     });
     const result = await handleResponse<{ success: boolean; data: any }>(res);
     return { success: result.success ?? true, data: result.data };

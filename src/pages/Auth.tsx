@@ -62,16 +62,26 @@ const Auth = () => {
   const [loadingLogin, setLoadingLogin] = useState(false);
   const [loadingRegister, setLoadingRegister] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [pendingGoogleCredential, setPendingGoogleCredential] = useState<string | null>(null);
+  const [googlePhone, setGooglePhone] = useState('');
 
   const finishAuth = (user?: { role?: string }) => {
     navigate(redirectTo, { replace: true });
   };
 
-  const handleGoogleAuth = async (credential: string) => {
+  const normalizeAuthPhone = (phone: string) => {
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    return cleaned;
+  };
+
+  const completeGoogleAuth = async (credential: string, phoneDigits?: string) => {
     setLoadingGoogle(true);
     try {
-      const result = await loginWithGoogle(credential);
+      const result = await loginWithGoogle(credential, phoneDigits);
       if (result.success) {
+        setPendingGoogleCredential(null);
+        setGooglePhone('');
         toast.success('Connexion réussie !');
         if (result.isNewUser) {
           sessionStorage.setItem(
@@ -81,12 +91,39 @@ const Auth = () => {
           sessionStorage.setItem('hk_event_show_install', '1');
         }
         finishAuth(result.user);
-      } else {
-        toast.error(result.error || 'Connexion Google échouée');
+        return;
       }
+
+      if (result.code === 'PHONE_REQUIRED') {
+        setPendingGoogleCredential(credential);
+        setActiveTab('register');
+        toast.info('Indiquez votre numéro de téléphone pour finaliser l’inscription');
+        return;
+      }
+
+      toast.error(result.error || 'Connexion Google échouée');
     } finally {
       setLoadingGoogle(false);
     }
+  };
+
+  const handleGoogleAuth = async (credential: string) => {
+    const fromRegister = normalizeAuthPhone(registerData.phone);
+    const phoneDigits = fromRegister.length === 9 ? fromRegister : undefined;
+    await completeGoogleAuth(credential, phoneDigits);
+  };
+
+  const handleCompleteGoogleWithPhone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingGoogleCredential) return;
+
+    const cleaned = normalizeAuthPhone(googlePhone || registerData.phone);
+    if (cleaned.length !== 9) {
+      toast.error('Numéro de téléphone obligatoire (9 chiffres après +243)');
+      return;
+    }
+
+    await completeGoogleAuth(pendingGoogleCredential, cleaned);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -153,6 +190,10 @@ const Auth = () => {
 
     let cleaned = phone.replace(/\D/g, '');
     if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (!cleaned) {
+      toast.error('Le numéro de téléphone est obligatoire');
+      return;
+    }
     if (cleaned.length !== 9) {
       toast.error('Numéro de téléphone invalide (9 chiffres requis)');
       return;
@@ -260,8 +301,68 @@ const Auth = () => {
             </CardHeader>
 
             <CardContent>
-              <GoogleSignInButton onSuccess={handleGoogleAuth} disabled={authBusy} />
-              <AuthDivider />
+              {pendingGoogleCredential ? (
+                <form onSubmit={handleCompleteGoogleWithPhone} className="space-y-4 mb-4">
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-[#4a5a44]">
+                      Finaliser l’inscription
+                    </h2>
+                    <p className="text-sm text-[#7a8b72] mt-1">
+                      Le numéro de téléphone est obligatoire pour créer votre compte.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Téléphone *</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                      <div className="absolute left-9 top-1/2 -translate-y-1/2 h-5 border-r border-border pr-2 flex items-center z-10">
+                        <span className="text-sm text-muted-foreground font-medium">+243</span>
+                      </div>
+                      <Input
+                        className="pl-24"
+                        type="tel"
+                        placeholder="81 234 5678"
+                        required
+                        autoFocus
+                        value={googlePhone}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, '');
+                          if (val.startsWith('0')) val = val.substring(1);
+                          if (val.length > 9) return;
+                          setGooglePhone(val);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#b8956c] hover:bg-[#4a5a44] text-white rounded-none uppercase tracking-wider"
+                    disabled={authBusy}
+                  >
+                    {loadingGoogle ? 'Validation...' : 'Continuer'}
+                  </Button>
+                  <button
+                    type="button"
+                    className="w-full text-sm text-[#7a8b72] hover:text-[#4a5a44]"
+                    onClick={() => {
+                      setPendingGoogleCredential(null);
+                      setGooglePhone('');
+                    }}
+                  >
+                    Annuler
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <GoogleSignInButton onSuccess={handleGoogleAuth} disabled={authBusy} />
+                  {activeTab === 'register' && (
+                    <p className="text-xs text-[#7a8b72] mt-2 mb-1 text-center">
+                      Avec Google : renseignez d’abord le téléphone ci-dessous, ou il sera demandé ensuite.
+                    </p>
+                  )}
+                  <AuthDivider />
+                </>
+              )}
 
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
@@ -328,6 +429,7 @@ const Auth = () => {
                         className="pl-10"
                         type="text"
                         placeholder="Witness kakesa"
+                        required
                         value={registerData.name}
                         onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                       />
@@ -342,6 +444,7 @@ const Auth = () => {
                         className="pl-10"
                         type="email"
                         placeholder="votre@email.com"
+                        required
                         value={registerData.email}
                         onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                       />

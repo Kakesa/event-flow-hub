@@ -137,10 +137,10 @@ const Users = () => {
 
   /* ================= ADD USER ================= */
   const handleAddUser = async () => {
-    if (!newUser.name || !newUser.email || !newUser.password) {
+    if (!newUser.name || !newUser.email || !newUser.password || !newUser.phone?.trim()) {
       toast({
         title: "Erreur",
-        description: "Champs requis manquants",
+        description: "Nom, email, téléphone et mot de passe sont obligatoires",
         variant: "destructive",
       });
       return;
@@ -326,7 +326,8 @@ const Users = () => {
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                 />
                 <Input
-                  placeholder="Téléphone"
+                  placeholder="Téléphone *"
+                  required
                   value={newUser.phone}
                   onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                 />
