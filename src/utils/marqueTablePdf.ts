@@ -19,10 +19,21 @@ function sanitizeFilename(name: string) {
 }
 
 async function captureFace(element: HTMLElement): Promise<string> {
+  // skipFonts évite SecurityError sur les CSS Google Fonts (cssRules cross-origin)
   return toPng(element, {
     cacheBust: true,
     pixelRatio: 2,
+    skipFonts: true,
     fetchRequestInit: { mode: 'cors', credentials: 'omit' },
+    filter: (node) => {
+      if (node instanceof HTMLLinkElement) {
+        const href = node.href || '';
+        if (href.includes('fonts.googleapis.com') || href.includes('fonts.gstatic.com')) {
+          return false;
+        }
+      }
+      return true;
+    },
   });
 }
 

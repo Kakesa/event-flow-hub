@@ -1,4 +1,4 @@
-import type { Event, MarqueTable, MarqueTableDesign } from '@/types/models';
+import type { Event, MarqueTable, MarqueTableDesign, MarqueTableTextStyle } from '@/types/models';
 
 /** Parse couple names from event title — also supports Portuguese/Spanish " e ". */
 export function parseMarqueCoupleFromTitle(title: string): {
@@ -80,68 +80,97 @@ export const DEFAULT_MARQUE_DESIGN: Required<
   widthMm: 160,
   heightMm: 95,
   tentFold: true,
-  backgroundColor: '#ffffff',
-  textColor: '#3d3d3d',
-  accentColor: '#8f6fad',
-  border: { enabled: false, color: '#e5e0d8', widthMm: 0.3, radiusMm: 0 },
-  decoration: { enabled: true, motif: 'event-cover', opacity: 0.98 },
+  backgroundColor: '#faf7f2',
+  textColor: '#3a342c',
+  accentColor: '#b8956c',
+  border: { enabled: false, color: '#d4c4b0', widthMm: 0.3, radiusMm: 0 },
+  decoration: { enabled: true, motif: 'event-cover', opacity: 1 },
   label: {
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: 14,
-    fontWeight: 400,
-    letterSpacing: '0.06em',
+    fontFamily: '"Cormorant Garamond", Georgia, serif',
+    fontSize: 13,
+    fontWeight: 500,
+    letterSpacing: '0.32em',
     align: 'center',
     offsetX: 0,
     offsetY: 0,
+    color: '#b8956c',
   },
   title: {
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: 42,
+    fontFamily: '"Playfair Display", Georgia, serif',
+    fontSize: 48,
     fontWeight: 500,
-    letterSpacing: '0.02em',
+    letterSpacing: '0.04em',
     align: 'center',
     offsetX: 0,
     offsetY: 0,
   },
   names: {
-    fontFamily: 'Georgia, "Times New Roman", serif',
-    fontSize: 13,
+    fontFamily: '"Great Vibes", cursive',
+    fontSize: 22,
     fontWeight: 400,
-    letterSpacing: '0.03em',
+    letterSpacing: '0.01em',
     align: 'center',
     offsetX: 0,
     offsetY: 0,
   },
   date: {
-    fontFamily: 'Georgia, "Times New Roman", serif',
+    fontFamily: '"Cormorant Garamond", Georgia, serif',
     fontSize: 12,
-    fontWeight: 400,
-    letterSpacing: '0.04em',
+    fontWeight: 500,
+    letterSpacing: '0.18em',
     align: 'center',
     offsetX: 0,
-    offsetY: 2,
+    offsetY: 0,
+    color: '#b8956c',
   },
 };
 
 export function mergeMarqueDesign(design?: MarqueTableDesign | null): MarqueTableDesign {
   const rawMotif = design?.decoration?.motif;
-  // Ancien défaut stocké `floral-left` → photo de couverture
-  // Le choix volontaire « Floral » utilise désormais `floral`
   let motif = rawMotif || 'event-cover';
   if (motif === 'floral-left') motif = 'event-cover';
+
+  const isLegacyFont = (font?: string) =>
+    !font ||
+    font.includes('Times New Roman') ||
+    font.startsWith('Georgia') ||
+    font === 'system-ui, sans-serif';
+
+  const mergeText = (
+    key: 'label' | 'title' | 'names' | 'date',
+  ): MarqueTableTextStyle => {
+    const base = DEFAULT_MARQUE_DESIGN[key] || {};
+    const override = design?.[key] || {};
+    const fontFamily = isLegacyFont(override.fontFamily)
+      ? base.fontFamily
+      : override.fontFamily;
+    return { ...base, ...override, fontFamily };
+  };
 
   return {
     ...DEFAULT_MARQUE_DESIGN,
     ...design,
+    backgroundColor:
+      !design?.backgroundColor || design.backgroundColor === '#ffffff'
+        ? DEFAULT_MARQUE_DESIGN.backgroundColor
+        : design.backgroundColor,
+    textColor:
+      !design?.textColor || design.textColor === '#3d3d3d'
+        ? DEFAULT_MARQUE_DESIGN.textColor
+        : design.textColor,
+    accentColor:
+      !design?.accentColor || design.accentColor === '#8f6fad'
+        ? DEFAULT_MARQUE_DESIGN.accentColor
+        : design.accentColor,
     border: { ...DEFAULT_MARQUE_DESIGN.border, ...design?.border },
     decoration: {
       ...DEFAULT_MARQUE_DESIGN.decoration,
       ...design?.decoration,
       motif,
     },
-    label: { ...DEFAULT_MARQUE_DESIGN.label, ...design?.label },
-    title: { ...DEFAULT_MARQUE_DESIGN.title, ...design?.title },
-    names: { ...DEFAULT_MARQUE_DESIGN.names, ...design?.names },
-    date: { ...DEFAULT_MARQUE_DESIGN.date, ...design?.date },
+    label: mergeText('label'),
+    title: mergeText('title'),
+    names: mergeText('names'),
+    date: mergeText('date'),
   };
 }

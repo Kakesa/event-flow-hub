@@ -39,10 +39,11 @@ interface MarqueTableEditorProps {
 }
 
 const FONT_OPTIONS = [
-  { value: 'Georgia, "Times New Roman", serif', label: 'Georgia (serif)' },
-  { value: '"Times New Roman", Times, serif', label: 'Times New Roman' },
-  { value: 'Garamond, Georgia, serif', label: 'Garamond' },
-  { value: 'system-ui, sans-serif', label: 'System sans' },
+  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
+  { value: '"Cormorant Garamond", Georgia, serif', label: 'Cormorant Garamond' },
+  { value: '"Great Vibes", cursive', label: 'Great Vibes (script)' },
+  { value: 'Georgia, "Times New Roman", serif', label: 'Georgia' },
+  { value: '"Lato", system-ui, sans-serif', label: 'Lato' },
 ];
 
 const MarqueTableEditor = ({

@@ -22,12 +22,12 @@ export interface MarqueTablePreviewProps {
 
 function textStyle(style?: MarqueTableTextStyle, fallbackColor?: string): React.CSSProperties {
   return {
-    fontFamily: style?.fontFamily || 'Georgia, "Times New Roman", serif',
+    fontFamily: style?.fontFamily || '"Cormorant Garamond", Georgia, serif',
     fontSize: style?.fontSize ? `${style.fontSize}px` : undefined,
     fontWeight: style?.fontWeight || 400,
     letterSpacing: style?.letterSpacing || 'normal',
     textAlign: style?.align || 'center',
-    color: style?.color || fallbackColor || '#3d3d3d',
+    color: style?.color || fallbackColor || '#3a342c',
     transform: `translate(${style?.offsetX || 0}px, ${style?.offsetY || 0}px)`,
   };
 }
@@ -35,7 +35,8 @@ function textStyle(style?: MarqueTableTextStyle, fallbackColor?: string): React.
 const MM_TO_PX = 3.7795275591;
 
 /**
- * Face marque-table : photo de couverture à gauche (floral en secours).
+ * Marque-table chic : photo de couverture en bandeau gauche,
+ * typographie élégante, filets dorés, fond ivoire.
  */
 const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
   ({ marque, event, scale = 1, className }, ref) => {
@@ -45,7 +46,9 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
     const displayName = resolveMarqueDisplayName(marque, event);
     const displayDate = resolveMarqueDisplayDate(marque, event);
     const titleText = resolveMarqueTitleText(marque);
-    const textColor = design.textColor || '#3d3d3d';
+    const textColor = design.textColor || '#3a342c';
+    const accent = design.accentColor || '#b8956c';
+    const bg = design.backgroundColor || '#faf7f2';
     const decorationOn =
       design.decoration?.enabled !== false &&
       design.decoration?.motif !== 'none' &&
@@ -57,7 +60,7 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
     const useCover = decorationOn && Boolean(coverUrl) && !forceFloral;
     const useFloral = decorationOn && (forceFloral || !coverUrl);
     const showLeftDecor = useCover || useFloral;
-    const opacity = design.decoration?.opacity ?? 0.98;
+    const opacity = design.decoration?.opacity ?? 1;
 
     return (
       <div
@@ -82,21 +85,38 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
             style={{
               width: widthPx,
               height: heightPx,
-              backgroundColor: design.backgroundColor || '#ffffff',
-              border: design.border?.enabled
-                ? `${(design.border.widthMm || 0.3) * MM_TO_PX}px solid ${design.border.color || '#e5e0d8'}`
-                : '1px solid rgba(0,0,0,0.06)',
-              borderRadius: design.border?.radiusMm
-                ? `${design.border.radiusMm * MM_TO_PX}px`
-                : undefined,
+              backgroundColor: bg,
               color: textColor,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+              boxShadow: '0 8px 28px rgba(58, 52, 44, 0.12)',
             }}
           >
+            {/* Cadre intérieur fin */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                inset: 8,
+                border: `1px solid ${accent}55`,
+              }}
+            />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                inset: 11,
+                border: `0.5px solid ${accent}33`,
+              }}
+            />
+
+            {/* Photo / floral */}
             {useCover && coverUrl && (
               <div
-                className="absolute left-[2%] top-[8%] bottom-[8%] w-[28%] overflow-hidden pointer-events-none rounded-sm"
-                style={{ opacity }}
+                className="absolute overflow-hidden pointer-events-none"
+                style={{
+                  left: 18,
+                  top: 18,
+                  bottom: 18,
+                  width: '30%',
+                  opacity,
+                }}
               >
                 <img
                   src={coverUrl}
@@ -105,54 +125,101 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
                   className="h-full w-full object-cover"
                   draggable={false}
                 />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    boxShadow: `inset 0 0 0 1px ${accent}88`,
+                  }}
+                />
               </div>
             )}
 
             {useFloral && (
               <FloralLeftDecoration
-                className="absolute left-[2%] top-[8%] bottom-[8%] w-[28%] h-[84%] pointer-events-none"
+                className="absolute left-[4%] top-[10%] bottom-[10%] w-[28%] h-[80%] pointer-events-none"
                 opacity={opacity}
               />
             )}
 
+            {/* Contenu texte */}
             <div
               className="absolute inset-y-0 flex flex-col items-center justify-center"
               style={{
-                left: showLeftDecor ? '30%' : '8%',
+                left: showLeftDecor ? '36%' : '10%',
                 right: '8%',
-                paddingBottom: '6%',
+                paddingTop: 10,
+                paddingBottom: 14,
               }}
             >
               {marque.label && (
                 <p
-                  className="w-full mb-1"
+                  className="w-full uppercase"
                   style={{
-                    ...textStyle(design.label, textColor),
-                    opacity: 0.85,
+                    ...textStyle(design.label, accent),
+                    marginBottom: 4,
                   }}
                 >
                   {marque.label}
                 </p>
               )}
-              <p className="w-full leading-[1.05]" style={textStyle(design.title, textColor)}>
+
+              {/* Filet décoratif */}
+              <div
+                className="flex items-center justify-center w-full"
+                style={{ gap: 8, marginBottom: 6 }}
+              >
+                <span style={{ flex: 1, maxWidth: 36, height: 1, background: `${accent}99` }} />
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    border: `1px solid ${accent}`,
+                    transform: 'rotate(45deg)',
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{ flex: 1, maxWidth: 36, height: 1, background: `${accent}99` }} />
+              </div>
+
+              <p
+                className="w-full leading-none"
+                style={{
+                  ...textStyle(design.title, textColor),
+                  marginBottom: 10,
+                }}
+              >
                 {titleText}
               </p>
 
-              <div className="w-full flex flex-col items-center mt-6" style={{ gap: 3 }}>
+              {(displayName || displayDate) && (
+                <div
+                  className="flex items-center justify-center w-full"
+                  style={{ gap: 8, marginBottom: 8 }}
+                >
+                  <span style={{ flex: 1, maxWidth: 28, height: 1, background: `${accent}66` }} />
+                  <span style={{ flex: 1, maxWidth: 28, height: 1, background: `${accent}66` }} />
+                </div>
+              )}
+
+              <div className="w-full flex flex-col items-center" style={{ gap: 2 }}>
                 {displayName && (
                   <p className="w-full leading-snug" style={textStyle(design.names, textColor)}>
                     {displayName}
                   </p>
                 )}
                 {displayDate && (
-                  <p className="w-full leading-snug" style={textStyle(design.date, textColor)}>
+                  <p
+                    className="w-full leading-snug"
+                    style={{
+                      ...textStyle(design.date, accent),
+                      opacity: 0.9,
+                    }}
+                  >
                     {displayDate}
                   </p>
                 )}
               </div>
             </div>
-
-            <div className="absolute bottom-0 left-0 right-0 h-[12%] pointer-events-none" />
           </div>
         </div>
       </div>
