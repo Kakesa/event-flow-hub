@@ -7,6 +7,7 @@ import {
   resolveMarqueTitleText,
 } from '@/utils/marqueTableResolve';
 import FloralLeftDecoration from '@/components/marque-tables/FloralLeftDecoration';
+import FloralCornersDecoration from '@/components/marque-tables/FloralCornersDecoration';
 import { resolveEventCoverUrl } from '@/utils/eventCover';
 import { cn } from '@/lib/utils';
 
@@ -106,16 +107,25 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
               }}
             />
 
-            {/* Photo / floral */}
+            {/* Fleurs aux coins (toujours avec décor, y compris photo) */}
+            {decorationOn && (
+              <FloralCornersDecoration
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                opacity={0.88}
+              />
+            )}
+
+            {/* Photo / floral gauche */}
             {useCover && coverUrl && (
               <div
                 className="absolute overflow-hidden pointer-events-none"
                 style={{
                   left: 18,
-                  top: 18,
-                  bottom: 18,
-                  width: '30%',
+                  top: 22,
+                  bottom: 28,
+                  width: '28%',
                   opacity,
+                  zIndex: 1,
                 }}
               >
                 <img
@@ -136,17 +146,17 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
 
             {useFloral && (
               <FloralLeftDecoration
-                className="absolute left-[4%] top-[10%] bottom-[10%] w-[28%] h-[80%] pointer-events-none"
+                className="absolute left-[4%] top-[10%] bottom-[10%] w-[28%] h-[80%] pointer-events-none z-[1]"
                 opacity={opacity}
               />
             )}
 
             {/* Contenu texte */}
             <div
-              className="absolute inset-y-0 flex flex-col items-center justify-center"
+              className="absolute inset-y-0 flex flex-col items-center justify-center z-[1]"
               style={{
-                left: showLeftDecor ? '36%' : '10%',
-                right: '8%',
+                left: showLeftDecor ? '34%' : '10%',
+                right: '10%',
                 paddingTop: 10,
                 paddingBottom: 14,
               }}
