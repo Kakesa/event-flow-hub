@@ -22,6 +22,7 @@ async function captureFace(element: HTMLElement): Promise<string> {
   return toPng(element, {
     cacheBust: true,
     pixelRatio: 2,
+    fetchRequestInit: { mode: 'cors', credentials: 'omit' },
   });
 }
 

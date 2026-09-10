@@ -84,7 +84,7 @@ export const DEFAULT_MARQUE_DESIGN: Required<
   textColor: '#3d3d3d',
   accentColor: '#8f6fad',
   border: { enabled: false, color: '#e5e0d8', widthMm: 0.3, radiusMm: 0 },
-  decoration: { enabled: true, motif: 'floral-left', opacity: 0.95 },
+  decoration: { enabled: true, motif: 'event-cover', opacity: 0.98 },
   label: {
     fontFamily: 'Georgia, "Times New Roman", serif',
     fontSize: 14,
@@ -124,11 +124,21 @@ export const DEFAULT_MARQUE_DESIGN: Required<
 };
 
 export function mergeMarqueDesign(design?: MarqueTableDesign | null): MarqueTableDesign {
+  const rawMotif = design?.decoration?.motif;
+  // Ancien défaut stocké `floral-left` → photo de couverture
+  // Le choix volontaire « Floral » utilise désormais `floral`
+  let motif = rawMotif || 'event-cover';
+  if (motif === 'floral-left') motif = 'event-cover';
+
   return {
     ...DEFAULT_MARQUE_DESIGN,
     ...design,
     border: { ...DEFAULT_MARQUE_DESIGN.border, ...design?.border },
-    decoration: { ...DEFAULT_MARQUE_DESIGN.decoration, ...design?.decoration },
+    decoration: {
+      ...DEFAULT_MARQUE_DESIGN.decoration,
+      ...design?.decoration,
+      motif,
+    },
     label: { ...DEFAULT_MARQUE_DESIGN.label, ...design?.label },
     title: { ...DEFAULT_MARQUE_DESIGN.title, ...design?.title },
     names: { ...DEFAULT_MARQUE_DESIGN.names, ...design?.names },
