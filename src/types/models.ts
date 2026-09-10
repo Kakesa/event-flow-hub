@@ -155,7 +155,8 @@ export interface MarqueTableDesign {
   };
   decoration?: {
     enabled?: boolean;
-    motif?: 'floral-left' | 'none';
+    /** `floral-left` = ancien défaut (migré vers event-cover à l’affichage) */
+    motif?: 'event-cover' | 'floral' | 'floral-left' | 'none';
     opacity?: number;
   };
   label?: MarqueTableTextStyle;

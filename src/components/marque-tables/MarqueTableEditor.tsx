@@ -39,10 +39,11 @@ interface MarqueTableEditorProps {
 }
 
 const FONT_OPTIONS = [
-  { value: 'Georgia, "Times New Roman", serif', label: 'Georgia (serif)' },
-  { value: '"Times New Roman", Times, serif', label: 'Times New Roman' },
-  { value: 'Garamond, Georgia, serif', label: 'Garamond' },
-  { value: 'system-ui, sans-serif', label: 'System sans' },
+  { value: '"Playfair Display", Georgia, serif', label: 'Playfair Display' },
+  { value: '"Cormorant Garamond", Georgia, serif', label: 'Cormorant Garamond' },
+  { value: '"Great Vibes", cursive', label: 'Great Vibes (script)' },
+  { value: 'Georgia, "Times New Roman", serif', label: 'Georgia' },
+  { value: '"Lato", system-ui, sans-serif', label: 'Lato' },
 ];
 
 const MarqueTableEditor = ({
@@ -234,7 +235,12 @@ const MarqueTableEditor = ({
                         decoration: {
                           ...design.decoration,
                           enabled: v !== 'minimal',
-                          motif: v === 'minimal' ? 'none' : 'floral-left',
+                          motif:
+                            v === 'minimal'
+                              ? 'none'
+                              : design.decoration?.motif === 'floral'
+                                ? 'floral'
+                                : 'event-cover',
                         },
                       })
                     }
@@ -301,22 +307,38 @@ const MarqueTableEditor = ({
                   />
                 </div>
 
-                <div className="flex items-center justify-between rounded-md border p-3">
-                  <div>
-                    <p className="text-sm font-medium">Décor floral</p>
-                  </div>
-                  <Switch
-                    checked={design.decoration?.enabled !== false && design.decoration?.motif !== 'none'}
-                    onCheckedChange={(v) =>
+                <div className="space-y-1.5">
+                  <Label>Décor gauche</Label>
+                  <Select
+                    value={
+                      design.decoration?.enabled === false || design.decoration?.motif === 'none'
+                        ? 'none'
+                        : design.decoration?.motif === 'floral'
+                          ? 'floral'
+                          : 'event-cover'
+                    }
+                    onValueChange={(v: 'event-cover' | 'floral' | 'none') =>
                       patchDesign({
                         decoration: {
                           ...design.decoration,
-                          enabled: v,
-                          motif: v ? 'floral-left' : 'none',
+                          enabled: v !== 'none',
+                          motif: v,
                         },
                       })
                     }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="event-cover">Photo de couverture</SelectItem>
+                      <SelectItem value="floral">Floral</SelectItem>
+                      <SelectItem value="none">Aucun</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Affiche la photo de couverture de l’événement. Sans image, le floral est utilisé.
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between rounded-md border p-3">
