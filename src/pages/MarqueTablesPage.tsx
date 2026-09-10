@@ -26,6 +26,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { eventsApi, marqueTablesApi } from '@/services/api';
 import type { Event, MarqueTable } from '@/types/models';
 import { toast } from 'sonner';
@@ -43,6 +53,8 @@ const MarqueTablesPage = () => {
   const [editing, setEditing] = useState<MarqueTable | null>(null);
   const [exportingAll, setExportingAll] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MarqueTable | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const faceRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -138,16 +150,27 @@ const MarqueTablesPage = () => {
     }
   };
 
-  const handleDelete = async (item: MarqueTable) => {
-    if (!confirm(`Supprimer « ${item.label} ${item.titleText || item.number} » ?`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      await marqueTablesApi.remove(item.id);
-      setItems((prev) => prev.filter((m) => m.id !== item.id));
-      toast.success('Supprimé');
+      await marqueTablesApi.remove(deleteTarget.id);
+      setItems((prev) => prev.filter((m) => m.id !== deleteTarget.id));
+      toast.success('Marque-table supprimé');
+      setDeleteTarget(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Suppression impossible');
+    } finally {
+      setIsDeleting(false);
     }
   };
+
+  const deleteLabel = deleteTarget
+    ? [deleteTarget.label, deleteTarget.titleText || deleteTarget.number]
+        .filter(Boolean)
+        .join(' ')
+        .trim()
+    : '';
 
   const moveItem = async (index: number, direction: -1 | 1) => {
     const target = index + direction;
@@ -367,8 +390,8 @@ const MarqueTablesPage = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-destructive"
-                      onClick={() => handleDelete(item)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setDeleteTarget(item)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -389,6 +412,52 @@ const MarqueTablesPage = () => {
           onSave={handleSave}
         />
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce marque-table ?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                Vous êtes sur le point de supprimer{' '}
+                <span className="font-medium text-foreground">
+                  « {deleteLabel || 'ce marque-table'} »
+                </span>
+                .
+              </span>
+              <span className="block">Cette action est définitive et ne peut pas être annulée.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
