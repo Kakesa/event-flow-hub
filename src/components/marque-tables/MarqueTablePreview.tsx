@@ -36,8 +36,8 @@ function textStyle(style?: MarqueTableTextStyle, fallbackColor?: string): React.
 const MM_TO_PX = 3.7795275591;
 
 /**
- * Marque-table chic : photo de couverture en bandeau gauche,
- * typographie élégante, filets dorés, fond ivoire.
+ * Marque-table chic : photo circulaire entourée de fleurs à gauche,
+ * texte libre à droite.
  */
 const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
   ({ marque, event, scale = 1, className }, ref) => {
@@ -62,6 +62,8 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
     const useFloral = decorationOn && (forceFloral || !coverUrl);
     const showLeftDecor = useCover || useFloral;
     const opacity = design.decoration?.opacity ?? 1;
+
+    const circleSize = Math.min(heightPx * 0.58, widthPx * 0.26);
 
     return (
       <div
@@ -91,56 +93,50 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
               boxShadow: '0 8px 28px rgba(58, 52, 44, 0.12)',
             }}
           >
-            {/* Cadre intérieur fin */}
             <div
               className="absolute pointer-events-none"
-              style={{
-                inset: 8,
-                border: `1px solid ${accent}55`,
-              }}
+              style={{ inset: 8, border: `1px solid ${accent}55` }}
             />
             <div
               className="absolute pointer-events-none"
-              style={{
-                inset: 11,
-                border: `0.5px solid ${accent}33`,
-              }}
+              style={{ inset: 11, border: `0.5px solid ${accent}33` }}
             />
 
-            {/* Fleurs aux coins (toujours avec décor, y compris photo) */}
+            {/* Fleurs autour de la photo + accents côté texte */}
             {decorationOn && (
               <FloralCornersDecoration
-                className="absolute inset-0 w-full h-full pointer-events-none"
-                opacity={0.88}
+                className="absolute inset-0 w-full h-full pointer-events-none z-[1]"
+                opacity={0.92}
               />
             )}
 
-            {/* Photo / floral gauche */}
+            {/* Photo circulaire au centre de la couronne florale */}
             {useCover && coverUrl && (
               <div
-                className="absolute overflow-hidden pointer-events-none"
+                className="absolute pointer-events-none z-[2]"
                 style={{
-                  left: 18,
-                  top: 22,
-                  bottom: 28,
-                  width: '28%',
+                  left: widthPx * 0.07,
+                  top: '50%',
+                  width: circleSize,
+                  height: circleSize,
+                  marginTop: -circleSize / 2,
                   opacity,
-                  zIndex: 1,
                 }}
               >
-                <img
-                  src={coverUrl}
-                  alt=""
-                  crossOrigin="anonymous"
-                  className="h-full w-full object-cover"
-                  draggable={false}
-                />
                 <div
-                  className="absolute inset-0"
+                  className="relative h-full w-full overflow-hidden rounded-full"
                   style={{
-                    boxShadow: `inset 0 0 0 1px ${accent}88`,
+                    boxShadow: `0 0 0 2px ${accent}, 0 0 0 5px ${bg}, 0 4px 14px rgba(58,52,44,0.18)`,
                   }}
-                />
+                >
+                  <img
+                    src={coverUrl}
+                    alt=""
+                    crossOrigin="anonymous"
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                  />
+                </div>
               </div>
             )}
 
@@ -151,12 +147,12 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
               />
             )}
 
-            {/* Contenu texte */}
+            {/* Texte — au-dessus des fleurs (ombre), zone centrale dégagée */}
             <div
-              className="absolute inset-y-0 flex flex-col items-center justify-center z-[1]"
+              className="absolute inset-y-0 flex flex-col items-center justify-center z-[3]"
               style={{
-                left: showLeftDecor ? '34%' : '10%',
-                right: '10%',
+                left: showLeftDecor ? '42%' : '10%',
+                right: '14%',
                 paddingTop: 10,
                 paddingBottom: 14,
               }}
@@ -173,7 +169,6 @@ const MarqueTablePreview = forwardRef<HTMLDivElement, MarqueTablePreviewProps>(
                 </p>
               )}
 
-              {/* Filet décoratif */}
               <div
                 className="flex items-center justify-center w-full"
                 style={{ gap: 8, marginBottom: 6 }}
